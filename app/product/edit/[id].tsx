@@ -9,14 +9,16 @@ import {
   Image,
   Alert,
   Platform,
+  Modal,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
-import { X, Camera, Image as ImageIcon, ArrowLeft } from 'lucide-react-native';
+import { X, Camera, Image as ImageIcon, ArrowLeft, Calendar as CalendarIcon } from 'lucide-react-native';
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import { useMarketplace } from '@/contexts/MarketplaceContext';
-import { categories } from '@/constants/categories';
-import { Category } from '@/types/marketplace';
+import { categories, getSubCategoriesForCategory } from '@/constants/categories';
+import { Category, SubCategory, ListingType } from '@/types/marketplace';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 export default function EditProductScreen() {
   const router = useRouter();
@@ -31,6 +33,7 @@ export default function EditProductScreen() {
   const [price, setPrice] = useState<string>('');
   const [location, setLocation] = useState<string>('');
   const [category, setCategory] = useState<Category>('electronics');
+  const [subCategory, setSubCategory] = useState<SubCategory | undefined>(undefined);
   const [condition, setCondition] = useState<'new' | 'used' | 'refurbished'>('used');
   const [images, setImages] = useState<string[]>([]);
   const [stockQuantity, setStockQuantity] = useState<string>('');
@@ -39,21 +42,43 @@ export default function EditProductScreen() {
   const [isOutOfStock, setIsOutOfStock] = useState<boolean>(false);
   const [hasDiscount, setHasDiscount] = useState<boolean>(false);
   const [discountPercent, setDiscountPercent] = useState<string>('');
+  
+  const [departureLocation, setDepartureLocation] = useState<string>('');
+  const [arrivalLocation, setArrivalLocation] = useState<string>('');
+  const [departureDate, setDepartureDate] = useState<Date | undefined>(undefined);
+  const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
+  const [tempDate, setTempDate] = useState<Date>(new Date());
+  const [pricePerKg, setPricePerKg] = useState<string>('');
+  const [pricePerKm, setPricePerKm] = useState<string>('');
+  const [vehicleType, setVehicleType] = useState<string>('');
+  
+  const listingType: ListingType = product?.listingType || 'product';
 
   useEffect(() => {
     if (product) {
       setTitle(product.title);
       setDescription(product.description);
       setPrice(product.price.toString());
-      setLocation(product.location);
       setCategory(product.category);
-      setCondition(product.condition || 'used');
+      setSubCategory(product.subCategory);
       setImages(product.images);
-      setManageStock(product.stockQuantity !== undefined);
-      setStockQuantity(product.stockQuantity ? product.stockQuantity.toString() : '');
-      setIsOutOfStock(product.isOutOfStock || false);
-      setHasDiscount(product.hasDiscount || false);
-      setDiscountPercent(product.discountPercent ? product.discountPercent.toString() : '');
+      
+      if (product.listingType === 'product') {
+        setLocation(product.location);
+        setCondition(product.condition || 'used');
+        setManageStock(product.stockQuantity !== undefined);
+        setStockQuantity(product.stockQuantity ? product.stockQuantity.toString() : '');
+        setIsOutOfStock(product.isOutOfStock || false);
+        setHasDiscount(product.hasDiscount || false);
+        setDiscountPercent(product.discountPercent ? product.discountPercent.toString() : '');
+      } else if (product.listingType === 'service' && product.serviceDetails) {
+        setDepartureLocation(product.serviceDetails.departureLocation || '');
+        setArrivalLocation(product.serviceDetails.arrivalLocation || '');
+        setDepartureDate(product.serviceDetails.departureDate ? new Date(product.serviceDetails.departureDate) : undefined);
+        setPricePerKg(product.serviceDetails.pricePerKg ? product.serviceDetails.pricePerKg.toString() : '');
+        setPricePerKm(product.serviceDetails.pricePerKm ? product.serviceDetails.pricePerKm.toString() : '');
+        setVehicleType(product.serviceDetails.vehicleType || '');
+      }
     }
   }, [product]);
 
@@ -170,33 +195,90 @@ export default function EditProductScreen() {
       Alert.alert('Erreur', 'Veuillez entrer une description');
       return;
     }
-    if (!price.trim() || isNaN(Number(price))) {
-      Alert.alert('Erreur', 'Veuillez entrer un prix valide');
+    
+    if (!category) {
+      Alert.alert('Erreur', 'Veuillez sélectionner une catégorie');
       return;
     }
-    if (!location.trim()) {
-      Alert.alert('Erreur', 'Veuillez entrer une localisation');
+    
+    const subCategoriesForCategory = getSubCategoriesForCategory(category);
+    if (subCategoriesForCategory.length > 0 && !subCategory) {
+      Alert.alert('Erreur', 'Veuillez sélectionner une sous-catégorie');
       return;
     }
+    
+    if (listingType === 'product') {
+      if (!price.trim() || isNaN(Number(price))) {
+        Alert.alert('Erreur', 'Veuillez entrer un prix valide');
+        return;
+      }
+      if (!location.trim()) {
+        Alert.alert('Erreur', 'Veuillez entrer une localisation');
+        return;
+      }
+    } else if (listingType === 'service') {
+      if (!departureLocation.trim()) {
+        Alert.alert('Erreur', 'Veuillez entrer le lieu de départ');
+        return;
+      }
+      if (!arrivalLocation.trim()) {
+        Alert.alert('Erreur', 'Veuillez entrer le lieu d\'arrivée');
+        return;
+      }
+      if (!departureDate) {
+        Alert.alert('Erreur', 'Veuillez sélectionner la date de départ');
+        return;
+      }
+    }
+    
     if (images.length === 0) {
       Alert.alert('Erreur', 'Veuillez ajouter au moins une photo');
       return;
     }
 
-    updateProduct(product.id, {
+    let servicePrice = 0;
+    if (listingType === 'service') {
+      if (pricePerKg) servicePrice = Number(pricePerKg);
+      else if (pricePerKm) servicePrice = Number(pricePerKm);
+    }
+    
+    const updates: any = {
       title: title.trim(),
       description: description.trim(),
-      price: Number(price),
-      location: location.trim(),
       category,
-      condition,
+      subCategory,
       images,
-      stockQuantity: manageStock && stockQuantity ? Number(stockQuantity) : undefined,
-      isOutOfStock,
-      hasDiscount,
-      discountPercent: hasDiscount && discountPercent ? Number(discountPercent) : undefined,
-      originalPrice: hasDiscount && discountPercent ? Number(price) : undefined,
-    });
+    };
+    
+    if (listingType === 'product') {
+      updates.price = Number(price);
+      updates.location = location.trim();
+      updates.condition = condition;
+      
+      if (isPremium || product.stockQuantity !== undefined) {
+        updates.stockQuantity = manageStock && stockQuantity ? Number(stockQuantity) : undefined;
+        updates.isOutOfStock = isOutOfStock;
+      }
+      
+      if (isPremium || product.hasDiscount) {
+        updates.hasDiscount = hasDiscount;
+        updates.discountPercent = hasDiscount && discountPercent ? Number(discountPercent) : undefined;
+        updates.originalPrice = hasDiscount && discountPercent ? Number(price) : undefined;
+      }
+    } else if (listingType === 'service') {
+      updates.price = servicePrice;
+      updates.location = departureLocation.trim();
+      updates.serviceDetails = {
+        departureLocation: departureLocation.trim(),
+        arrivalLocation: arrivalLocation.trim(),
+        departureDate: departureDate ? departureDate.toISOString() : undefined,
+        pricePerKg: pricePerKg ? Number(pricePerKg) : undefined,
+        pricePerKm: pricePerKm ? Number(pricePerKm) : undefined,
+        vehicleType: vehicleType.trim() || undefined,
+      };
+    }
+    
+    updateProduct(product.id, updates);
 
     Alert.alert('Succès', 'Votre annonce a été modifiée !', [
       {
@@ -221,9 +303,9 @@ export default function EditProductScreen() {
         <View style={styles.headerTitleContainer}>
           <Text style={styles.headerTitle}>Modifier l&apos;annonce</Text>
           <Text style={styles.headerSubtitle}>
-            {currentUser?.type === 'standard'
-              ? 'Compte Standard - 2 photos/produit'
-              : 'Compte Premium - Accès illimité'}
+            {listingType === 'product' ? 'Produit' : 'Service'} - {currentUser?.type === 'standard'
+              ? '2 photos max'
+              : 'Accès illimité'}
           </Text>
         </View>
       </View>
@@ -284,34 +366,140 @@ export default function EditProductScreen() {
             textAlignVertical="top"
             placeholderTextColor="#999"
           />
-          <TextInput
-            style={styles.input}
-            placeholder="Prix (FCFA)"
-            value={price}
-            onChangeText={setPrice}
-            keyboardType="numeric"
-            placeholderTextColor="#999"
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Localisation (ex: Dakar, Plateau)"
-            value={location}
-            onChangeText={setLocation}
-            placeholderTextColor="#999"
-          />
+
+          {listingType === 'product' ? (
+            <>
+              <TextInput
+                style={styles.input}
+                placeholder="Prix (FCFA)"
+                value={price}
+                onChangeText={setPrice}
+                keyboardType="numeric"
+                placeholderTextColor="#999"
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Localisation (ex: Dakar, Plateau)"
+                value={location}
+                onChangeText={setLocation}
+                placeholderTextColor="#999"
+              />
+            </>
+          ) : (
+            <>
+              <TextInput
+                style={styles.input}
+                placeholder="Lieu de départ (ex: Dakar)"
+                value={departureLocation}
+                onChangeText={setDepartureLocation}
+                placeholderTextColor="#999"
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Lieu d'arrivée (ex: Saint-Louis)"
+                value={arrivalLocation}
+                onChangeText={setArrivalLocation}
+                placeholderTextColor="#999"
+              />
+              <View style={styles.dateInputWrapper}>
+                <TouchableOpacity 
+                  style={styles.dateInputContainer}
+                  onPress={() => {
+                    setTempDate(departureDate || new Date());
+                    setShowDatePicker(true);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <CalendarIcon size={22} color="#00A651" style={styles.calendarIcon} />
+                  <View style={styles.dateDisplayContainer}>
+                    {departureDate ? (
+                      <>
+                        <Text style={styles.dateDisplayText}>
+                          {departureDate.toLocaleDateString('fr-FR', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                          })}
+                        </Text>
+                        <Text style={styles.timeDisplayText}>
+                          {departureDate.toLocaleTimeString('fr-FR', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </Text>
+                      </>
+                    ) : (
+                      <Text style={styles.dateInputPlaceholder}>Sélectionner la date et l&apos;heure</Text>
+                    )}
+                  </View>
+                  <View style={styles.calendarButton}>
+                    <CalendarIcon size={20} color="#fff" />
+                  </View>
+                </TouchableOpacity>
+                <Text style={styles.dateHint}>Appuyez pour sélectionner la date et l&apos;heure de départ</Text>
+              </View>
+              
+              {(subCategory === 'thiaktiak' || subCategory === 'vtc') && (
+                <>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Prix par km (FCFA)"
+                    value={pricePerKm}
+                    onChangeText={setPricePerKm}
+                    keyboardType="numeric"
+                    placeholderTextColor="#999"
+                  />
+                  {subCategory === 'vtc' && (
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Type de véhicule (ex: Toyota Corolla)"
+                      value={vehicleType}
+                      onChangeText={setVehicleType}
+                      placeholderTextColor="#999"
+                    />
+                  )}
+                </>
+              )}
+
+              {(subCategory === 'gp' || subCategory === 'conteneur') && (
+                <TextInput
+                  style={styles.input}
+                  placeholder="Prix par kg (FCFA)"
+                  value={pricePerKg}
+                  onChangeText={setPricePerKg}
+                  keyboardType="numeric"
+                  placeholderTextColor="#999"
+                />
+              )}
+
+              {subCategory === 'autres' && (
+                <TextInput
+                  style={styles.input}
+                  placeholder="Tarif (FCFA)"
+                  value={pricePerKm}
+                  onChangeText={setPricePerKm}
+                  keyboardType="numeric"
+                  placeholderTextColor="#999"
+                />
+              )}
+            </>
+          )}
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Catégorie</Text>
+          <Text style={styles.sectionTitle}>Catégorie *</Text>
           <View style={styles.categoriesGrid}>
-            {categories.filter(c => c.id !== 'all').map((cat) => (
+            {categories.filter(c => c.id !== 'all').filter(c => listingType === 'product' ? c.id !== 'delivery' : c.id === 'delivery').map((cat) => (
               <TouchableOpacity
                 key={cat.id}
                 style={[
                   styles.categoryButton,
                   category === cat.id && styles.categoryButtonSelected,
                 ]}
-                onPress={() => setCategory(cat.id)}
+                onPress={() => {
+                  setCategory(cat.id);
+                  setSubCategory(undefined);
+                }}
               >
                 <Text style={styles.categoryButtonIcon}>{cat.icon}</Text>
                 <Text
@@ -327,152 +515,383 @@ export default function EditProductScreen() {
           </View>
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>État</Text>
-          <View style={styles.conditionRow}>
-            {[
-              { value: 'new' as const, label: 'Neuf' },
-              { value: 'used' as const, label: 'Occasion' },
-              { value: 'refurbished' as const, label: 'Reconditionné' },
-            ].map((cond) => (
-              <TouchableOpacity
-                key={cond.value}
-                style={[
-                  styles.conditionButton,
-                  condition === cond.value && styles.conditionButtonSelected,
-                ]}
-                onPress={() => setCondition(cond.value)}
-              >
-                <Text
+        {getSubCategoriesForCategory(category).length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>{listingType === 'service' ? 'Type de service *' : 'Sous-catégorie *'}</Text>
+            <View style={styles.categoriesGrid}>
+              {getSubCategoriesForCategory(category).map((subCat) => (
+                <TouchableOpacity
+                  key={subCat.id}
                   style={[
-                    styles.conditionButtonText,
-                    condition === cond.value && styles.conditionButtonTextSelected,
+                    styles.categoryButton,
+                    subCategory === subCat.id && styles.categoryButtonSelected,
                   ]}
+                  onPress={() => setSubCategory(subCat.id as SubCategory)}
                 >
-                  {cond.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Réduction / Promotion</Text>
-            {!isPremium && (
-              <View style={styles.premiumBadge}>
-                <Text style={styles.premiumBadgeText}>Premium</Text>
-              </View>
-            )}
-          </View>
-          <TouchableOpacity 
-            style={styles.checkboxRow}
-            onPress={() => {
-              if (!isPremium) {
-                Alert.alert(
-                  'Fonctionnalité Premium',
-                  'Les promotions sont réservées aux utilisateurs Premium. Passez à Premium pour 3500 FCFA/mois pour accéder à cette fonctionnalité.',
-                  [
-                    { text: 'OK', style: 'cancel' },
-                  ]
-                );
-              } else {
-                setHasDiscount(!hasDiscount);
-              }
-            }}
-          >
-            <View style={[styles.checkbox, hasDiscount && styles.checkboxChecked, !isPremium && styles.checkboxDisabled]}>
-              {hasDiscount && <Text style={styles.checkboxCheck}>✓</Text>}
+                  <Text style={styles.categoryButtonIcon}>{subCat.icon}</Text>
+                  <Text
+                    style={[
+                      styles.categoryButtonText,
+                      subCategory === subCat.id && styles.categoryButtonTextSelected,
+                    ]}
+                  >
+                    {subCat.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
             </View>
-            <Text style={[styles.checkboxLabel, !isPremium && styles.checkboxLabelDisabled]}>Ce produit est en promotion</Text>
-          </TouchableOpacity>
-          {hasDiscount && (
-            <View>
-              <TextInput
-                style={styles.input}
-                placeholder="Pourcentage de réduction (ex: 20 pour 20%)"
-                value={discountPercent}
-                onChangeText={(text) => {
-                  const num = Number(text);
-                  if (text === '' || (!isNaN(num) && num > 0 && num <= 100)) {
-                    setDiscountPercent(text);
-                  }
-                }}
-                keyboardType="numeric"
-                placeholderTextColor="#999"
-              />
-              {discountPercent && price && (
-                <View style={styles.discountPreview}>
-                  <Text style={styles.discountPreviewLabel}>Prix après réduction :</Text>
-                  <View style={styles.priceRow}>
-                    <Text style={styles.originalPrice}>{Number(price).toLocaleString('fr-FR')} FCFA</Text>
-                    <Text style={styles.discountedPrice}>
-                      {Math.round(Number(price) * (1 - Number(discountPercent) / 100)).toLocaleString('fr-FR')} FCFA
-                    </Text>
-                  </View>
+          </View>
+        )}
+
+        {listingType === 'product' && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>État</Text>
+            <View style={styles.conditionRow}>
+              {[
+                { value: 'new' as const, label: 'Neuf' },
+                { value: 'used' as const, label: 'Occasion' },
+                { value: 'refurbished' as const, label: 'Reconditionné' },
+              ].map((cond) => (
+                <TouchableOpacity
+                  key={cond.value}
+                  style={[
+                    styles.conditionButton,
+                    condition === cond.value && styles.conditionButtonSelected,
+                  ]}
+                  onPress={() => setCondition(cond.value)}
+                >
+                  <Text
+                    style={[
+                      styles.conditionButtonText,
+                      condition === cond.value && styles.conditionButtonTextSelected,
+                    ]}
+                  >
+                    {cond.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {listingType === 'product' && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Réduction / Promotion</Text>
+              {!isPremium && (
+                <View style={styles.premiumBadge}>
+                  <Text style={styles.premiumBadgeText}>Premium</Text>
                 </View>
               )}
             </View>
-          )}
-        </View>
-
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Gestion du stock</Text>
-            {!isPremium && (
-              <View style={styles.premiumBadge}>
-                <Text style={styles.premiumBadgeText}>Premium</Text>
+            <TouchableOpacity 
+              style={styles.checkboxRow}
+              onPress={() => {
+                if (!isPremium) {
+                  Alert.alert(
+                    'Fonctionnalité Premium',
+                    'Les promotions sont réservées aux utilisateurs Premium. Passez à Premium pour 3500 FCFA/mois pour accéder à cette fonctionnalité.',
+                    [
+                      { text: 'OK', style: 'cancel' },
+                    ]
+                  );
+                } else {
+                  setHasDiscount(!hasDiscount);
+                }
+              }}
+            >
+              <View style={[styles.checkbox, hasDiscount && styles.checkboxChecked, !isPremium && styles.checkboxDisabled]}>
+                {hasDiscount && <Text style={styles.checkboxCheck}>✓</Text>}
+              </View>
+              <Text style={[styles.checkboxLabel, !isPremium && styles.checkboxLabelDisabled]}>Ce produit est en promotion</Text>
+            </TouchableOpacity>
+            {hasDiscount && (
+              <View>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Pourcentage de réduction (ex: 20 pour 20%)"
+                  value={discountPercent}
+                  onChangeText={(text) => {
+                    const num = Number(text);
+                    if (text === '' || (!isNaN(num) && num > 0 && num <= 100)) {
+                      setDiscountPercent(text);
+                    }
+                  }}
+                  keyboardType="numeric"
+                  placeholderTextColor="#999"
+                />
+                {discountPercent && price && (
+                  <View style={styles.discountPreview}>
+                    <Text style={styles.discountPreviewLabel}>Prix après réduction :</Text>
+                    <View style={styles.priceRow}>
+                      <Text style={styles.originalPrice}>{Number(price).toLocaleString('fr-FR')} FCFA</Text>
+                      <Text style={styles.discountedPrice}>
+                        {Math.round(Number(price) * (1 - Number(discountPercent) / 100)).toLocaleString('fr-FR')} FCFA
+                      </Text>
+                    </View>
+                  </View>
+                )}
               </View>
             )}
           </View>
-          <TouchableOpacity 
-            style={styles.checkboxRow}
-            onPress={() => {
-              if (!isPremium) {
-                Alert.alert(
-                  'Fonctionnalité Premium',
-                  'La gestion du stock est réservée aux utilisateurs Premium. Passez à Premium pour 3500 FCFA/mois pour accéder à cette fonctionnalité.',
-                  [
-                    { text: 'OK', style: 'cancel' },
-                  ]
-                );
-              } else {
-                setManageStock(!manageStock);
-              }
-            }}
-          >
-            <View style={[styles.checkbox, manageStock && styles.checkboxChecked, !isPremium && styles.checkboxDisabled]}>
-              {manageStock && <Text style={styles.checkboxCheck}>✓</Text>}
-            </View>
-            <Text style={[styles.checkboxLabel, !isPremium && styles.checkboxLabelDisabled]}>Gérer le stock de ce produit</Text>
-          </TouchableOpacity>
-          {manageStock && (
-            <>
-              <TextInput
-                style={styles.input}
-                placeholder="Quantité disponible"
-                value={stockQuantity}
-                onChangeText={setStockQuantity}
-                keyboardType="numeric"
-                placeholderTextColor="#999"
-              />
-              <TouchableOpacity 
-                style={styles.checkboxRow}
-                onPress={() => setIsOutOfStock(!isOutOfStock)}
-              >
-                <View style={[styles.checkbox, isOutOfStock && styles.checkboxChecked]}>
-                  {isOutOfStock && <Text style={styles.checkboxCheck}>✓</Text>}
+        )}
+
+        {listingType === 'product' && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Gestion du stock</Text>
+              {!isPremium && (
+                <View style={styles.premiumBadge}>
+                  <Text style={styles.premiumBadgeText}>Premium</Text>
                 </View>
-                <Text style={styles.checkboxLabel}>Produit en rupture de stock</Text>
-              </TouchableOpacity>
-            </>
-          )}
-        </View>
+              )}
+            </View>
+            <TouchableOpacity 
+              style={styles.checkboxRow}
+              onPress={() => {
+                if (!isPremium) {
+                  Alert.alert(
+                    'Fonctionnalité Premium',
+                    'La gestion du stock est réservée aux utilisateurs Premium. Passez à Premium pour 3500 FCFA/mois pour accéder à cette fonctionnalité.',
+                    [
+                      { text: 'OK', style: 'cancel' },
+                    ]
+                  );
+                } else {
+                  setManageStock(!manageStock);
+                }
+              }}
+            >
+              <View style={[styles.checkbox, manageStock && styles.checkboxChecked, !isPremium && styles.checkboxDisabled]}>
+                {manageStock && <Text style={styles.checkboxCheck}>✓</Text>}
+              </View>
+              <Text style={[styles.checkboxLabel, !isPremium && styles.checkboxLabelDisabled]}>Gérer le stock de ce produit</Text>
+            </TouchableOpacity>
+            {manageStock && (
+              <>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Quantité disponible"
+                  value={stockQuantity}
+                  onChangeText={setStockQuantity}
+                  keyboardType="numeric"
+                  placeholderTextColor="#999"
+                />
+                <TouchableOpacity 
+                  style={styles.checkboxRow}
+                  onPress={() => setIsOutOfStock(!isOutOfStock)}
+                >
+                  <View style={[styles.checkbox, isOutOfStock && styles.checkboxChecked]}>
+                    {isOutOfStock && <Text style={styles.checkboxCheck}>✓</Text>}
+                  </View>
+                  <Text style={styles.checkboxLabel}>Produit en rupture de stock</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        )}
 
         <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
           <Text style={styles.submitButtonText}>Enregistrer les modifications</Text>
         </TouchableOpacity>
       </ScrollView>
+
+      {Platform.OS !== 'web' && showDatePicker && (
+        <Modal
+          visible={showDatePicker}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setShowDatePicker(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.nativeDateModalContent}>
+              <Text style={styles.modalTitle}>Sélectionner la date et l&apos;heure</Text>
+              <View style={styles.nativePickerContainer}>
+                <DateTimePicker
+                  value={tempDate}
+                  mode="date"
+                  display="spinner"
+                  textColor="#00A651"
+                  onChange={(event, selectedDate) => {
+                    if (selectedDate) {
+                      setTempDate(selectedDate);
+                    }
+                  }}
+                  style={styles.datePicker}
+                />
+                <DateTimePicker
+                  value={tempDate}
+                  mode="time"
+                  display="spinner"
+                  textColor="#00A651"
+                  onChange={(event, selectedTime) => {
+                    if (selectedTime) {
+                      setTempDate(selectedTime);
+                    }
+                  }}
+                  style={styles.timePicker}
+                />
+              </View>
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalCancelButton]}
+                  onPress={() => {
+                    setShowDatePicker(false);
+                    setTempDate(departureDate || new Date());
+                  }}
+                >
+                  <Text style={styles.modalCancelText}>Annuler</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalConfirmButton]}
+                  onPress={() => {
+                    setDepartureDate(tempDate);
+                    setShowDatePicker(false);
+                  }}
+                >
+                  <Text style={styles.modalConfirmText}>Valider</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      )}
+
+      {Platform.OS === 'web' && showDatePicker && (
+        <Modal
+          visible={showDatePicker}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setShowDatePicker(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Sélectionner la date et l&apos;heure</Text>
+              <View style={styles.webDatePickerContainer}>
+                <View style={styles.webDatePickerRow}>
+                  <View style={styles.webDatePickerField}>
+                    <Text style={styles.webDatePickerLabel}>Jour</Text>
+                    <TextInput
+                      style={styles.webDatePickerInput}
+                      placeholder="JJ"
+                      keyboardType="numeric"
+                      maxLength={2}
+                      value={tempDate ? tempDate.getDate().toString().padStart(2, '0') : ''}
+                      onChangeText={(text) => {
+                        const day = parseInt(text);
+                        if (!isNaN(day) && day >= 1 && day <= 31) {
+                          const newDate = new Date(tempDate || new Date());
+                          newDate.setDate(day);
+                          setTempDate(newDate);
+                        }
+                      }}
+                      placeholderTextColor="#999"
+                    />
+                  </View>
+                  <View style={styles.webDatePickerField}>
+                    <Text style={styles.webDatePickerLabel}>Mois</Text>
+                    <TextInput
+                      style={styles.webDatePickerInput}
+                      placeholder="MM"
+                      keyboardType="numeric"
+                      maxLength={2}
+                      value={tempDate ? (tempDate.getMonth() + 1).toString().padStart(2, '0') : ''}
+                      onChangeText={(text) => {
+                        const month = parseInt(text);
+                        if (!isNaN(month) && month >= 1 && month <= 12) {
+                          const newDate = new Date(tempDate || new Date());
+                          newDate.setMonth(month - 1);
+                          setTempDate(newDate);
+                        }
+                      }}
+                      placeholderTextColor="#999"
+                    />
+                  </View>
+                  <View style={styles.webDatePickerField}>
+                    <Text style={styles.webDatePickerLabel}>Année</Text>
+                    <TextInput
+                      style={styles.webDatePickerInput}
+                      placeholder="AAAA"
+                      keyboardType="numeric"
+                      maxLength={4}
+                      value={tempDate ? tempDate.getFullYear().toString() : ''}
+                      onChangeText={(text) => {
+                        const year = parseInt(text);
+                        if (!isNaN(year) && year >= 2024) {
+                          const newDate = new Date(tempDate || new Date());
+                          newDate.setFullYear(year);
+                          setTempDate(newDate);
+                        }
+                      }}
+                      placeholderTextColor="#999"
+                    />
+                  </View>
+                </View>
+                <View style={styles.webDatePickerRow}>
+                  <View style={styles.webDatePickerField}>
+                    <Text style={styles.webDatePickerLabel}>Heure</Text>
+                    <TextInput
+                      style={styles.webDatePickerInput}
+                      placeholder="HH"
+                      keyboardType="numeric"
+                      maxLength={2}
+                      value={tempDate ? tempDate.getHours().toString().padStart(2, '0') : ''}
+                      onChangeText={(text) => {
+                        const hour = parseInt(text);
+                        if (!isNaN(hour) && hour >= 0 && hour <= 23) {
+                          const newDate = new Date(tempDate || new Date());
+                          newDate.setHours(hour);
+                          setTempDate(newDate);
+                        }
+                      }}
+                      placeholderTextColor="#999"
+                    />
+                  </View>
+                  <View style={styles.webDatePickerField}>
+                    <Text style={styles.webDatePickerLabel}>Minutes</Text>
+                    <TextInput
+                      style={styles.webDatePickerInput}
+                      placeholder="MM"
+                      keyboardType="numeric"
+                      maxLength={2}
+                      value={tempDate ? tempDate.getMinutes().toString().padStart(2, '0') : ''}
+                      onChangeText={(text) => {
+                        const minute = parseInt(text);
+                        if (!isNaN(minute) && minute >= 0 && minute <= 59) {
+                          const newDate = new Date(tempDate || new Date());
+                          newDate.setMinutes(minute);
+                          setTempDate(newDate);
+                        }
+                      }}
+                      placeholderTextColor="#999"
+                    />
+                  </View>
+                </View>
+              </View>
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalCancelButton]}
+                  onPress={() => {
+                    setShowDatePicker(false);
+                    setTempDate(departureDate || new Date());
+                  }}
+                >
+                  <Text style={styles.modalCancelText}>Annuler</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalConfirmButton]}
+                  onPress={() => {
+                    setDepartureDate(tempDate);
+                    setShowDatePicker(false);
+                  }}
+                >
+                  <Text style={styles.modalConfirmText}>Valider</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      )}
     </View>
   );
 }
@@ -759,5 +1178,146 @@ const styles = StyleSheet.create({
   checkboxLabelDisabled: {
     opacity: 0.5,
     color: '#999',
+  },
+  dateInputWrapper: {
+    marginBottom: 12,
+  },
+  dateInputContainer: {
+    backgroundColor: '#f5f5f5',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    borderWidth: 2,
+    borderColor: '#00A651',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  calendarIcon: {
+    flexShrink: 0,
+  },
+  dateDisplayContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  dateDisplayText: {
+    fontSize: 16,
+    color: '#00A651',
+    fontWeight: '700' as const,
+  },
+  timeDisplayText: {
+    fontSize: 16,
+    color: '#00A651',
+    fontWeight: '700' as const,
+  },
+  dateInputPlaceholder: {
+    fontSize: 16,
+    color: '#999',
+  },
+  calendarButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: '#00A651',
+  },
+  dateHint: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 6,
+    marginLeft: 4,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 24,
+    width: '80%',
+    maxWidth: 400,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700' as const,
+    color: '#00A651',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  webDatePickerContainer: {
+    marginBottom: 16,
+  },
+  webDatePickerRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 12,
+  },
+  webDatePickerField: {
+    flex: 1,
+  },
+  webDatePickerLabel: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+    color: '#00A651',
+    marginBottom: 6,
+  },
+  webDatePickerInput: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 16,
+    color: '#000',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    textAlign: 'center',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  modalCancelButton: {
+    backgroundColor: '#F1F5F9',
+  },
+  modalCancelText: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    color: '#64748B',
+  },
+  modalConfirmButton: {
+    backgroundColor: '#00A651',
+  },
+  modalConfirmText: {
+    fontSize: 16,
+    fontWeight: '700' as const,
+    color: '#fff',
+  },
+  nativeDateModalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 20,
+    width: '90%',
+    maxWidth: 400,
+  },
+  nativePickerContainer: {
+    marginBottom: 16,
+  },
+  datePicker: {
+    height: 200,
+    width: '100%',
+  },
+  timePicker: {
+    height: 200,
+    width: '100%',
+    marginTop: 8,
   },
 });
