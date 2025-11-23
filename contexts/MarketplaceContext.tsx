@@ -610,6 +610,8 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
       setCurrentUser(newUser);
       setIsAuthenticated(true);
       
+      toast.showSuccess('Inscription réussie ! Bienvenue sur Marketplace');
+      
       return { success: true, user: newUser };
     } catch (error) {
       console.error('Registration error:', error);
@@ -662,6 +664,8 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
       }
       setCurrentUser(user);
       setIsAuthenticated(true);
+      
+      toast.showSuccess(`Bienvenue ${user.name} !`);
       
       return { success: true, user };
     } catch (error) {

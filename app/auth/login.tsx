@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
-  Alert,
   ScrollView,
   Image,
 } from 'react-native';
@@ -15,11 +14,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ArrowRight, Eye, EyeOff } from 'lucide-react-native';
 import { useMarketplace } from '@/contexts/MarketplaceContext';
+import { useToast } from '@/contexts/ToastContext';
 
 export default function LoginScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { login } = useMarketplace();
+  const toast = useToast();
   const [phone, setPhone] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [countryCode, setCountryCode] = useState<string>('+221');
@@ -28,8 +29,147 @@ export default function LoginScreen() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const countries = [
-    { code: '+221', name: 'Sénégal', flag: '🇸🇳' },
+    { code: '+93', name: 'Afghanistan', flag: '🇦🇫' },
+    { code: '+355', name: 'Albanie', flag: '🇦🇱' },
+    { code: '+213', name: 'Algérie', flag: '🇩🇿' },
+    { code: '+376', name: 'Andorre', flag: '🇦🇩' },
+    { code: '+244', name: 'Angola', flag: '🇦🇴' },
+    { code: '+54', name: 'Argentine', flag: '🇦🇷' },
+    { code: '+61', name: 'Australie', flag: '🇦🇺' },
+    { code: '+43', name: 'Autriche', flag: '🇦🇹' },
+    { code: '+973', name: 'Bahreïn', flag: '🇧🇭' },
+    { code: '+880', name: 'Bangladesh', flag: '🇧🇩' },
+    { code: '+32', name: 'Belgique', flag: '🇧🇪' },
+    { code: '+229', name: 'Bénin', flag: '🇧🇯' },
+    { code: '+975', name: 'Bhoutan', flag: '🇧🇹' },
+    { code: '+591', name: 'Bolivie', flag: '🇧🇴' },
+    { code: '+387', name: 'Bosnie-Herzégovine', flag: '🇧🇦' },
+    { code: '+267', name: 'Botswana', flag: '🇧🇼' },
+    { code: '+55', name: 'Brésil', flag: '🇧🇷' },
+    { code: '+673', name: 'Brunéi', flag: '🇧🇳' },
+    { code: '+359', name: 'Bulgarie', flag: '🇧🇬' },
+    { code: '+226', name: 'Burkina Faso', flag: '🇧🇫' },
+    { code: '+257', name: 'Burundi', flag: '🇧🇮' },
+    { code: '+855', name: 'Cambodge', flag: '🇰🇭' },
+    { code: '+237', name: 'Cameroun', flag: '🇨🇲' },
+    { code: '+1', name: 'Canada', flag: '🇨🇦' },
+    { code: '+238', name: 'Cap-Vert', flag: '🇨🇻' },
+    { code: '+236', name: 'Centrafrique', flag: '🇨🇫' },
+    { code: '+56', name: 'Chili', flag: '🇨🇱' },
+    { code: '+86', name: 'Chine', flag: '🇨🇳' },
+    { code: '+57', name: 'Colombie', flag: '🇨🇴' },
+    { code: '+269', name: 'Comores', flag: '🇰🇲' },
+    { code: '+242', name: 'Congo', flag: '🇨🇬' },
+    { code: '+243', name: 'RD Congo', flag: '🇨🇩' },
+    { code: '+82', name: 'Corée du Sud', flag: '🇰🇷' },
+    { code: '+850', name: 'Corée du Nord', flag: '🇰🇵' },
+    { code: '+506', name: 'Costa Rica', flag: '🇨🇷' },
+    { code: '+225', name: 'Côte d\'Ivoire', flag: '🇨🇮' },
+    { code: '+385', name: 'Croatie', flag: '🇭🇷' },
+    { code: '+53', name: 'Cuba', flag: '🇨🇺' },
+    { code: '+357', name: 'Chypre', flag: '🇨🇾' },
+    { code: '+420', name: 'Tchéquie', flag: '🇨🇿' },
+    { code: '+45', name: 'Danemark', flag: '🇩🇰' },
+    { code: '+253', name: 'Djibouti', flag: '🇩🇯' },
+    { code: '+20', name: 'Égypte', flag: '🇪🇬' },
+    { code: '+971', name: 'Émirats arabes unis', flag: '🇦🇪' },
+    { code: '+593', name: 'Équateur', flag: '🇪🇨' },
+    { code: '+291', name: 'Érythrée', flag: '🇪🇷' },
+    { code: '+372', name: 'Estonie', flag: '🇪🇪' },
+    { code: '+251', name: 'Éthiopie', flag: '🇪🇹' },
+    { code: '+358', name: 'Finlande', flag: '🇫🇮' },
     { code: '+33', name: 'France', flag: '🇫🇷' },
+    { code: '+241', name: 'Gabon', flag: '🇬🇦' },
+    { code: '+220', name: 'Gambie', flag: '🇬🇲' },
+    { code: '+995', name: 'Géorgie', flag: '🇬🇪' },
+    { code: '+49', name: 'Allemagne', flag: '🇩🇪' },
+    { code: '+233', name: 'Ghana', flag: '🇬🇭' },
+    { code: '+30', name: 'Grèce', flag: '🇬🇷' },
+    { code: '+224', name: 'Guinée', flag: '🇬🇳' },
+    { code: '+245', name: 'Guinée-Bissau', flag: '🇬🇼' },
+    { code: '+240', name: 'Guinée équatoriale', flag: '🇬🇶' },
+    { code: '+509', name: 'Haïti', flag: '🇭🇹' },
+    { code: '+504', name: 'Honduras', flag: '🇭🇳' },
+    { code: '+852', name: 'Hong Kong', flag: '🇭🇰' },
+    { code: '+36', name: 'Hongrie', flag: '🇭🇺' },
+    { code: '+354', name: 'Islande', flag: '🇮🇸' },
+    { code: '+91', name: 'Inde', flag: '🇮🇳' },
+    { code: '+62', name: 'Indonésie', flag: '🇮🇩' },
+    { code: '+98', name: 'Iran', flag: '🇮🇷' },
+    { code: '+964', name: 'Irak', flag: '🇮🇶' },
+    { code: '+353', name: 'Irlande', flag: '🇮🇪' },
+    { code: '+972', name: 'Israël', flag: '🇮🇱' },
+    { code: '+39', name: 'Italie', flag: '🇮🇹' },
+    { code: '+81', name: 'Japon', flag: '🇯🇵' },
+    { code: '+962', name: 'Jordanie', flag: '🇯🇴' },
+    { code: '+254', name: 'Kenya', flag: '🇰🇪' },
+    { code: '+965', name: 'Koweït', flag: '🇰🇼' },
+    { code: '+961', name: 'Liban', flag: '🇱🇧' },
+    { code: '+231', name: 'Liberia', flag: '🇱🇷' },
+    { code: '+218', name: 'Libye', flag: '🇱🇾' },
+    { code: '+352', name: 'Luxembourg', flag: '🇱🇺' },
+    { code: '+261', name: 'Madagascar', flag: '🇲🇬' },
+    { code: '+265', name: 'Malawi', flag: '🇲🇼' },
+    { code: '+60', name: 'Malaisie', flag: '🇲🇾' },
+    { code: '+223', name: 'Mali', flag: '🇲🇱' },
+    { code: '+356', name: 'Malte', flag: '🇲🇹' },
+    { code: '+222', name: 'Mauritanie', flag: '🇲🇷' },
+    { code: '+230', name: 'Maurice', flag: '🇲🇺' },
+    { code: '+52', name: 'Mexique', flag: '🇲🇽' },
+    { code: '+212', name: 'Maroc', flag: '🇲🇦' },
+    { code: '+258', name: 'Mozambique', flag: '🇲🇿' },
+    { code: '+95', name: 'Myanmar', flag: '🇲🇲' },
+    { code: '+264', name: 'Namibie', flag: '🇳🇦' },
+    { code: '+977', name: 'Népal', flag: '🇳🇵' },
+    { code: '+31', name: 'Pays-Bas', flag: '🇳🇱' },
+    { code: '+64', name: 'Nouvelle-Zélande', flag: '🇳🇿' },
+    { code: '+227', name: 'Niger', flag: '🇳🇪' },
+    { code: '+234', name: 'Nigeria', flag: '🇳🇬' },
+    { code: '+47', name: 'Norvège', flag: '🇳🇴' },
+    { code: '+968', name: 'Oman', flag: '🇴🇲' },
+    { code: '+92', name: 'Pakistan', flag: '🇵🇰' },
+    { code: '+507', name: 'Panama', flag: '🇵🇦' },
+    { code: '+595', name: 'Paraguay', flag: '🇵🇾' },
+    { code: '+51', name: 'Pérou', flag: '🇵🇪' },
+    { code: '+63', name: 'Philippines', flag: '🇵🇭' },
+    { code: '+48', name: 'Pologne', flag: '🇵🇱' },
+    { code: '+351', name: 'Portugal', flag: '🇵🇹' },
+    { code: '+974', name: 'Qatar', flag: '🇶🇦' },
+    { code: '+40', name: 'Roumanie', flag: '🇷🇴' },
+    { code: '+7', name: 'Russie', flag: '🇷🇺' },
+    { code: '+250', name: 'Rwanda', flag: '🇷🇼' },
+    { code: '+966', name: 'Arabie saoudite', flag: '🇸🇦' },
+    { code: '+221', name: 'Sénégal', flag: '🇸🇳' },
+    { code: '+381', name: 'Serbie', flag: '🇷🇸' },
+    { code: '+65', name: 'Singapour', flag: '🇸🇬' },
+    { code: '+421', name: 'Slovaquie', flag: '🇸🇰' },
+    { code: '+386', name: 'Slovénie', flag: '🇸🇮' },
+    { code: '+252', name: 'Somalie', flag: '🇸🇴' },
+    { code: '+27', name: 'Afrique du Sud', flag: '🇿🇦' },
+    { code: '+211', name: 'Soudan du Sud', flag: '🇸🇸' },
+    { code: '+34', name: 'Espagne', flag: '🇪🇸' },
+    { code: '+94', name: 'Sri Lanka', flag: '🇱🇰' },
+    { code: '+249', name: 'Soudan', flag: '🇸🇩' },
+    { code: '+46', name: 'Suède', flag: '🇸🇪' },
+    { code: '+41', name: 'Suisse', flag: '🇨🇭' },
+    { code: '+963', name: 'Syrie', flag: '🇸🇾' },
+    { code: '+886', name: 'Taïwan', flag: '🇹🇼' },
+    { code: '+255', name: 'Tanzanie', flag: '🇹🇿' },
+    { code: '+66', name: 'Thaïlande', flag: '🇹🇭' },
+    { code: '+228', name: 'Togo', flag: '🇹🇬' },
+    { code: '+216', name: 'Tunisie', flag: '🇹🇳' },
+    { code: '+90', name: 'Turquie', flag: '🇹🇷' },
+    { code: '+256', name: 'Ouganda', flag: '🇺🇬' },
+    { code: '+380', name: 'Ukraine', flag: '🇺🇦' },
+    { code: '+44', name: 'Royaume-Uni', flag: '🇬🇧' },
+    { code: '+1', name: 'États-Unis', flag: '🇺🇸' },
+    { code: '+598', name: 'Uruguay', flag: '🇺🇾' },
+    { code: '+998', name: 'Ouzbékistan', flag: '🇺🇿' },
+    { code: '+58', name: 'Venezuela', flag: '🇻🇪' },
+    { code: '+84', name: 'Vietnam', flag: '🇻🇳' },
+    { code: '+967', name: 'Yémen', flag: '🇾🇪' },
+    { code: '+260', name: 'Zambie', flag: '🇿🇲' },
+    { code: '+263', name: 'Zimbabwe', flag: '🇿🇼' },
   ];
 
   const formatPhoneNumber = (text: string) => {
@@ -44,17 +184,17 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     if (!phone.trim()) {
-      Alert.alert('Erreur', 'Veuillez entrer votre numéro WhatsApp');
+      toast.showError('Veuillez entrer votre numéro WhatsApp');
       return;
     }
 
     if (!validatePhone(phone)) {
-      Alert.alert('Erreur', 'Veuillez entrer un numéro de téléphone valide');
+      toast.showError('Veuillez entrer un numéro de téléphone valide');
       return;
     }
 
     if (!password.trim()) {
-      Alert.alert('Erreur', 'Veuillez entrer votre mot de passe');
+      toast.showError('Veuillez entrer votre mot de passe');
       return;
     }
 
@@ -68,11 +208,11 @@ export default function LoginScreen() {
       if (result.success) {
         router.replace('/(tabs)');
       } else {
-        Alert.alert('Erreur', result.error || 'Une erreur est survenue');
+        toast.showError(result.error || 'Une erreur est survenue');
       }
     } catch (error) {
       console.error('Login error:', error);
-      Alert.alert('Erreur', 'Une erreur est survenue lors de la connexion');
+      toast.showError('Une erreur est survenue lors de la connexion');
     } finally {
       setIsLoading(false);
     }
