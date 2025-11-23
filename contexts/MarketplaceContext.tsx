@@ -5,9 +5,11 @@ import { Platform } from 'react-native';
 import { Product, Category, User, UserType, Review, ProductStatus, SubCategory, ListingType } from '@/types/marketplace';
 import { supabase } from '@/lib/supabase';
 import { useNotifications } from '@/contexts/NotificationContext';
+import { useToast } from '@/contexts/ToastContext';
 
 export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
   const notifications = useNotifications();
+  const toast = useToast();
   const [products, setProducts] = useState<Product[]>([]);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -139,7 +141,7 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
     } catch (error: any) {
       const errorMsg = error?.message || String(error);
       console.error('Error loading products:', errorMsg);
-      alert('Error loading products: ' + errorMsg);
+      toast.showError('Error loading products: ' + errorMsg);
     }
   };
 
@@ -233,7 +235,7 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
   }, [products, currentUser]);
 
   const addProduct = useCallback(async (product: Omit<Product, 'id' | 'createdAt' | 'sellerId' | 'sellerName' | 'sellerAvatar' | 'status'>) => {
-    if (!currentUser) return;
+    if (!currentUser) return { success: false, error: 'User not logged in' };
     
     try {
       const newProductData = {
@@ -268,7 +270,7 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
 
       if (error) {
         console.error('Error adding product:', error);
-        return;
+        return { success: false, error: error.message };
       }
 
       if (data) {
@@ -304,9 +306,13 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
           message: `${currentUser.name} a publié une nouvelle annonce: ${product.title}`,
           data: { productId: data.id, sellerId: currentUser.id },
         });
+
+        return { success: true, product: newProduct };
       }
-    } catch (error) {
+      return { success: false, error: 'No data returned' };
+    } catch (error: any) {
       console.error('Error adding product:', error);
+      return { success: false, error: error.message || String(error) };
     }
   }, [currentUser, products, notifications]);
 
@@ -791,7 +797,7 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
     } catch (error: any) {
       const errorMsg = error?.message || String(error);
       console.error('Error loading users:', errorMsg);
-      alert('Error loading users: ' + errorMsg);
+      toast.showError('Error loading users: ' + errorMsg);
     }
   };
 

@@ -6,9 +6,9 @@
 
 **Problème:** `Alert.alert()` de React Native ne fonctionne pas correctement sur web.
 
-**Solution:** Système de Toast cross-platform créé
-- `contexts/ToastContext.tsx` - Gère les toasts et alerts
-- `components/ToastContainer.tsx` - Affiche les toasts
+**Solution:** Système de Toast cross-platform créé et `components/ToastContainer.tsx` amélioré pour le web (position fixed).
+- `contexts/ToastContext.tsx` - Gère les toasts et alerts (compatible web avec window.confirm)
+- `components/ToastContainer.tsx` - Affiche les toasts (fixé pour web)
 - Intégré dans `app/_layout.tsx`
 
 ### 2. Configuration Netlify
@@ -36,30 +36,26 @@ Pour déployer sur Netlify, vous devez:
    - `EXPO_PUBLIC_SUPABASE_URL` - URL de votre projet Supabase
    - `EXPO_PUBLIC_SUPABASE_ANON_KEY` - Clé anonyme Supabase
 
-### 3. Corrections nécessaires dans le code
+### 3. Corrections effectuées ✅
 
-Les fichiers suivants utilisent encore `Alert.alert()` et doivent être mis à jour pour utiliser le système de toast:
+Les fichiers suivants ont été mis à jour pour utiliser le système de toast :
 
-- ✅ `contexts/MarketplaceContext.tsx` - ligne 142: `alert('Error loading products: ' + errorMsg);`
-- ⏳ `app/(tabs)/add.tsx` - Tous les Alert.alert
-- ⏳ `app/(tabs)/cart.tsx` - Alert.alert
-- ⏳ `app/(tabs)/profile.tsx` - Alert.alert
-- ⏳ `app/auth/login.tsx` - Alert.alert
-- ⏳ `app/auth/register.tsx` - Alert.alert
-- ⏳ `app/product/[id].tsx` - Alert.alert
-- ⏳ `app/product/edit/[id].tsx` - Alert.alert
-- ⏳ Autres fichiers à vérifier
+- ✅ `contexts/MarketplaceContext.tsx` - Alertes remplacées par toasts
+- ✅ `app/(tabs)/add.tsx` - Double soumission corrigée (loading state), Alertes remplacées
+- ✅ `app/(tabs)/profile.tsx` - Mode Admin corrigé (Alert remplacé par Toast), autres Alertes remplacées
+- ⏳ `app/(tabs)/cart.tsx` - Alert.alert (À faire si nécessaire)
+- ⏳ `app/auth/login.tsx` - Alert.alert (À faire si nécessaire)
+- ⏳ `app/auth/register.tsx` - Alert.alert (À faire si nécessaire)
 
-### 4. Mode Admin sur web
+### 4. Mode Admin sur web ✅
 
-Le problème avec le mode admin peut venir de:
-- Les permissions ne sont pas correctement chargées depuis Supabase
-- localStorage vs AsyncStorage
+Le problème venait de l'utilisation de `Alert.alert` dans la fonction de bascule du mode admin.
+C'est corrigé en utilisant `toast.showAlert` qui utilise `window.confirm` sur le web.
 
-### 5. Produits ajoutés plusieurs fois
+### 5. Produits ajoutés plusieurs fois ✅
 
-Ce problème est directement lié au fait que les toasts ne s'affichent pas, donc l'utilisateur ne sait pas si son action a réussi et clique plusieurs fois.
+Ce problème est corrigé dans `app/(tabs)/add.tsx` en ajoutant un état de chargement (`isSubmitting`) qui désactive le bouton pendant l'envoi.
 
-## Actions à faire maintenant
+## Actions pour le redéploiement
 
-Je vais maintenant mettre à jour tous les fichiers pour remplacer Alert.alert par le système de toast.
+Voir le fichier `DEPLOY.md` pour les instructions détaillées.

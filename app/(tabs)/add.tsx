@@ -25,6 +25,7 @@ export default function AddProductScreen() {
   const insets = useSafeAreaInsets();
   const toast = useToast();
   const { addProduct, canAddProduct, getMaxImages, currentUser, isAuthenticated } = useMarketplace();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [listingType, setListingType] = useState<ListingType>('product');
 
@@ -246,56 +247,69 @@ export default function AddProductScreen() {
       else if (tripPrice) servicePrice = Number(tripPrice);
     }
 
-    addProduct({
-      title: title.trim(),
-      description: description.trim(),
-      price: listingType === 'product' ? Number(price) : servicePrice,
-      location: listingType === 'product' ? location.trim() : departureLocation.trim(),
-      category,
-      subCategory: subCategory as any,
-      condition: listingType === 'product' ? condition : undefined,
-      images,
-      sellerPhone: currentUser?.phone || '',
-      listingType,
-      stockQuantity: listingType === 'product' && manageStock && stockQuantity ? Number(stockQuantity) : undefined,
-      isOutOfStock: listingType === 'product' ? false : undefined,
-      hasDiscount: listingType === 'product' && hasDiscount,
-      discountPercent: listingType === 'product' && hasDiscount && discountPercent ? Number(discountPercent) : undefined,
-      originalPrice: listingType === 'product' && hasDiscount && discountPercent ? Number(price) : undefined,
-      serviceDetails: listingType === 'service' ? {
-        departureLocation: departureLocation.trim(),
-        arrivalLocation: arrivalLocation.trim(),
-        departureDate: departureDate ? departureDate.toISOString() : undefined,
-        arrivalDate: undefined,
-        pricePerKg: pricePerKg ? Number(pricePerKg) : undefined,
-        tripPrice: tripPrice ? Number(tripPrice) : undefined,
-        vehicleType: vehicleType.trim() || undefined,
-        availableSeats: availableSeats ? Number(availableSeats) : undefined,
-      } : undefined,
-    });
+    setIsSubmitting(true);
+    try {
+      // @ts-ignore - addProduct returns a promise with status
+      const result = await addProduct({
+        title: title.trim(),
+        description: description.trim(),
+        price: listingType === 'product' ? Number(price) : servicePrice,
+        location: listingType === 'product' ? location.trim() : departureLocation.trim(),
+        category,
+        subCategory: subCategory as any,
+        condition: listingType === 'product' ? condition : undefined,
+        images,
+        sellerPhone: currentUser?.phone || '',
+        listingType,
+        stockQuantity: listingType === 'product' && manageStock && stockQuantity ? Number(stockQuantity) : undefined,
+        isOutOfStock: listingType === 'product' ? false : undefined,
+        hasDiscount: listingType === 'product' && hasDiscount,
+        discountPercent: listingType === 'product' && hasDiscount && discountPercent ? Number(discountPercent) : undefined,
+        originalPrice: listingType === 'product' && hasDiscount && discountPercent ? Number(price) : undefined,
+        serviceDetails: listingType === 'service' ? {
+          departureLocation: departureLocation.trim(),
+          arrivalLocation: arrivalLocation.trim(),
+          departureDate: departureDate ? departureDate.toISOString() : undefined,
+          arrivalDate: undefined,
+          pricePerKg: pricePerKg ? Number(pricePerKg) : undefined,
+          tripPrice: tripPrice ? Number(tripPrice) : undefined,
+          vehicleType: vehicleType.trim() || undefined,
+          availableSeats: availableSeats ? Number(availableSeats) : undefined,
+        } : undefined,
+      });
 
-    toast.showSuccess('Votre annonce a été soumise et est en attente de validation par un administrateur !', 5000);
-    
-    setTitle('');
-    setDescription('');
-    setPrice('');
-    setLocation('');
-    setCategory('electronics');
-    setSubCategory(undefined);
-    setImages([]);
-    setDepartureLocation('');
-    setArrivalLocation('');
-    setDepartureDate(undefined);
-    setPricePerKg('');
-    setTripPrice('');
-    setVehicleType('');
-    setAvailableSeats('');
-    setStockQuantity('');
-    setManageStock(false);
-    setHasDiscount(false);
-    setDiscountPercent('');
-    
-    router.push('/(tabs)/' as any);
+      if (result && result.success) {
+        toast.showSuccess('Votre annonce a été soumise et est en attente de validation par un administrateur !', 5000);
+        
+        setTitle('');
+        setDescription('');
+        setPrice('');
+        setLocation('');
+        setCategory('electronics');
+        setSubCategory(undefined);
+        setImages([]);
+        setDepartureLocation('');
+        setArrivalLocation('');
+        setDepartureDate(undefined);
+        setPricePerKg('');
+        setTripPrice('');
+        setVehicleType('');
+        setAvailableSeats('');
+        setStockQuantity('');
+        setManageStock(false);
+        setHasDiscount(false);
+        setDiscountPercent('');
+        
+        router.push('/(tabs)/' as any);
+      } else {
+        toast.showError(result?.error || 'Erreur lors de la soumission');
+      }
+    } catch (error) {
+      toast.showError('Une erreur inattendue est survenue');
+      console.error(error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (!isAuthenticated) {
@@ -791,8 +805,14 @@ export default function AddProductScreen() {
           </Text>
         </View>
 
-        <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-          <Text style={styles.submitButtonText}>Publier l&apos;annonce</Text>
+        <TouchableOpacity 
+          style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]} 
+          onPress={handleSubmit}
+          disabled={isSubmitting}
+        >
+          <Text style={styles.submitButtonText}>
+            {isSubmitting ? 'Publication en cours...' : "Publier l'annonce"}
+          </Text>
         </TouchableOpacity>
       </ScrollView>
 
@@ -1199,6 +1219,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700' as const,
     color: '#fff',
+  },
+  submitButtonDisabled: {
+    opacity: 0.7,
+    backgroundColor: '#666',
   },
   authRequired: {
     flex: 1,

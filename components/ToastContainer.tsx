@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated, Platform } from 'react-native';
+import React, { useMemo } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Animated, Platform, ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react-native';
 import { useToast } from '@/contexts/ToastContext';
@@ -7,6 +7,22 @@ import { useToast } from '@/contexts/ToastContext';
 export default function ToastContainer() {
   const { toasts, hideToast } = useToast();
   const insets = useSafeAreaInsets();
+
+  const containerStyle = useMemo(() => {
+    if (Platform.OS === 'web') {
+      // @ts-ignore - react-native-web supports fixed position
+      return { position: 'fixed', top: 16, left: 16, right: 16, zIndex: 9999, alignItems: 'center', gap: 8 };
+    }
+    return {
+      position: 'absolute',
+      top: insets.top + 16,
+      left: 16,
+      right: 16,
+      zIndex: 9999,
+      alignItems: 'center',
+      gap: 8,
+    };
+  }, [insets]);
 
   if (toasts.length === 0) return null;
 
@@ -33,7 +49,7 @@ export default function ToastContainer() {
   };
 
   return (
-    <View style={[styles.container, { top: Platform.OS === 'web' ? 16 : insets.top + 16 }]} pointerEvents="box-none">
+    <View style={containerStyle as any} pointerEvents="box-none">
       {toasts.map((toast) => (
         <Animated.View
           key={toast.id}
@@ -60,14 +76,6 @@ export default function ToastContainer() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    position: 'absolute',
-    left: 16,
-    right: 16,
-    zIndex: 9999,
-    alignItems: 'center',
-    gap: 8,
-  },
   toast: {
     flexDirection: 'row',
     alignItems: 'center',

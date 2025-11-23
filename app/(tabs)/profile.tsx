@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   Image,
   Dimensions,
-  Alert,
   Share,
   Linking,
 } from 'react-native';
@@ -16,6 +15,7 @@ import { MapPin, Phone, Package, Crown, LogOut, Calendar, Star, MoreVertical, Sh
 import { useRouter } from 'expo-router';
 import { useMarketplace } from '@/contexts/MarketplaceContext';
 import { Product } from '@/types/marketplace';
+import { useToast } from '@/contexts/ToastContext';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2;
@@ -24,6 +24,7 @@ export default function ProfileScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { currentUser, userProducts, logout, getSellerRating, deleteProduct, updateUser, requestPremiumUpgrade } = useMarketplace();
+  const toast = useToast();
 
   if (!currentUser) {
     return null;
@@ -32,7 +33,7 @@ export default function ProfileScreen() {
   const handleUpgrade = async () => {
     const waveUrl = 'https://pay.wave.com/m/M_sn_rplUWv_SWooz/c/sn/?amount=3500';
     
-    Alert.alert(
+    toast.showAlert(
       'Passer à Premium',
       'Avantages Premium:\n\n• Produits illimités\n• Photos illimitées par produit\n• Gestion du stock\n• Promotions et réductions\n• Support prioritaire\n\nPrix: 3500 FCFA/mois\n\nVoulez-vous continuer ?',
       [
@@ -44,7 +45,7 @@ export default function ProfileScreen() {
               await Linking.openURL(waveUrl);
               
               setTimeout(() => {
-                Alert.alert(
+                toast.showAlert(
                   'Confirmation de paiement',
                   'Avez-vous effectué le paiement Wave de 3500 FCFA ?',
                   [
@@ -52,7 +53,7 @@ export default function ProfileScreen() {
                       text: 'Non', 
                       style: 'cancel',
                       onPress: () => {
-                        Alert.alert('Info', 'Vous pouvez relancer le paiement plus tard.');
+                        toast.showInfo('Vous pouvez relancer le paiement plus tard.');
                       }
                     },
                     {
@@ -60,13 +61,13 @@ export default function ProfileScreen() {
                       onPress: async () => {
                         const result = await requestPremiumUpgrade();
                         if (result.success) {
-                          Alert.alert(
+                          toast.showAlert(
                             'Demande envoyée',
                             'Votre demande de passage en Premium est en attente de validation par un administrateur. Votre compte Premium sera activé dans les minutes qui suivent.',
                             [{ text: 'OK' }]
                           );
                         } else {
-                          Alert.alert('Erreur', result.error || 'Une erreur est survenue');
+                          toast.showError(result.error || 'Une erreur est survenue');
                         }
                       },
                     },
@@ -75,7 +76,7 @@ export default function ProfileScreen() {
               }, 2000);
             } catch (error) {
               console.error('Error opening Wave URL:', error);
-              Alert.alert('Erreur', 'Impossible d\'ouvrir le lien de paiement Wave');
+              toast.showError('Impossible d\'ouvrir le lien de paiement Wave');
             }
           },
         },
@@ -84,7 +85,7 @@ export default function ProfileScreen() {
   };
 
   const handleLogout = () => {
-    Alert.alert(
+    toast.showAlert(
       'Déconnexion',
       'Êtes-vous sûr de vouloir vous déconnecter ?',
       [
@@ -103,7 +104,7 @@ export default function ProfileScreen() {
 
   const toggleAdminMode = () => {
     const newAdminStatus = !currentUser.isAdmin;
-    Alert.alert(
+    toast.showAlert(
       newAdminStatus ? 'Activer le mode Admin' : 'Désactiver le mode Admin',
       newAdminStatus 
         ? 'Vous aurez accès au panneau d\'administration pour gérer les commandes.'
@@ -114,7 +115,7 @@ export default function ProfileScreen() {
           text: newAdminStatus ? 'Activer' : 'Désactiver',
           onPress: () => {
             updateUser({ isAdmin: newAdminStatus });
-            Alert.alert('Succès', `Mode Admin ${newAdminStatus ? 'activé' : 'désactivé'}`);
+            toast.showSuccess(`Mode Admin ${newAdminStatus ? 'activé' : 'désactivé'}`);
           },
         },
       ]
@@ -126,7 +127,7 @@ export default function ProfileScreen() {
   };
 
   const handleDeleteProduct = (productId: string, productTitle: string) => {
-    Alert.alert(
+    toast.showAlert(
       'Supprimer l\'annonce',
       `Êtes-vous sûr de vouloir supprimer "${productTitle}" ?`,
       [
@@ -136,7 +137,7 @@ export default function ProfileScreen() {
           style: 'destructive',
           onPress: () => {
             deleteProduct(productId);
-            Alert.alert('Succès', 'L\'annonce a été supprimée');
+            toast.showSuccess('L\'annonce a été supprimée');
           },
         },
       ]
@@ -164,12 +165,12 @@ export default function ProfileScreen() {
       }
     } catch (error) {
       console.error('Error sharing product:', error);
-      Alert.alert('Erreur', 'Impossible de partager ce produit.');
+      toast.showError('Impossible de partager ce produit.');
     }
   };
 
   const handleProductOptions = (product: Product) => {
-    Alert.alert(
+    toast.showAlert(
       product.title,
       'Que voulez-vous faire ?',
       [
