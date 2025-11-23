@@ -327,9 +327,9 @@ export default function RegisterScreen() {
               </View>
               {showCountryPicker && (
                 <View style={styles.countryPicker}>
-                  {countries.map((country) => (
+                  {countries.map((country, index) => (
                     <TouchableOpacity
-                      key={country.code}
+                      key={`${country.code}-${country.name}-${index}`}
                       style={[
                         styles.countryOption,
                         countryCode === country.code && styles.countryOptionSelected
