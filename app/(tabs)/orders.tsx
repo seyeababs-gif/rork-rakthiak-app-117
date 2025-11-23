@@ -1,0 +1,528 @@
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Image,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Package, Clock, CheckCircle, XCircle, Truck, ChevronRight, Star } from 'lucide-react-native';
+import { useOrders } from '@/contexts/OrderContext';
+import { useMarketplace } from '@/contexts/MarketplaceContext';
+import { useReviews } from '@/contexts/ReviewContext';
+import { OrderStatus, Order } from '@/types/marketplace';
+import { router } from 'expo-router';
+import ReviewModal from '@/components/ReviewModal';
+
+export default function OrdersScreen() {
+  const insets = useSafeAreaInsets();
+  const { getUserOrders } = useOrders();
+  const { currentUser, isAuthenticated } = useMarketplace();
+  const { canReviewOrder, addReview } = useReviews();
+  const [selectedFilter, setSelectedFilter] = useState<OrderStatus | 'all'>('all');
+  const [reviewModalVisible, setReviewModalVisible] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+
+  const userOrders = currentUser ? getUserOrders(currentUser.id) : [];
+
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('fr-FR').format(price) + ' FCFA';
+  };
+
+  const formatDate = (date: Date) => {
+    return new Intl.DateTimeFormat('fr-FR', {
+      day: 'numeric',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(date);
+  };
+
+  const getStatusInfo = (status: OrderStatus) => {
+    switch (status) {
+      case 'pending_payment':
+        return { label: 'En attente paiement', color: '#FFA500', icon: Clock };
+      case 'paid':
+        return { label: 'Payé', color: '#3B82F6', icon: CheckCircle };
+      case 'validated':
+        return { label: 'Validé', color: '#1E3A8A', icon: CheckCircle };
+      case 'rejected':
+        return { label: 'Rejeté', color: '#E31B23', icon: XCircle };
+      case 'shipped':
+        return { label: 'Expédié', color: '#8E44AD', icon: Truck };
+      case 'completed':
+        return { label: 'Terminé', color: '#27AE60', icon: CheckCircle };
+    }
+  };
+
+  const filteredOrders = userOrders.filter(order => {
+    if (selectedFilter === 'all') return true;
+    return order.status === selectedFilter;
+  });
+
+  const getFilterCount = (filter: OrderStatus | 'all') => {
+    if (filter === 'all') return userOrders.length;
+    return userOrders.filter(order => order.status === filter).length;
+  };
+
+  if (!isAuthenticated) {
+    return (
+      <View style={styles.container}>
+        <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
+          <Text style={styles.headerTitle}>Mes Commandes</Text>
+          <Text style={styles.headerSubtitle}>Suivez vos achats</Text>
+        </View>
+
+        <View style={styles.notAuthContainer}>
+          <Package size={64} color="#ccc" />
+          <Text style={styles.notAuthTitle}>Connectez-vous</Text>
+          <Text style={styles.notAuthSubtext}>
+            Vous devez être connecté pour voir vos commandes
+          </Text>
+          <TouchableOpacity
+            style={styles.loginButton}
+            onPress={() => router.push('/auth/login')}
+          >
+            <Text style={styles.loginButtonText}>Se connecter</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
+        <Text style={styles.headerTitle}>Mes Commandes</Text>
+        <Text style={styles.headerSubtitle}>{userOrders.length} commande(s)</Text>
+      </View>
+
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.filtersContainer}
+        contentContainerStyle={styles.filtersContent}
+      >
+        <TouchableOpacity
+          style={[styles.filterChip, selectedFilter === 'all' && styles.filterChipActive]}
+          onPress={() => setSelectedFilter('all')}
+        >
+          <Text style={[styles.filterChipText, selectedFilter === 'all' && styles.filterChipTextActive]}>
+            Toutes ({getFilterCount('all')})
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.filterChip, selectedFilter === 'paid' && styles.filterChipActive]}
+          onPress={() => setSelectedFilter('paid')}
+        >
+          <Text style={[styles.filterChipText, selectedFilter === 'paid' && styles.filterChipTextActive]}>
+            Payées ({getFilterCount('paid')})
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.filterChip, selectedFilter === 'validated' && styles.filterChipActive]}
+          onPress={() => setSelectedFilter('validated')}
+        >
+          <Text style={[styles.filterChipText, selectedFilter === 'validated' && styles.filterChipTextActive]}>
+            Validées ({getFilterCount('validated')})
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.filterChip, selectedFilter === 'shipped' && styles.filterChipActive]}
+          onPress={() => setSelectedFilter('shipped')}
+        >
+          <Text style={[styles.filterChipText, selectedFilter === 'shipped' && styles.filterChipTextActive]}>
+            Expédiées ({getFilterCount('shipped')})
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.filterChip, selectedFilter === 'completed' && styles.filterChipActive]}
+          onPress={() => setSelectedFilter('completed')}
+        >
+          <Text style={[styles.filterChipText, selectedFilter === 'completed' && styles.filterChipTextActive]}>
+            Terminées ({getFilterCount('completed')})
+          </Text>
+        </TouchableOpacity>
+      </ScrollView>
+
+      <ScrollView
+        style={styles.content}
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        {filteredOrders.length > 0 ? (
+          filteredOrders.map(order => {
+            const statusInfo = getStatusInfo(order.status);
+            const StatusIcon = statusInfo.icon;
+
+            return (
+              <View key={order.id} style={styles.orderCard}>
+                <View style={styles.orderHeader}>
+                  <View>
+                    <Text style={styles.orderId}>#{order.id.slice(-8).toUpperCase()}</Text>
+                    <Text style={styles.orderDate}>{formatDate(order.createdAt)}</Text>
+                  </View>
+                  <View style={[styles.statusBadge, { backgroundColor: statusInfo.color + '20' }]}>
+                    <StatusIcon size={14} color={statusInfo.color} />
+                    <Text style={[styles.statusText, { color: statusInfo.color }]}>
+                      {statusInfo.label}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.itemsContainer}>
+                  {order.items.slice(0, 2).map((item, index) => (
+                    <View key={index} style={styles.orderItem}>
+                      <Image source={{ uri: item.product.images[0] }} style={styles.itemImage} />
+                      <View style={styles.itemInfo}>
+                        <Text style={styles.itemTitle} numberOfLines={1}>
+                          {item.product.title}
+                        </Text>
+                        <Text style={styles.itemQuantity}>Qté: {item.quantity}</Text>
+                        <Text style={styles.itemPrice}>
+                          {formatPrice(item.priceAtPurchase * item.quantity)}
+                        </Text>
+                      </View>
+                    </View>
+                  ))}
+                  {order.items.length > 2 && (
+                    <Text style={styles.moreItems}>
+                      +{order.items.length - 2} autre(s) article(s)
+                    </Text>
+                  )}
+                </View>
+
+                <View style={styles.orderFooter}>
+                  <View>
+                    <Text style={styles.totalLabel}>Total</Text>
+                    <Text style={styles.totalAmount}>{formatPrice(order.totalAmount)}</Text>
+                  </View>
+                  <TouchableOpacity style={styles.detailsButton}>
+                    <Text style={styles.detailsButtonText}>Détails</Text>
+                    <ChevronRight size={18} color="#1E3A8A" />
+                  </TouchableOpacity>
+                </View>
+
+                {currentUser && canReviewOrder(order, currentUser.id) && (
+                  <TouchableOpacity
+                    style={styles.reviewButton}
+                    onPress={() => {
+                      setSelectedOrder(order);
+                      setReviewModalVisible(true);
+                    }}
+                  >
+                    <Star size={16} color="#F59E0B" fill="#F59E0B" />
+                    <Text style={styles.reviewButtonText}>Laisser un avis</Text>
+                  </TouchableOpacity>
+                )}
+
+                {order.status === 'rejected' && order.rejectionReason && (
+                  <View style={styles.rejectionReason}>
+                    <XCircle size={16} color="#E31B23" />
+                    <View style={styles.rejectionReasonContent}>
+                      <Text style={styles.rejectionReasonLabel}>Raison du rejet:</Text>
+                      <Text style={styles.rejectionReasonText}>{order.rejectionReason}</Text>
+                    </View>
+                  </View>
+                )}
+              </View>
+            );
+          })
+        ) : (
+          <View style={styles.emptyState}>
+            <Package size={64} color="#ddd" />
+            <Text style={styles.emptyStateText}>Aucune commande</Text>
+            <Text style={styles.emptyStateSubtext}>
+              Vos commandes apparaîtront ici après vos achats
+            </Text>
+          </View>
+        )}
+      </ScrollView>
+
+      <ReviewModal
+        visible={reviewModalVisible}
+        order={selectedOrder}
+        onClose={() => {
+          setReviewModalVisible(false);
+          setSelectedOrder(null);
+        }}
+        onSubmit={(rating, comment) => {
+          if (currentUser && selectedOrder) {
+            selectedOrder.items.forEach(item => {
+              addReview(
+                selectedOrder.id,
+                item.product.id,
+                item.product.sellerId,
+                currentUser.id,
+                currentUser.name,
+                currentUser.avatar,
+                rating,
+                comment
+              );
+            });
+          }
+        }}
+      />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
+  },
+  header: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: '700' as const,
+    color: '#000',
+    marginBottom: 4,
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: '#666',
+  },
+  filtersContainer: {
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  filtersContent: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 8,
+  },
+  filterChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#f5f5f5',
+  },
+  filterChipActive: {
+    backgroundColor: '#1E3A8A',
+  },
+  filterChipText: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+    color: '#666',
+  },
+  filterChipTextActive: {
+    color: '#fff',
+  },
+  content: {
+    flex: 1,
+  },
+  contentContainer: {
+    padding: 16,
+    paddingBottom: 32,
+  },
+  orderCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  orderHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  orderId: {
+    fontSize: 16,
+    fontWeight: '700' as const,
+    color: '#000',
+  },
+  orderDate: {
+    fontSize: 13,
+    color: '#666',
+    marginTop: 2,
+  },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: '600' as const,
+  },
+  itemsContainer: {
+    gap: 10,
+    marginBottom: 16,
+  },
+  orderItem: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  itemImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+    backgroundColor: '#e0e0e0',
+  },
+  itemInfo: {
+    flex: 1,
+    gap: 4,
+  },
+  itemTitle: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+    color: '#000',
+  },
+  itemQuantity: {
+    fontSize: 13,
+    color: '#666',
+  },
+  itemPrice: {
+    fontSize: 14,
+    fontWeight: '700' as const,
+    color: '#1E3A8A',
+  },
+  moreItems: {
+    fontSize: 13,
+    color: '#666',
+    fontStyle: 'italic' as const,
+    marginTop: 4,
+  },
+  orderFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+  },
+  totalLabel: {
+    fontSize: 13,
+    color: '#666',
+    marginBottom: 4,
+  },
+  totalAmount: {
+    fontSize: 18,
+    fontWeight: '700' as const,
+    color: '#000',
+  },
+  detailsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#1E3A8A20',
+    borderRadius: 8,
+  },
+  detailsButtonText: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+    color: '#1E3A8A',
+  },
+  reviewButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 12,
+    paddingVertical: 12,
+    backgroundColor: '#FFF9E6',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#F59E0B',
+  },
+  reviewButtonText: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+    color: '#F59E0B',
+  },
+  rejectionReason: {
+    marginTop: 12,
+    flexDirection: 'row',
+    gap: 8,
+    padding: 12,
+    backgroundColor: '#FFF5F5',
+    borderRadius: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: '#E31B23',
+  },
+  rejectionReasonContent: {
+    flex: 1,
+  },
+  rejectionReasonLabel: {
+    fontSize: 12,
+    fontWeight: '600' as const,
+    color: '#E31B23',
+    marginBottom: 4,
+  },
+  rejectionReasonText: {
+    fontSize: 13,
+    color: '#666',
+  },
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 80,
+  },
+  emptyStateText: {
+    fontSize: 18,
+    fontWeight: '600' as const,
+    color: '#000',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptyStateSubtext: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    paddingHorizontal: 32,
+  },
+  notAuthContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 32,
+  },
+  notAuthTitle: {
+    fontSize: 20,
+    fontWeight: '700' as const,
+    color: '#000',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  notAuthSubtext: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  loginButton: {
+    backgroundColor: '#1E3A8A',
+    paddingVertical: 14,
+    paddingHorizontal: 32,
+    borderRadius: 12,
+  },
+  loginButtonText: {
+    fontSize: 16,
+    fontWeight: '700' as const,
+    color: '#fff',
+  },
+});
