@@ -51,6 +51,7 @@ export default function EditProductScreen() {
   const [pricePerKg, setPricePerKg] = useState<string>('');
   const [pricePerKm, setPricePerKm] = useState<string>('');
   const [vehicleType, setVehicleType] = useState<string>('');
+  const [availableSeats, setAvailableSeats] = useState<string>('');
   
   const listingType: ListingType = product?.listingType || 'product';
 
@@ -78,6 +79,7 @@ export default function EditProductScreen() {
         setPricePerKg(product.serviceDetails.pricePerKg ? product.serviceDetails.pricePerKg.toString() : '');
         setPricePerKm(product.serviceDetails.pricePerKm ? product.serviceDetails.pricePerKm.toString() : '');
         setVehicleType(product.serviceDetails.vehicleType || '');
+        setAvailableSeats(product.serviceDetails.availableSeats ? product.serviceDetails.availableSeats.toString() : '');
       }
     }
   }, [product]);
@@ -275,6 +277,7 @@ export default function EditProductScreen() {
         pricePerKg: pricePerKg ? Number(pricePerKg) : undefined,
         pricePerKm: pricePerKm ? Number(pricePerKm) : undefined,
         vehicleType: vehicleType.trim() || undefined,
+        availableSeats: availableSeats ? Number(availableSeats) : undefined,
       };
     }
     
@@ -439,7 +442,7 @@ export default function EditProductScreen() {
                 <Text style={styles.dateHint}>Appuyez pour sélectionner la date et l&apos;heure de départ</Text>
               </View>
               
-              {(subCategory === 'thiaktiak' || subCategory === 'vtc') && (
+              {(subCategory === 'thiaktiak' || subCategory === 'covoiturage') && (
                 <>
                   <TextInput
                     style={styles.input}
@@ -449,14 +452,24 @@ export default function EditProductScreen() {
                     keyboardType="numeric"
                     placeholderTextColor="#999"
                   />
-                  {subCategory === 'vtc' && (
-                    <TextInput
-                      style={styles.input}
-                      placeholder="Type de véhicule (ex: Toyota Corolla)"
-                      value={vehicleType}
-                      onChangeText={setVehicleType}
-                      placeholderTextColor="#999"
-                    />
+                  {subCategory === 'covoiturage' && (
+                    <>
+                      <TextInput
+                        style={styles.input}
+                        placeholder="Type de véhicule (ex: Toyota Corolla)"
+                        value={vehicleType}
+                        onChangeText={setVehicleType}
+                        placeholderTextColor="#999"
+                      />
+                      <TextInput
+                        style={styles.input}
+                        placeholder="Nombre de places disponibles (ex: 4)"
+                        value={availableSeats}
+                        onChangeText={setAvailableSeats}
+                        keyboardType="numeric"
+                        placeholderTextColor="#999"
+                      />
+                    </>
                   )}
                 </>
               )}

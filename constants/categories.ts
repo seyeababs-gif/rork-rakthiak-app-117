@@ -29,7 +29,7 @@ export const subCategories: SubCategoryInfo[] = [
   { id: 'meubles', name: 'Meubles', icon: '🛋️', parentCategory: 'home' },
   { id: 'decoration', name: 'Décoration', icon: '🖼️', parentCategory: 'home' },
   { id: 'menage', name: 'Ménage', icon: '🧹', parentCategory: 'home' },
-  { id: 'vtc', name: 'VTC', icon: '🚖', parentCategory: 'delivery' },
+  { id: 'covoiturage', name: 'Covoiturage', icon: '🚗', parentCategory: 'delivery' },
   { id: 'thiaktiak', name: 'Thiak Thiak', icon: '🛵', parentCategory: 'delivery' },
   { id: 'gp', name: 'GP', icon: '✈️', parentCategory: 'delivery' },
   { id: 'conteneur', name: 'Conteneur par bateau', icon: '🚢', parentCategory: 'delivery' },

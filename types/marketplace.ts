@@ -13,7 +13,7 @@ export type SubCategory =
   | 'meubles'
   | 'decoration'
   | 'menage'
-  | 'vtc'
+  | 'covoiturage'
   | 'thiaktiak'
   | 'gp'
   | 'conteneur'
@@ -32,6 +32,7 @@ export interface ServiceDetails {
   pricePerKg?: number;
   pricePerKm?: number;
   vehicleType?: string;
+  availableSeats?: number;
 }
 
 export interface Product {

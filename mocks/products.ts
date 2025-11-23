@@ -112,14 +112,14 @@ export const mockProducts: Product[] = [
   },
   {
     id: '7',
-    title: 'VTC - Transport Dakar Aéroport',
-    description: 'Service VTC professionnel, véhicule climatisé, chauffeur expérimenté. Disponible 24h/24. Trajets vers l\'aéroport et toute la région de Dakar.',
+    title: 'Covoiturage - Transport Dakar Aéroport',
+    description: 'Service covoiturage professionnel, véhicule climatisé, chauffeur expérimenté. Disponible 24h/24. Trajets vers l\'aéroport et toute la région de Dakar. 4 places disponibles.',
     price: 15000,
     images: [
       'https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?w=800',
     ],
     category: 'delivery',
-    subCategory: 'vtc',
+    subCategory: 'covoiturage',
     location: 'Dakar - Aéroport AIBD',
     sellerId: 'seller-7',
     sellerName: 'Mamadou Fall',
@@ -127,6 +127,15 @@ export const mockProducts: Product[] = [
     sellerPhone: '+221777890123',
     createdAt: new Date('2025-01-11'),
     status: 'approved',
+    listingType: 'service',
+    serviceDetails: {
+      departureLocation: 'Dakar',
+      arrivalLocation: 'Aéroport AIBD',
+      departureDate: new Date('2025-01-25T08:00:00').toISOString(),
+      pricePerKm: 1500,
+      vehicleType: 'Toyota Corolla',
+      availableSeats: 4,
+    },
   },
   {
     id: '9',

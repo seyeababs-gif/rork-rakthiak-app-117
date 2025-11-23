@@ -302,6 +302,12 @@ export default function ProductDetailScreen() {
                     <Text style={styles.serviceValue}>{product.serviceDetails.vehicleType}</Text>
                   </View>
                 )}
+                {product.serviceDetails.availableSeats && (
+                  <View style={styles.serviceRow}>
+                    <Text style={styles.serviceLabel}>Places disponibles:</Text>
+                    <Text style={styles.serviceValue}>{product.serviceDetails.availableSeats}</Text>
+                  </View>
+                )}
               </View>
             </View>
           )}

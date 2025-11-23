@@ -53,6 +53,7 @@ export default function AddProductScreen() {
   const [pricePerKg, setPricePerKg] = useState<string>('');
   const [pricePerKm, setPricePerKm] = useState<string>('');
   const [vehicleType, setVehicleType] = useState<string>('');
+  const [availableSeats, setAvailableSeats] = useState<string>('');
   const [stockQuantity, setStockQuantity] = useState<string>('');
   const [manageStock, setManageStock] = useState<boolean>(false);
   const [hasDiscount, setHasDiscount] = useState<boolean>(false);
@@ -217,6 +218,7 @@ export default function AddProductScreen() {
         pricePerKg: pricePerKg ? Number(pricePerKg) : undefined,
         pricePerKm: pricePerKm ? Number(pricePerKm) : undefined,
         vehicleType: vehicleType.trim() || undefined,
+        availableSeats: availableSeats ? Number(availableSeats) : undefined,
       } : undefined,
     });
 
@@ -240,6 +242,7 @@ export default function AddProductScreen() {
           setPricePerKg('');
           setPricePerKm('');
           setVehicleType('');
+          setAvailableSeats('');
           setStockQuantity('');
           setManageStock(false);
           setHasDiscount(false);
@@ -455,7 +458,7 @@ export default function AddProductScreen() {
                 <Text style={styles.dateHint}>Appuyez pour sélectionner la date et l&apos;heure de départ</Text>
               </View>
               
-              {(subCategory === 'thiaktiak' || subCategory === 'vtc') && (
+              {(subCategory === 'thiaktiak' || subCategory === 'covoiturage') && (
                 <>
                   <TextInput
                     style={styles.input}
@@ -465,14 +468,24 @@ export default function AddProductScreen() {
                     keyboardType="numeric"
                     placeholderTextColor="#999"
                   />
-                  {subCategory === 'vtc' && (
-                    <TextInput
-                      style={styles.input}
-                      placeholder="Type de véhicule (ex: Toyota Corolla)"
-                      value={vehicleType}
-                      onChangeText={setVehicleType}
-                      placeholderTextColor="#999"
-                    />
+                  {subCategory === 'covoiturage' && (
+                    <>
+                      <TextInput
+                        style={styles.input}
+                        placeholder="Type de véhicule (ex: Toyota Corolla)"
+                        value={vehicleType}
+                        onChangeText={setVehicleType}
+                        placeholderTextColor="#999"
+                      />
+                      <TextInput
+                        style={styles.input}
+                        placeholder="Nombre de places disponibles (ex: 4)"
+                        value={availableSeats}
+                        onChangeText={setAvailableSeats}
+                        keyboardType="numeric"
+                        placeholderTextColor="#999"
+                      />
+                    </>
                   )}
                 </>
               )}
