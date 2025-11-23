@@ -9,12 +9,12 @@ import {
   Dimensions,
   Alert,
   Share,
+  Linking,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MapPin, Phone, Package, Crown, LogOut, Calendar, Star, MoreVertical, Shield, Clock, CheckCircle, XCircle } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useMarketplace } from '@/contexts/MarketplaceContext';
-import { Linking } from 'react-native';
 import { Product } from '@/types/marketplace';
 
 const { width } = Dimensions.get('window');
@@ -296,15 +296,17 @@ export default function ProfileScreen() {
             <Text style={styles.logoutButtonText}>Déconnexion</Text>
           </TouchableOpacity>
         </View>
-        <TouchableOpacity 
-          style={currentUser.isAdmin ? styles.adminButtonActive : styles.adminButton} 
-          onPress={toggleAdminMode}
-        >
-          <Shield size={16} color={currentUser.isAdmin ? "#fff" : "#1E3A8A"} />
-          <Text style={currentUser.isAdmin ? styles.adminButtonTextActive : styles.adminButtonText}>
-            {currentUser.isAdmin ? 'Mode Admin Activé' : 'Activer Mode Admin'}
-          </Text>
-        </TouchableOpacity>
+        {currentUser.isSuperAdmin && (
+          <TouchableOpacity 
+            style={currentUser.isAdmin ? styles.adminButtonActive : styles.adminButton} 
+            onPress={toggleAdminMode}
+          >
+            <Shield size={16} color={currentUser.isAdmin ? "#fff" : "#1E3A8A"} />
+            <Text style={currentUser.isAdmin ? styles.adminButtonTextActive : styles.adminButtonText}>
+              {currentUser.isAdmin ? 'Mode Admin Activé' : 'Activer Mode Admin'}
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       <ScrollView
