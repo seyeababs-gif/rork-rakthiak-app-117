@@ -6,8 +6,11 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
-  Alert,
   Dimensions,
+  Modal,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -29,6 +32,7 @@ import {
 } from 'lucide-react-native';
 import { useOrders } from '@/contexts/OrderContext';
 import { useMarketplace } from '@/contexts/MarketplaceContext';
+import { useToast } from '@/contexts/ToastContext';
 import { Order, OrderStatus, Product, User } from '@/types/marketplace';
 
 const { width } = Dimensions.get('window');
@@ -39,6 +43,7 @@ type TabType = 'orders' | 'products' | 'users';
 export default function AdminScreen() {
   const insets = useSafeAreaInsets();
   const { orders, updateOrderStatus } = useOrders();
+  const toast = useToast();
   const { 
     currentUser, 
     isAuthenticated, 
@@ -56,6 +61,15 @@ export default function AdminScreen() {
   } = useMarketplace();
   const [selectedFilter, setSelectedFilter] = useState<OrderStatus | 'all'>('paid');
   const [selectedTab, setSelectedTab] = useState<TabType>('products');
+
+  // Rejection Modal State
+  const [rejectModal, setRejectModal] = useState<{
+    visible: boolean;
+    type: 'order' | 'product' | null;
+    targetId: string | null;
+    targetTitle?: string;
+  }>({ visible: false, type: null, targetId: null });
+  const [rejectionReason, setRejectionReason] = useState('');
 
   const isAdmin = currentUser?.isAdmin === true;
 
@@ -111,16 +125,16 @@ export default function AdminScreen() {
   };
 
   const handleValidate = (orderId: string) => {
-    Alert.alert(
+    toast.showAlert(
       'Valider la commande',
       'Êtes-vous sûr de vouloir valider cette commande ?',
       [
         { text: 'Annuler', style: 'cancel' },
         {
           text: 'Valider',
-          onPress: () => {
-            updateOrderStatus(orderId, 'validated');
-            Alert.alert('Succès', 'La commande a été validée');
+          onPress: async () => {
+            await updateOrderStatus(orderId, 'validated');
+            toast.showSuccess('La commande a été validée');
           },
         },
       ]
@@ -128,35 +142,26 @@ export default function AdminScreen() {
   };
 
   const handleReject = (orderId: string) => {
-    Alert.prompt(
-      'Rejeter la commande',
-      'Entrez la raison du rejet',
-      [
-        { text: 'Annuler', style: 'cancel' },
-        {
-          text: 'Rejeter',
-          style: 'destructive',
-          onPress: (reason: string | undefined) => {
-            updateOrderStatus(orderId, 'rejected', { rejectionReason: reason || 'Non spécifié' });
-            Alert.alert('Succès', 'La commande a été rejetée');
-          },
-        },
-      ],
-      'plain-text'
-    );
+    setRejectModal({
+      visible: true,
+      type: 'order',
+      targetId: orderId,
+      targetTitle: `Commande #${orderId.slice(-8)}`
+    });
+    setRejectionReason('');
   };
 
   const handleShip = (orderId: string) => {
-    Alert.alert(
+    toast.showAlert(
       'Marquer comme expédié',
       'Cette commande a-t-elle été expédiée ?',
       [
         { text: 'Annuler', style: 'cancel' },
         {
           text: 'Expédié',
-          onPress: () => {
-            updateOrderStatus(orderId, 'shipped');
-            Alert.alert('Succès', 'La commande a été marquée comme expédiée');
+          onPress: async () => {
+            await updateOrderStatus(orderId, 'shipped');
+            toast.showSuccess('La commande a été marquée comme expédiée');
           },
         },
       ]
@@ -164,16 +169,16 @@ export default function AdminScreen() {
   };
 
   const handleApproveProduct = (productId: string, productTitle: string) => {
-    Alert.alert(
+    toast.showAlert(
       'Approuver le produit',
       `Voulez-vous approuver "${productTitle}" ?`,
       [
         { text: 'Annuler', style: 'cancel' },
         {
           text: 'Approuver',
-          onPress: () => {
-            approveProduct(productId);
-            Alert.alert('Succès', 'Le produit a été approuvé et est maintenant visible');
+          onPress: async () => {
+            await approveProduct(productId);
+            toast.showSuccess('Le produit a été approuvé et est maintenant visible');
           },
         },
       ]
@@ -181,26 +186,32 @@ export default function AdminScreen() {
   };
 
   const handleRejectProduct = (productId: string, productTitle: string) => {
-    Alert.prompt(
-      'Rejeter le produit',
-      `Pourquoi rejetez-vous "${productTitle}" ?`,
-      [
-        { text: 'Annuler', style: 'cancel' },
-        {
-          text: 'Rejeter',
-          style: 'destructive',
-          onPress: (reason: string | undefined) => {
-            rejectProduct(productId, reason || 'Non conforme aux règles');
-            Alert.alert('Succès', 'Le produit a été rejeté');
-          },
-        },
-      ],
-      'plain-text'
-    );
+    setRejectModal({
+      visible: true,
+      type: 'product',
+      targetId: productId,
+      targetTitle: productTitle
+    });
+    setRejectionReason('');
+  };
+
+  const confirmReject = async () => {
+    if (!rejectModal.targetId || !rejectModal.type) return;
+
+    if (rejectModal.type === 'order') {
+      await updateOrderStatus(rejectModal.targetId, 'rejected', { rejectionReason: rejectionReason || 'Non spécifié' });
+      toast.showSuccess('La commande a été rejetée');
+    } else if (rejectModal.type === 'product') {
+      await rejectProduct(rejectModal.targetId, rejectionReason || 'Non conforme aux règles');
+      toast.showSuccess('Le produit a été rejeté');
+    }
+
+    setRejectModal({ visible: false, type: null, targetId: null });
+    setRejectionReason('');
   };
 
   const handleDeleteProduct = (productId: string, productTitle: string) => {
-    Alert.alert(
+    toast.showAlert(
       'Supprimer le produit',
       `Êtes-vous sûr de vouloir supprimer "${productTitle}" ? Cette action est irréversible.`,
       [
@@ -208,9 +219,9 @@ export default function AdminScreen() {
         {
           text: 'Supprimer',
           style: 'destructive',
-          onPress: () => {
-            deleteProduct(productId);
-            Alert.alert('Succès', 'Le produit a été supprimé');
+          onPress: async () => {
+            await deleteProduct(productId);
+            toast.showSuccess('Le produit a été supprimé');
           },
         },
       ]
@@ -544,7 +555,7 @@ export default function AdminScreen() {
 
   const handleChangeUserType = (userId: string, userName: string, currentType: string) => {
     const newType = currentType === 'premium' ? 'standard' : 'premium';
-    Alert.alert(
+    toast.showAlert(
       'Changer le type de compte',
       `Voulez-vous passer ${userName} en ${newType === 'premium' ? 'Premium' : 'Standard'} ?`,
       [
@@ -554,9 +565,9 @@ export default function AdminScreen() {
           onPress: async () => {
             const result = await changeUserType(userId, newType as 'premium' | 'standard');
             if (result.success) {
-              Alert.alert('Succès', `Le compte de ${userName} est maintenant ${newType === 'premium' ? 'Premium' : 'Standard'}`);
+              toast.showSuccess(`Le compte de ${userName} est maintenant ${newType === 'premium' ? 'Premium' : 'Standard'}`);
             } else {
-              Alert.alert('Erreur', result.error || 'Une erreur est survenue');
+              toast.showError(result.error || 'Une erreur est survenue');
             }
           },
         },
@@ -565,7 +576,7 @@ export default function AdminScreen() {
   };
 
   const handleDeleteUser = (userId: string, userName: string) => {
-    Alert.alert(
+    toast.showAlert(
       'Supprimer l\'utilisateur',
       `Êtes-vous sûr de vouloir supprimer ${userName} ? Cette action supprimera aussi toutes ses annonces.`,
       [
@@ -576,9 +587,9 @@ export default function AdminScreen() {
           onPress: async () => {
             const result = await deleteUser(userId);
             if (result.success) {
-              Alert.alert('Succès', `${userName} a été supprimé`);
+              toast.showSuccess(`${userName} a été supprimé`);
             } else {
-              Alert.alert('Erreur', result.error || 'Une erreur est survenue');
+              toast.showError(result.error || 'Une erreur est survenue');
             }
           },
         },
@@ -587,7 +598,7 @@ export default function AdminScreen() {
   };
 
   const handleApprovePremium = (userId: string, userName: string) => {
-    Alert.alert(
+    toast.showAlert(
       'Valider le passage Premium',
       `Voulez-vous activer le compte Premium de ${userName} ?`,
       [
@@ -597,9 +608,9 @@ export default function AdminScreen() {
           onPress: async () => {
             const result = await approvePremiumUpgrade(userId);
             if (result.success) {
-              Alert.alert('Succès', `Le compte Premium de ${userName} a été activé`);
+              toast.showSuccess(`Le compte Premium de ${userName} a été activé`);
             } else {
-              Alert.alert('Erreur', result.error || 'Une erreur est survenue');
+              toast.showError(result.error || 'Une erreur est survenue');
             }
           },
         },
@@ -608,7 +619,7 @@ export default function AdminScreen() {
   };
 
   const handleRejectPremium = (userId: string, userName: string) => {
-    Alert.alert(
+    toast.showAlert(
       'Rejeter la demande Premium',
       `Voulez-vous rejeter la demande Premium de ${userName} ?`,
       [
@@ -619,9 +630,9 @@ export default function AdminScreen() {
           onPress: async () => {
             const result = await rejectPremiumUpgrade(userId);
             if (result.success) {
-              Alert.alert('Succès', `La demande Premium de ${userName} a été rejetée`);
+              toast.showSuccess(`La demande Premium de ${userName} a été rejetée`);
             } else {
-              Alert.alert('Erreur', result.error || 'Une erreur est survenue');
+              toast.showError(result.error || 'Une erreur est survenue');
             }
           },
         },
@@ -631,11 +642,11 @@ export default function AdminScreen() {
 
   const handleToggleAdmin = (userId: string, userName: string, isCurrentlyAdmin: boolean) => {
     if (!currentUser?.isSuperAdmin) {
-      Alert.alert('Accès refusé', 'Seul le super administrateur peut gérer les admins');
+      toast.showError('Seul le super administrateur peut gérer les admins');
       return;
     }
 
-    Alert.alert(
+    toast.showAlert(
       isCurrentlyAdmin ? 'Retirer les droits admin' : 'Définir comme admin',
       `Voulez-vous ${isCurrentlyAdmin ? 'retirer les droits admin de' : 'faire de'} ${userName} ${isCurrentlyAdmin ? '' : 'un administrateur'} ?`,
       [
@@ -645,9 +656,9 @@ export default function AdminScreen() {
           onPress: async () => {
             const result = await toggleAdminStatus(userId);
             if (result.success) {
-              Alert.alert('Succès', `${userName} ${isCurrentlyAdmin ? 'n\'est plus admin' : 'est maintenant admin'}`);
+              toast.showSuccess(`${userName} ${isCurrentlyAdmin ? 'n\'est plus admin' : 'est maintenant admin'}`);
             } else {
-              Alert.alert('Erreur', result.error || 'Une erreur est survenue');
+              toast.showError(result.error || 'Une erreur est survenue');
             }
           },
         },
@@ -857,6 +868,54 @@ export default function AdminScreen() {
       {selectedTab === 'orders' && renderOrdersTab()}
       {selectedTab === 'products' && renderProductsTab()}
       {selectedTab === 'users' && renderUsersTab()}
+
+      <Modal
+        visible={rejectModal.visible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setRejectModal({ visible: false, type: null, targetId: null })}
+      >
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.modalOverlay}
+        >
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Rejeter {rejectModal.type === 'product' ? "l'annonce" : "la commande"}</Text>
+              <TouchableOpacity onPress={() => setRejectModal({ visible: false, type: null, targetId: null })}>
+                <XCircle size={24} color="#666" />
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.modalSubtitle}>
+              Veuillez indiquer la raison du rejet pour &quot;{rejectModal.targetTitle}&quot; :
+            </Text>
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Raison du rejet..."
+              value={rejectionReason}
+              onChangeText={setRejectionReason}
+              multiline
+              numberOfLines={3}
+              textAlignVertical="top"
+              autoFocus
+            />
+            <View style={styles.modalButtons}>
+              <TouchableOpacity 
+                style={[styles.modalButton, styles.cancelModalButton]}
+                onPress={() => setRejectModal({ visible: false, type: null, targetId: null })}
+              >
+                <Text style={styles.cancelModalButtonText}>Annuler</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.modalButton, styles.confirmModalButton]}
+                onPress={confirmReject}
+              >
+                <Text style={styles.confirmModalButtonText}>Confirmer le rejet</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </View>
   );
 }
@@ -1449,5 +1508,75 @@ const styles = StyleSheet.create({
   },
   userActionButtonTextRemoveAdmin: {
     color: '#E31B23',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: '90%',
+    maxWidth: 400,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 5,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700' as const,
+    color: '#E31B23',
+  },
+  modalSubtitle: {
+    fontSize: 16,
+    color: '#666',
+    marginBottom: 16,
+  },
+  modalInput: {
+    backgroundColor: '#f5f5f5',
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 16,
+    color: '#000',
+    height: 100,
+    marginBottom: 24,
+    textAlignVertical: 'top',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  cancelModalButton: {
+    backgroundColor: '#f5f5f5',
+  },
+  cancelModalButtonText: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    color: '#666',
+  },
+  confirmModalButton: {
+    backgroundColor: '#E31B23',
+  },
+  confirmModalButtonText: {
+    fontSize: 16,
+    fontWeight: '700' as const,
+    color: '#fff',
   },
 });

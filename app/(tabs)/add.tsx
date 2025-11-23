@@ -85,11 +85,22 @@ export default function AddProductScreen() {
       mediaTypes: ['images'] as any,
       allowsEditing: true,
       aspect: [4, 3],
-      quality: 0.8,
+      quality: 0.5,
+      base64: true,
     });
 
     if (!result.canceled && result.assets[0]) {
-      setImages([...images, result.assets[0].uri]);
+      const asset = result.assets[0];
+      let imageUri = asset.uri;
+
+      // Always use base64 if available to ensure cross-platform compatibility (Web -> Mobile)
+      if (asset.base64) {
+        // Determine mime type (default to jpeg if not present)
+        const mimeType = asset.mimeType || 'image/jpeg';
+        imageUri = `data:${mimeType};base64,${asset.base64}`;
+      }
+
+      setImages([...images, imageUri]);
     }
   };
 
@@ -119,11 +130,20 @@ export default function AddProductScreen() {
     const result = await ImagePicker.launchCameraAsync({
       allowsEditing: true,
       aspect: [4, 3],
-      quality: 0.8,
+      quality: 0.5,
+      base64: true,
     });
 
     if (!result.canceled && result.assets[0]) {
-      setImages([...images, result.assets[0].uri]);
+      const asset = result.assets[0];
+      let imageUri = asset.uri;
+
+      if (asset.base64) {
+        const mimeType = asset.mimeType || 'image/jpeg';
+        imageUri = `data:${mimeType};base64,${asset.base64}`;
+      }
+
+      setImages([...images, imageUri]);
     }
   };
 
