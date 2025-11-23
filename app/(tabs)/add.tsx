@@ -93,9 +93,25 @@ export default function AddProductScreen() {
       const asset = result.assets[0];
       let imageUri = asset.uri;
 
-      // Always use base64 if available to ensure cross-platform compatibility (Web -> Mobile)
-      if (asset.base64) {
-        // Determine mime type (default to jpeg if not present)
+      // Handle Web: Convert blob URL to base64
+      if (Platform.OS === 'web') {
+        try {
+          const response = await fetch(asset.uri);
+          const blob = await response.blob();
+          const base64 = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          });
+          imageUri = base64 as string;
+        } catch (e) {
+          console.error('Error converting blob to base64:', e);
+          toast.showError('Erreur lors du traitement de l\'image');
+          return;
+        }
+      } else if (asset.base64) {
+        // Native: use base64 if available
         const mimeType = asset.mimeType || 'image/jpeg';
         imageUri = `data:${mimeType};base64,${asset.base64}`;
       }

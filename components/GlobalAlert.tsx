@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Platform } from 'react-native';
 import { useToast } from '@/contexts/ToastContext';
 
 export default function GlobalAlert() {
@@ -10,8 +10,23 @@ export default function GlobalAlert() {
   const buttons = alertConfig.buttons;
   const isVertical = buttons.length > 2;
 
+  // Use fixed positioning on web to ensure it covers the viewport regardless of scroll
+  const overlayStyle = Platform.select({
+    web: {
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      zIndex: 10000,
+      justifyContent: 'center',
+      alignItems: 'center',
+    } as any,
+    default: styles.overlay,
+  });
+
   return (
-    <View style={styles.overlay} pointerEvents="auto">
+    <View style={overlayStyle} pointerEvents="auto">
       <View style={styles.backdrop} />
       <View style={styles.alertContainer}>
         <Text style={styles.title}>{alertConfig.title}</Text>
