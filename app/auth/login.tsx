@@ -29,27 +29,16 @@ export default function LoginScreen() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const countries = [
+    { code: '+221', name: 'Sénégal', flag: '🇸🇳' },
+    { code: '+223', name: 'Mali', flag: '🇲🇱' },
+    { code: '+245', name: 'Guinée-Bissau', flag: '🇬🇼' },
+    { code: '+220', name: 'Gambie', flag: '🇬🇲' },
+    { code: '+222', name: 'Mauritanie', flag: '🇲🇷' },
+    { code: '+33', name: 'France', flag: '🇫🇷' },
     { code: '+32', name: 'Belgique', flag: '🇧🇪' },
-    { code: '+229', name: 'Bénin', flag: '🇧🇯' },
-    { code: '+226', name: 'Burkina Faso', flag: '🇧🇫' },
-    { code: '+238', name: 'Cap-Vert', flag: '🇨🇻' },
-    { code: '+225', name: 'Côte d\'Ivoire', flag: '🇨🇮' },
+    { code: '+39', name: 'Italie', flag: '🇮🇹' },
     { code: '+34', name: 'Espagne', flag: '🇪🇸' },
     { code: '+1', name: 'États-Unis', flag: '🇺🇸' },
-    { code: '+33', name: 'France', flag: '🇫🇷' },
-    { code: '+220', name: 'Gambie', flag: '🇬🇲' },
-    { code: '+233', name: 'Ghana', flag: '🇬🇭' },
-    { code: '+224', name: 'Guinée', flag: '🇬🇳' },
-    { code: '+245', name: 'Guinée-Bissau', flag: '🇬🇼' },
-    { code: '+39', name: 'Italie', flag: '🇮🇹' },
-    { code: '+231', name: 'Liberia', flag: '🇱🇷' },
-    { code: '+223', name: 'Mali', flag: '🇲🇱' },
-    { code: '+222', name: 'Mauritanie', flag: '🇲🇷' },
-    { code: '+227', name: 'Niger', flag: '🇳🇪' },
-    { code: '+234', name: 'Nigeria', flag: '🇳🇬' },
-    { code: '+221', name: 'Sénégal', flag: '🇸🇳' },
-    { code: '+232', name: 'Sierra Leone', flag: '🇸🇱' },
-    { code: '+228', name: 'Togo', flag: '🇹🇬' },
   ];
 
   const formatPhoneNumber = (text: string) => {
