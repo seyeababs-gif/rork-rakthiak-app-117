@@ -131,7 +131,7 @@ export default function AddProductScreen() {
     setImages(images.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!isAuthenticated) {
       toast.showAlert(
         'Connexion requise',
