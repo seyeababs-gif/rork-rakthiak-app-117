@@ -113,9 +113,13 @@ export default function ProfileScreen() {
         { text: 'Annuler', style: 'cancel' },
         {
           text: newAdminStatus ? 'Activer' : 'Désactiver',
-          onPress: () => {
-            updateUser({ isAdmin: newAdminStatus });
-            toast.showSuccess(`Mode Admin ${newAdminStatus ? 'activé' : 'désactivé'}`);
+          onPress: async () => {
+            const result = await updateUser({ isAdmin: newAdminStatus });
+            if (result && result.success) {
+              toast.showSuccess(`Mode Admin ${newAdminStatus ? 'activé' : 'désactivé'}`);
+            } else {
+              toast.showError(result?.error || 'Erreur lors de la mise à jour du mode admin');
+            }
           },
         },
       ]

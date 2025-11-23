@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { X, Camera, Image as ImageIcon, ArrowLeft, Calendar as CalendarIcon } from 'lucide-react-native';
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
+import { useToast } from '@/contexts/ToastContext';
 import { useMarketplace } from '@/contexts/MarketplaceContext';
 import { categories, getSubCategoriesForCategory } from '@/constants/categories';
 import { Category, SubCategory, ListingType } from '@/types/marketplace';
@@ -25,6 +26,7 @@ export default function EditProductScreen() {
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { getProduct, updateProduct, getMaxImages, currentUser } = useMarketplace();
+  const toast = useToast();
 
   const product = getProduct(id || '');
 
@@ -125,8 +127,7 @@ export default function EditProductScreen() {
   const pickImage = async () => {
     const maxImages = getMaxImages();
     if (images.length >= maxImages) {
-      Alert.alert(
-        'Limite atteinte',
+      toast.showInfo(
         currentUser?.type === 'standard'
           ? 'Vous pouvez ajouter maximum 2 photos par produit. Passez à Premium pour un accès illimité.'
           : 'Limite de photos atteinte.'
@@ -137,7 +138,7 @@ export default function EditProductScreen() {
     if (Platform.OS !== 'web') {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permission requise', 'Nous avons besoin de votre permission pour accéder à vos photos.');
+        toast.showWarning('Nous avons besoin de votre permission pour accéder à vos photos.');
         return;
       }
     }
@@ -157,8 +158,7 @@ export default function EditProductScreen() {
   const takePhoto = async () => {
     const maxImages = getMaxImages();
     if (images.length >= maxImages) {
-      Alert.alert(
-        'Limite atteinte',
+      toast.showInfo(
         currentUser?.type === 'standard'
           ? 'Vous pouvez ajouter maximum 2 photos par produit. Passez à Premium pour un accès illimité.'
           : 'Limite de photos atteinte.'
@@ -167,13 +167,13 @@ export default function EditProductScreen() {
     }
 
     if (Platform.OS === 'web') {
-      Alert.alert('Non disponible', 'La caméra n&apos;est pas disponible sur le web.');
+      toast.showInfo('La caméra n\'est pas disponible sur le web.');
       return;
     }
 
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permission requise', 'Nous avez besoin de votre permission pour accéder à la caméra.');
+      toast.showWarning('Nous avez besoin de votre permission pour accéder à la caméra.');
       return;
     }
 
@@ -192,53 +192,53 @@ export default function EditProductScreen() {
     setImages(images.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!title.trim()) {
-      Alert.alert('Erreur', 'Veuillez entrer un titre');
+      toast.showError('Veuillez entrer un titre');
       return;
     }
     if (!description.trim()) {
-      Alert.alert('Erreur', 'Veuillez entrer une description');
+      toast.showError('Veuillez entrer une description');
       return;
     }
     
     if (!category) {
-      Alert.alert('Erreur', 'Veuillez sélectionner une catégorie');
+      toast.showError('Veuillez sélectionner une catégorie');
       return;
     }
     
     const subCategoriesForCategory = getSubCategoriesForCategory(category);
     if (subCategoriesForCategory.length > 0 && !subCategory) {
-      Alert.alert('Erreur', 'Veuillez sélectionner une sous-catégorie');
+      toast.showError('Veuillez sélectionner une sous-catégorie');
       return;
     }
     
     if (listingType === 'product') {
       if (!price.trim() || isNaN(Number(price))) {
-        Alert.alert('Erreur', 'Veuillez entrer un prix valide');
+        toast.showError('Veuillez entrer un prix valide');
         return;
       }
       if (!location.trim()) {
-        Alert.alert('Erreur', 'Veuillez entrer une localisation');
+        toast.showError('Veuillez entrer une localisation');
         return;
       }
     } else if (listingType === 'service') {
       if (!departureLocation.trim()) {
-        Alert.alert('Erreur', 'Veuillez entrer le lieu de départ');
+        toast.showError('Veuillez entrer le lieu de départ');
         return;
       }
       if (!arrivalLocation.trim()) {
-        Alert.alert('Erreur', 'Veuillez entrer le lieu d\'arrivée');
+        toast.showError('Veuillez entrer le lieu d\'arrivée');
         return;
       }
       if (!departureDate) {
-        Alert.alert('Erreur', 'Veuillez sélectionner la date de départ');
+        toast.showError('Veuillez sélectionner la date de départ');
         return;
       }
     }
     
     if (images.length === 0) {
-      Alert.alert('Erreur', 'Veuillez ajouter au moins une photo');
+      toast.showError('Veuillez ajouter au moins une photo');
       return;
     }
 
@@ -285,9 +285,9 @@ export default function EditProductScreen() {
       };
     }
     
-    updateProduct(product.id, updates);
+    await updateProduct(product.id, updates);
 
-    Alert.alert('Succès', 'Votre annonce a été modifiée !', [
+    toast.showAlert('Succès', 'Votre annonce a été modifiée !', [
       {
         text: 'OK',
         onPress: () => {
@@ -605,7 +605,7 @@ export default function EditProductScreen() {
               style={styles.checkboxRow}
               onPress={() => {
                 if (!isPremium) {
-                  Alert.alert(
+                  toast.showAlert(
                     'Fonctionnalité Premium',
                     'Les promotions sont réservées aux utilisateurs Premium. Passez à Premium pour 3500 FCFA/mois pour accéder à cette fonctionnalité.',
                     [
@@ -667,7 +667,7 @@ export default function EditProductScreen() {
               style={styles.checkboxRow}
               onPress={() => {
                 if (!isPremium) {
-                  Alert.alert(
+                  toast.showAlert(
                     'Fonctionnalité Premium',
                     'La gestion du stock est réservée aux utilisateurs Premium. Passez à Premium pour 3500 FCFA/mois pour accéder à cette fonctionnalité.',
                     [

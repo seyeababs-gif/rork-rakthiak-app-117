@@ -279,8 +279,7 @@ export default function AddProductScreen() {
       });
 
       if (result && result.success) {
-        toast.showSuccess('Votre annonce a été soumise et est en attente de validation par un administrateur !', 5000);
-        
+        // Reset form
         setTitle('');
         setDescription('');
         setPrice('');
@@ -299,10 +298,21 @@ export default function AddProductScreen() {
         setManageStock(false);
         setHasDiscount(false);
         setDiscountPercent('');
-        
-        router.push('/(tabs)/' as any);
+
+        toast.showAlert(
+          'Succès',
+          'Votre annonce a été soumise et est en attente de validation par un administrateur !',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                router.push('/(tabs)/' as any);
+              },
+            },
+          ]
+        );
       } else {
-        toast.showError(result?.error || 'Erreur lors de la soumission');
+        toast.showAlert('Erreur', result?.error || 'Erreur lors de la soumission');
       }
     } catch (error) {
       toast.showError('Une erreur inattendue est survenue');

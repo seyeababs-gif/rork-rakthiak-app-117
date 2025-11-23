@@ -685,7 +685,7 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
   }, []);
 
   const updateUser = useCallback(async (updates: Partial<User>) => {
-    if (!currentUser) return;
+    if (!currentUser) return { success: false, error: 'User not logged in' };
     
     try {
       const updateData: any = {};
@@ -697,6 +697,7 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
       if (updates.deliveryAddress !== undefined) updateData.delivery_address = updates.deliveryAddress;
       if (updates.deliveryCity !== undefined) updateData.delivery_city = updates.deliveryCity;
       if (updates.deliveryPhone !== undefined) updateData.delivery_phone = updates.deliveryPhone;
+      if (updates.isAdmin !== undefined) updateData.is_admin = updates.isAdmin;
       
       const { error } = await supabase
         .from('users')
@@ -705,13 +706,15 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
       
       if (error) {
         console.error('Error updating user:', error);
-        return;
+        return { success: false, error: error.message };
       }
       
       const updatedUser = { ...currentUser, ...updates };
       setCurrentUser(updatedUser);
-    } catch (error) {
+      return { success: true };
+    } catch (error: any) {
       console.error('Error updating user:', error);
+      return { success: false, error: error.message || String(error) };
     }
   }, [currentUser]);
 
