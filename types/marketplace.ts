@@ -30,7 +30,7 @@ export interface ServiceDetails {
   departureDate?: string;
   arrivalDate?: string;
   pricePerKg?: number;
-  pricePerKm?: number;
+  tripPrice?: number;
   vehicleType?: string;
   availableSeats?: number;
 }

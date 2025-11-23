@@ -51,7 +51,7 @@ export default function AddProductScreen() {
   const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
   const [tempDate, setTempDate] = useState<Date>(new Date());
   const [pricePerKg, setPricePerKg] = useState<string>('');
-  const [pricePerKm, setPricePerKm] = useState<string>('');
+  const [tripPrice, setTripPrice] = useState<string>('');
   const [vehicleType, setVehicleType] = useState<string>('');
   const [availableSeats, setAvailableSeats] = useState<string>('');
   const [stockQuantity, setStockQuantity] = useState<string>('');
@@ -166,6 +166,18 @@ export default function AddProductScreen() {
         Alert.alert('Erreur', 'Veuillez entrer une localisation');
         return;
       }
+      if (!category) {
+        Alert.alert('Erreur', 'Veuillez sélectionner une catégorie');
+        return;
+      }
+      if (getSubCategoriesForCategory(category).length > 0 && !subCategory) {
+        Alert.alert('Erreur', 'Veuillez sélectionner une sous-catégorie');
+        return;
+      }
+      if (!condition) {
+        Alert.alert('Erreur', 'Veuillez sélectionner l\'état du produit');
+        return;
+      }
     }
 
     if (listingType === 'service') {
@@ -181,6 +193,45 @@ export default function AddProductScreen() {
         Alert.alert('Erreur', 'Veuillez sélectionner la date et l\'heure de départ');
         return;
       }
+      if (!category) {
+        Alert.alert('Erreur', 'Veuillez sélectionner une catégorie');
+        return;
+      }
+      if (!subCategory) {
+        Alert.alert('Erreur', 'Veuillez sélectionner un type de service');
+        return;
+      }
+      
+      if (subCategory === 'covoiturage' || subCategory === 'thiaktiak') {
+        if (!tripPrice.trim() || isNaN(Number(tripPrice))) {
+          Alert.alert('Erreur', 'Veuillez entrer le prix du trajet');
+          return;
+        }
+        if (subCategory === 'covoiturage') {
+          if (!vehicleType.trim()) {
+            Alert.alert('Erreur', 'Veuillez entrer le type de véhicule');
+            return;
+          }
+          if (!availableSeats.trim() || isNaN(Number(availableSeats))) {
+            Alert.alert('Erreur', 'Veuillez entrer le nombre de places disponibles');
+            return;
+          }
+        }
+      }
+      
+      if (subCategory === 'gp' || subCategory === 'conteneur') {
+        if (!pricePerKg.trim() || isNaN(Number(pricePerKg))) {
+          Alert.alert('Erreur', 'Veuillez entrer le prix par kg');
+          return;
+        }
+      }
+      
+      if (subCategory === 'autres') {
+        if (!tripPrice.trim() || isNaN(Number(tripPrice))) {
+          Alert.alert('Erreur', 'Veuillez entrer le tarif');
+          return;
+        }
+      }
     }
 
     if (images.length === 0) {
@@ -191,7 +242,7 @@ export default function AddProductScreen() {
     let servicePrice = 0;
     if (listingType === 'service') {
       if (pricePerKg) servicePrice = Number(pricePerKg);
-      else if (pricePerKm) servicePrice = Number(pricePerKm);
+      else if (tripPrice) servicePrice = Number(tripPrice);
     }
 
     addProduct({
@@ -216,7 +267,7 @@ export default function AddProductScreen() {
         departureDate: departureDate ? departureDate.toISOString() : undefined,
         arrivalDate: undefined,
         pricePerKg: pricePerKg ? Number(pricePerKg) : undefined,
-        pricePerKm: pricePerKm ? Number(pricePerKm) : undefined,
+        tripPrice: tripPrice ? Number(tripPrice) : undefined,
         vehicleType: vehicleType.trim() || undefined,
         availableSeats: availableSeats ? Number(availableSeats) : undefined,
       } : undefined,
@@ -240,7 +291,7 @@ export default function AddProductScreen() {
           setArrivalLocation('');
           setDepartureDate(undefined);
           setPricePerKg('');
-          setPricePerKm('');
+          setTripPrice('');
           setVehicleType('');
           setAvailableSeats('');
           setStockQuantity('');
@@ -462,9 +513,9 @@ export default function AddProductScreen() {
                 <>
                   <TextInput
                     style={styles.input}
-                    placeholder="Prix par km (FCFA)"
-                    value={pricePerKm}
-                    onChangeText={setPricePerKm}
+                    placeholder="Prix du trajet (FCFA)"
+                    value={tripPrice}
+                    onChangeText={setTripPrice}
                     keyboardType="numeric"
                     placeholderTextColor="#999"
                   />
@@ -505,8 +556,8 @@ export default function AddProductScreen() {
                 <TextInput
                   style={styles.input}
                   placeholder="Tarif (FCFA)"
-                  value={pricePerKm}
-                  onChangeText={setPricePerKm}
+                  value={tripPrice}
+                  onChangeText={setTripPrice}
                   keyboardType="numeric"
                   placeholderTextColor="#999"
                 />

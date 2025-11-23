@@ -49,7 +49,7 @@ export default function EditProductScreen() {
   const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
   const [tempDate, setTempDate] = useState<Date>(new Date());
   const [pricePerKg, setPricePerKg] = useState<string>('');
-  const [pricePerKm, setPricePerKm] = useState<string>('');
+  const [tripPrice, setTripPrice] = useState<string>('');
   const [vehicleType, setVehicleType] = useState<string>('');
   const [availableSeats, setAvailableSeats] = useState<string>('');
   
@@ -77,7 +77,7 @@ export default function EditProductScreen() {
         setArrivalLocation(product.serviceDetails.arrivalLocation || '');
         setDepartureDate(product.serviceDetails.departureDate ? new Date(product.serviceDetails.departureDate) : undefined);
         setPricePerKg(product.serviceDetails.pricePerKg ? product.serviceDetails.pricePerKg.toString() : '');
-        setPricePerKm(product.serviceDetails.pricePerKm ? product.serviceDetails.pricePerKm.toString() : '');
+        setTripPrice(product.serviceDetails.tripPrice ? product.serviceDetails.tripPrice.toString() : '');
         setVehicleType(product.serviceDetails.vehicleType || '');
         setAvailableSeats(product.serviceDetails.availableSeats ? product.serviceDetails.availableSeats.toString() : '');
       }
@@ -241,7 +241,7 @@ export default function EditProductScreen() {
     let servicePrice = 0;
     if (listingType === 'service') {
       if (pricePerKg) servicePrice = Number(pricePerKg);
-      else if (pricePerKm) servicePrice = Number(pricePerKm);
+      else if (tripPrice) servicePrice = Number(tripPrice);
     }
     
     const updates: any = {
@@ -275,7 +275,7 @@ export default function EditProductScreen() {
         arrivalLocation: arrivalLocation.trim(),
         departureDate: departureDate ? departureDate.toISOString() : undefined,
         pricePerKg: pricePerKg ? Number(pricePerKg) : undefined,
-        pricePerKm: pricePerKm ? Number(pricePerKm) : undefined,
+        tripPrice: tripPrice ? Number(tripPrice) : undefined,
         vehicleType: vehicleType.trim() || undefined,
         availableSeats: availableSeats ? Number(availableSeats) : undefined,
       };
@@ -446,9 +446,9 @@ export default function EditProductScreen() {
                 <>
                   <TextInput
                     style={styles.input}
-                    placeholder="Prix par km (FCFA)"
-                    value={pricePerKm}
-                    onChangeText={setPricePerKm}
+                    placeholder="Prix du trajet (FCFA)"
+                    value={tripPrice}
+                    onChangeText={setTripPrice}
                     keyboardType="numeric"
                     placeholderTextColor="#999"
                   />
@@ -489,8 +489,8 @@ export default function EditProductScreen() {
                 <TextInput
                   style={styles.input}
                   placeholder="Tarif (FCFA)"
-                  value={pricePerKm}
-                  onChangeText={setPricePerKm}
+                  value={tripPrice}
+                  onChangeText={setTripPrice}
                   keyboardType="numeric"
                   placeholderTextColor="#999"
                 />

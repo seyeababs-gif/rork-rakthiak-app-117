@@ -132,7 +132,7 @@ export const mockProducts: Product[] = [
       departureLocation: 'Dakar',
       arrivalLocation: 'Aéroport AIBD',
       departureDate: new Date('2025-01-25T08:00:00').toISOString(),
-      pricePerKm: 1500,
+      tripPrice: 1500,
       vehicleType: 'Toyota Corolla',
       availableSeats: 4,
     },

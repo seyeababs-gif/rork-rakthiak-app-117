@@ -59,8 +59,8 @@ export default function ProductDetailScreen() {
       if (product.serviceDetails.pricePerKg) {
         return `${formatPrice(product.serviceDetails.pricePerKg)}/kg`;
       }
-      if (product.serviceDetails.pricePerKm) {
-        return `${formatPrice(product.serviceDetails.pricePerKm)}/km`;
+      if (product.serviceDetails.tripPrice) {
+        return `${formatPrice(product.serviceDetails.tripPrice)} (trajet)`;
       }
     }
     return formatPrice(product.price);
