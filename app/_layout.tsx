@@ -10,6 +10,7 @@ import { ReviewProvider } from "@/contexts/ReviewContext";
 import { NotificationProvider, useNotifications } from "@/contexts/NotificationContext";
 import { ToastProvider } from "@/contexts/ToastContext";
 import ToastContainer from "@/components/ToastContainer";
+import GlobalAlert from "@/components/GlobalAlert";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -90,6 +91,7 @@ export default function RootLayout() {
                       <NotificationSetup />
                       <RootLayoutNav />
                       <ToastContainer />
+                      <GlobalAlert />
                     </AuthGuard>
                   </GestureHandlerRootView>
                 </ReviewProvider>
