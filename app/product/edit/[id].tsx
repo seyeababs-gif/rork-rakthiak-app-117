@@ -101,7 +101,11 @@ export default function EditProductScreen() {
     );
   }
 
-  if (product.sellerId !== currentUser?.id) {
+  const isAdmin = currentUser?.isAdmin === true;
+  const isSuperAdmin = currentUser?.isSuperAdmin === true;
+  const canEdit = product.sellerId === currentUser?.id || isAdmin || isSuperAdmin;
+
+  if (!canEdit) {
     return (
       <View style={styles.container}>
         <Stack.Screen options={{ headerShown: false }} />
@@ -306,7 +310,7 @@ export default function EditProductScreen() {
         <View style={styles.headerTitleContainer}>
           <Text style={styles.headerTitle}>Modifier l&apos;annonce</Text>
           <Text style={styles.headerSubtitle}>
-            {listingType === 'product' ? 'Produit' : 'Service'} - {currentUser?.type === 'standard'
+            {listingType === 'product' ? 'Produit' : 'Service'} - {(isAdmin || isSuperAdmin) ? 'Mode Admin' : currentUser?.type === 'standard'
               ? '2 photos max'
               : 'Accès illimité'}
           </Text>

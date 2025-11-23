@@ -13,8 +13,8 @@ import {
   Modal,
   TextInput,
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { MapPin, Heart, ShoppingCart, Star, Share2, MessageCircle } from 'lucide-react-native';
+import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
+import { MapPin, Heart, ShoppingCart, Star, Share2, MessageCircle, Edit } from 'lucide-react-native';
 import { useMarketplace } from '@/contexts/MarketplaceContext';
 import { useCart } from '@/contexts/CartContext';
 
@@ -22,7 +22,7 @@ const { width } = Dimensions.get('window');
 
 export default function ProductDetailScreen() {
   const { id } = useLocalSearchParams();
-  const { products, toggleFavorite, isFavorite, getProductReviews, getProductRating, getSellerRating, isAuthenticated } = useMarketplace();
+  const { products, toggleFavorite, isFavorite, getProductReviews, getProductRating, getSellerRating, isAuthenticated, currentUser } = useMarketplace();
   const { addToCart, isInCart } = useCart();
   const router = useRouter();
   
@@ -38,9 +38,14 @@ export default function ProductDetailScreen() {
   
   const displayedReviews = showAllReviews ? productReviews : productReviews.slice(0, 2);
 
+  const isAdmin = currentUser?.isAdmin === true;
+  const isSuperAdmin = currentUser?.isSuperAdmin === true;
+  const canViewAndEdit = isAdmin || isSuperAdmin;
+
   if (!product) {
     return (
       <View style={styles.container}>
+        <Stack.Screen options={{ title: 'Produit introuvable', headerShown: true }} />
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>Produit non trouvé</Text>
         </View>
@@ -193,8 +198,35 @@ export default function ProductDetailScreen() {
     }
   };
 
+  const getStatusDisplay = () => {
+    switch (product.status) {
+      case 'pending':
+        return { label: 'En attente de validation', color: '#FFA500', bgColor: '#FFF9F0' };
+      case 'approved':
+        return { label: 'Approuvé', color: '#00A651', bgColor: '#E8F5E9' };
+      case 'rejected':
+        return { label: 'Rejeté', color: '#E31B23', bgColor: '#FFF5F5' };
+    }
+  };
+
+  const statusDisplay = getStatusDisplay();
+
   return (
     <View style={styles.container}>
+      <Stack.Screen 
+        options={{ 
+          title: canViewAndEdit && product.status !== 'approved' ? `${product.title} (${statusDisplay.label})` : product.title,
+          headerShown: true,
+          headerRight: canViewAndEdit ? () => (
+            <TouchableOpacity
+              style={styles.headerEditButton}
+              onPress={() => router.push(`/product/edit/${product.id}` as any)}
+            >
+              <Edit size={22} color="#007AFF" />
+            </TouchableOpacity>
+          ) : undefined,
+        }} 
+      />
       <ScrollView
         style={styles.content}
         contentContainerStyle={styles.contentContainer}
@@ -212,6 +244,18 @@ export default function ProductDetailScreen() {
         </ScrollView>
 
         <View style={styles.infoContainer}>
+          {canViewAndEdit && product.status !== 'approved' && (
+            <View style={[styles.adminStatusBanner, { backgroundColor: statusDisplay.bgColor, borderLeftColor: statusDisplay.color }]}>
+              <Text style={[styles.adminStatusText, { color: statusDisplay.color }]}>
+                📋 Statut : {statusDisplay.label}
+              </Text>
+              {product.status === 'rejected' && product.rejectionReason && (
+                <Text style={styles.adminStatusSubtext}>
+                  Raison : {product.rejectionReason}
+                </Text>
+              )}
+            </View>
+          )}
           <View style={styles.headerRow}>
             <View style={styles.headerLeft}>
               <Text style={styles.productTitle}>{product.title}</Text>
@@ -922,5 +966,25 @@ const styles = StyleSheet.create({
   buttonDisabled: {
     backgroundColor: '#9CA3AF',
     opacity: 0.6,
+  },
+  headerEditButton: {
+    marginRight: 16,
+    padding: 8,
+  },
+  adminStatusBanner: {
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+    borderLeftWidth: 4,
+  },
+  adminStatusText: {
+    fontSize: 16,
+    fontWeight: '700' as const,
+    marginBottom: 4,
+  },
+  adminStatusSubtext: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 4,
   },
 });

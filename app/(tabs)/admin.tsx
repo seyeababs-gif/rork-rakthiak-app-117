@@ -221,6 +221,10 @@ export default function AdminScreen() {
     router.push(`/product/edit/${productId}` as any);
   };
 
+  const handleViewProduct = (productId: string) => {
+    router.push(`/product/${productId}` as any);
+  };
+
   const filteredOrders = orders.filter(order => {
     if (selectedFilter === 'all') return true;
     return order.status === selectedFilter;
@@ -382,6 +386,12 @@ export default function AdminScreen() {
           )}
 
           <View style={styles.productAdminActions}>
+            <TouchableOpacity
+              style={styles.productAdminActionButton}
+              onPress={() => handleViewProduct(product.id)}
+            >
+              <Text style={styles.productAdminActionButtonText}>Voir</Text>
+            </TouchableOpacity>
             <TouchableOpacity
               style={styles.productAdminActionButton}
               onPress={() => handleEditProduct(product.id)}
@@ -1227,6 +1237,11 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 8,
     backgroundColor: '#f5f5f5',
+  },
+  productAdminActionButtonText: {
+    fontSize: 12,
+    fontWeight: '600' as const,
+    color: '#007AFF',
   },
   emptyState: {
     alignItems: 'center',

@@ -214,11 +214,12 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
     return products.filter(product => {
       const isApproved = product.status === 'approved';
       const isAdmin = currentUser?.isAdmin === true;
+      const isSuperAdmin = currentUser?.isSuperAdmin === true;
       const matchesSearch = product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           product.description.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
       const matchesSubCategory = !selectedSubCategory || product.subCategory === selectedSubCategory;
-      return (isAdmin || isApproved) && matchesSearch && matchesCategory && matchesSubCategory;
+      return (isAdmin || isSuperAdmin || isApproved) && matchesSearch && matchesCategory && matchesSubCategory;
     });
   }, [products, searchQuery, selectedCategory, selectedSubCategory, currentUser]);
 
