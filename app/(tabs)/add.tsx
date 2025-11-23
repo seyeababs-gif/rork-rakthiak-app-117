@@ -7,7 +7,6 @@ import {
   TextInput,
   TouchableOpacity,
   Image,
-  Alert,
   Platform,
   Modal,
 } from 'react-native';
@@ -17,12 +16,14 @@ import * as ImagePicker from 'expo-image-picker';
 import { X, Camera, Image as ImageIcon, Package, Briefcase, Calendar as CalendarIcon } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useMarketplace } from '@/contexts/MarketplaceContext';
+import { useToast } from '@/contexts/ToastContext';
 import { categories, getSubCategoriesForCategory } from '@/constants/categories';
 import { Category, ListingType } from '@/types/marketplace';
 
 export default function AddProductScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const toast = useToast();
   const { addProduct, canAddProduct, getMaxImages, currentUser, isAuthenticated } = useMarketplace();
 
   const [listingType, setListingType] = useState<ListingType>('product');
@@ -62,7 +63,7 @@ export default function AddProductScreen() {
   const pickImage = async () => {
     const maxImages = getMaxImages();
     if (images.length >= maxImages) {
-      Alert.alert(
+      toast.showAlert(
         'Limite atteinte',
         currentUser?.type === 'standard'
           ? 'Vous pouvez ajouter maximum 2 photos par produit. Passez à Premium pour un accès illimité.'
@@ -74,7 +75,7 @@ export default function AddProductScreen() {
     if (Platform.OS !== 'web') {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permission requise', 'Nous avons besoin de votre permission pour accéder à vos photos.');
+        toast.showAlert('Permission requise', 'Nous avons besoin de votre permission pour accéder à vos photos.');
         return;
       }
     }
@@ -94,7 +95,7 @@ export default function AddProductScreen() {
   const takePhoto = async () => {
     const maxImages = getMaxImages();
     if (images.length >= maxImages) {
-      Alert.alert(
+      toast.showAlert(
         'Limite atteinte',
         currentUser?.type === 'standard'
           ? 'Vous pouvez ajouter maximum 2 photos par produit. Passez à Premium pour un accès illimité.'
@@ -104,13 +105,13 @@ export default function AddProductScreen() {
     }
 
     if (Platform.OS === 'web') {
-      Alert.alert('Non disponible', 'La caméra n&apos;est pas disponible sur le web.');
+      toast.showAlert('Non disponible', 'La caméra n&apos;est pas disponible sur le web.');
       return;
     }
 
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permission requise', 'Nous avez besoin de votre permission pour accéder à la caméra.');
+      toast.showAlert('Permission requise', 'Nous avez besoin de votre permission pour accéder à la caméra.');
       return;
     }
 
@@ -131,7 +132,7 @@ export default function AddProductScreen() {
 
   const handleSubmit = () => {
     if (!isAuthenticated) {
-      Alert.alert(
+      toast.showAlert(
         'Connexion requise',
         'Vous devez être connecté pour ajouter un produit.',
         [
@@ -144,76 +145,76 @@ export default function AddProductScreen() {
 
     const productCheck = canAddProduct();
     if (!productCheck.canAdd) {
-      Alert.alert('Limite atteinte', productCheck.reason);
+      toast.showAlert('Limite atteinte', productCheck.reason);
       return;
     }
 
     if (!title.trim()) {
-      Alert.alert('Erreur', 'Veuillez entrer un titre');
+      toast.showAlert('Erreur', 'Veuillez entrer un titre');
       return;
     }
     if (!description.trim()) {
-      Alert.alert('Erreur', 'Veuillez entrer une description');
+      toast.showAlert('Erreur', 'Veuillez entrer une description');
       return;
     }
 
     if (listingType === 'product') {
       if (!price.trim() || isNaN(Number(price))) {
-        Alert.alert('Erreur', 'Veuillez entrer un prix valide');
+        toast.showAlert('Erreur', 'Veuillez entrer un prix valide');
         return;
       }
       if (!location.trim()) {
-        Alert.alert('Erreur', 'Veuillez entrer une localisation');
+        toast.showAlert('Erreur', 'Veuillez entrer une localisation');
         return;
       }
       if (!category) {
-        Alert.alert('Erreur', 'Veuillez sélectionner une catégorie');
+        toast.showAlert('Erreur', 'Veuillez sélectionner une catégorie');
         return;
       }
       if (getSubCategoriesForCategory(category).length > 0 && !subCategory) {
-        Alert.alert('Erreur', 'Veuillez sélectionner une sous-catégorie');
+        toast.showAlert('Erreur', 'Veuillez sélectionner une sous-catégorie');
         return;
       }
       if (!condition) {
-        Alert.alert('Erreur', 'Veuillez sélectionner l\'état du produit');
+        toast.showAlert('Erreur', 'Veuillez sélectionner l\'état du produit');
         return;
       }
     }
 
     if (listingType === 'service') {
       if (!departureLocation.trim()) {
-        Alert.alert('Erreur', 'Veuillez entrer le lieu de départ');
+        toast.showAlert('Erreur', 'Veuillez entrer le lieu de départ');
         return;
       }
       if (!arrivalLocation.trim()) {
-        Alert.alert('Erreur', 'Veuillez entrer le lieu d\'arrivée');
+        toast.showAlert('Erreur', 'Veuillez entrer le lieu d\'arrivée');
         return;
       }
       if (!departureDate) {
-        Alert.alert('Erreur', 'Veuillez sélectionner la date et l\'heure de départ');
+        toast.showAlert('Erreur', 'Veuillez sélectionner la date et l\'heure de départ');
         return;
       }
       if (!category) {
-        Alert.alert('Erreur', 'Veuillez sélectionner une catégorie');
+        toast.showAlert('Erreur', 'Veuillez sélectionner une catégorie');
         return;
       }
       if (!subCategory) {
-        Alert.alert('Erreur', 'Veuillez sélectionner un type de service');
+        toast.showAlert('Erreur', 'Veuillez sélectionner un type de service');
         return;
       }
       
       if (subCategory === 'covoiturage' || subCategory === 'thiaktiak') {
         if (!tripPrice.trim() || isNaN(Number(tripPrice))) {
-          Alert.alert('Erreur', 'Veuillez entrer le prix du trajet');
+          toast.showAlert('Erreur', 'Veuillez entrer le prix du trajet');
           return;
         }
         if (subCategory === 'covoiturage') {
           if (!vehicleType.trim()) {
-            Alert.alert('Erreur', 'Veuillez entrer le type de véhicule');
+            toast.showAlert('Erreur', 'Veuillez entrer le type de véhicule');
             return;
           }
           if (!availableSeats.trim() || isNaN(Number(availableSeats))) {
-            Alert.alert('Erreur', 'Veuillez entrer le nombre de places disponibles');
+            toast.showAlert('Erreur', 'Veuillez entrer le nombre de places disponibles');
             return;
           }
         }
@@ -221,21 +222,21 @@ export default function AddProductScreen() {
       
       if (subCategory === 'gp' || subCategory === 'conteneur') {
         if (!pricePerKg.trim() || isNaN(Number(pricePerKg))) {
-          Alert.alert('Erreur', 'Veuillez entrer le prix par kg');
+          toast.showAlert('Erreur', 'Veuillez entrer le prix par kg');
           return;
         }
       }
       
       if (subCategory === 'autres') {
         if (!tripPrice.trim() || isNaN(Number(tripPrice))) {
-          Alert.alert('Erreur', 'Veuillez entrer le tarif');
+          toast.showAlert('Erreur', 'Veuillez entrer le tarif');
           return;
         }
       }
     }
 
     if (images.length === 0) {
-      Alert.alert('Erreur', 'Veuillez ajouter au moins une photo');
+      toast.showAlert('Erreur', 'Veuillez ajouter au moins une photo');
       return;
     }
 
@@ -273,35 +274,28 @@ export default function AddProductScreen() {
       } : undefined,
     });
 
-    Alert.alert(
-      'Succès',
-      'Votre annonce a été soumise et est en attente de validation par un administrateur !',
-      [
-        {
-          text: 'OK',
-          onPress: () => {
-          setTitle('');
-          setDescription('');
-          setPrice('');
-          setLocation('');
-          setCategory('electronics');
-          setSubCategory(undefined);
-          setImages([]);
-          setDepartureLocation('');
-          setArrivalLocation('');
-          setDepartureDate(undefined);
-          setPricePerKg('');
-          setTripPrice('');
-          setVehicleType('');
-          setAvailableSeats('');
-          setStockQuantity('');
-          setManageStock(false);
-          setHasDiscount(false);
-          setDiscountPercent('');
-          router.push('/(tabs)/' as any);
-        },
-      },
-    ]);
+    toast.showSuccess('Votre annonce a été soumise et est en attente de validation par un administrateur !', 5000);
+    
+    setTitle('');
+    setDescription('');
+    setPrice('');
+    setLocation('');
+    setCategory('electronics');
+    setSubCategory(undefined);
+    setImages([]);
+    setDepartureLocation('');
+    setArrivalLocation('');
+    setDepartureDate(undefined);
+    setPricePerKg('');
+    setTripPrice('');
+    setVehicleType('');
+    setAvailableSeats('');
+    setStockQuantity('');
+    setManageStock(false);
+    setHasDiscount(false);
+    setDiscountPercent('');
+    
+    router.push('/(tabs)/' as any);
   };
 
   if (!isAuthenticated) {
@@ -696,7 +690,7 @@ export default function AddProductScreen() {
               style={styles.checkboxRow}
               onPress={() => {
                 if (currentUser?.type === 'standard') {
-                  Alert.alert(
+                  toast.showAlert(
                     'Fonctionnalité Premium',
                     'Les promotions sont réservées aux utilisateurs Premium. Passez à Premium pour 3500 FCFA/mois pour accéder à cette fonctionnalité.',
                     [
@@ -759,7 +753,7 @@ export default function AddProductScreen() {
               style={styles.checkboxRow}
               onPress={() => {
                 if (currentUser?.type === 'standard') {
-                  Alert.alert(
+                  toast.showAlert(
                     'Fonctionnalité Premium',
                     'La gestion du stock est réservée aux utilisateurs Premium. Passez à Premium pour 3500 FCFA/mois pour accéder à cette fonctionnalité.',
                     [

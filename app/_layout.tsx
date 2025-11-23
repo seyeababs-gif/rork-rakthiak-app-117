@@ -8,6 +8,8 @@ import { CartContext } from "@/contexts/CartContext";
 import { OrderProvider } from "@/contexts/OrderContext";
 import { ReviewProvider } from "@/contexts/ReviewContext";
 import { NotificationProvider, useNotifications } from "@/contexts/NotificationContext";
+import { ToastProvider } from "@/contexts/ToastContext";
+import ToastContainer from "@/components/ToastContainer";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -77,22 +79,25 @@ export default function RootLayout() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <NotificationProvider>
-        <MarketplaceProvider>
-          <CartContext>
-            <OrderProvider>
-              <ReviewProvider>
-                <GestureHandlerRootView style={{ flex: 1 }}>
-                  <AuthGuard>
-                    <NotificationSetup />
-                    <RootLayoutNav />
-                  </AuthGuard>
-                </GestureHandlerRootView>
-              </ReviewProvider>
-            </OrderProvider>
-          </CartContext>
-        </MarketplaceProvider>
-      </NotificationProvider>
+      <ToastProvider>
+        <NotificationProvider>
+          <MarketplaceProvider>
+            <CartContext>
+              <OrderProvider>
+                <ReviewProvider>
+                  <GestureHandlerRootView style={{ flex: 1 }}>
+                    <AuthGuard>
+                      <NotificationSetup />
+                      <RootLayoutNav />
+                      <ToastContainer />
+                    </AuthGuard>
+                  </GestureHandlerRootView>
+                </ReviewProvider>
+              </OrderProvider>
+            </CartContext>
+          </MarketplaceProvider>
+        </NotificationProvider>
+      </ToastProvider>
     </QueryClientProvider>
   );
 }
