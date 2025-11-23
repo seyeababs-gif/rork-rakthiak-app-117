@@ -35,6 +35,7 @@ export default function EditProductScreen() {
   const [images, setImages] = useState<string[]>([]);
   const [stockQuantity, setStockQuantity] = useState<string>('');
   const [manageStock, setManageStock] = useState<boolean>(false);
+  const isPremium = currentUser?.type === 'premium';
   const [isOutOfStock, setIsOutOfStock] = useState<boolean>(false);
   const [hasDiscount, setHasDiscount] = useState<boolean>(false);
   const [discountPercent, setDiscountPercent] = useState<string>('');
@@ -356,15 +357,34 @@ export default function EditProductScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Réduction / Promotion</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Réduction / Promotion</Text>
+            {!isPremium && (
+              <View style={styles.premiumBadge}>
+                <Text style={styles.premiumBadgeText}>Premium</Text>
+              </View>
+            )}
+          </View>
           <TouchableOpacity 
             style={styles.checkboxRow}
-            onPress={() => setHasDiscount(!hasDiscount)}
+            onPress={() => {
+              if (!isPremium) {
+                Alert.alert(
+                  'Fonctionnalité Premium',
+                  'Les promotions sont réservées aux utilisateurs Premium. Passez à Premium pour 3500 FCFA/mois pour accéder à cette fonctionnalité.',
+                  [
+                    { text: 'OK', style: 'cancel' },
+                  ]
+                );
+              } else {
+                setHasDiscount(!hasDiscount);
+              }
+            }}
           >
-            <View style={[styles.checkbox, hasDiscount && styles.checkboxChecked]}>
+            <View style={[styles.checkbox, hasDiscount && styles.checkboxChecked, !isPremium && styles.checkboxDisabled]}>
               {hasDiscount && <Text style={styles.checkboxCheck}>✓</Text>}
             </View>
-            <Text style={styles.checkboxLabel}>Ce produit est en promotion</Text>
+            <Text style={[styles.checkboxLabel, !isPremium && styles.checkboxLabelDisabled]}>Ce produit est en promotion</Text>
           </TouchableOpacity>
           {hasDiscount && (
             <View>
@@ -397,15 +417,34 @@ export default function EditProductScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Gestion du stock</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Gestion du stock</Text>
+            {!isPremium && (
+              <View style={styles.premiumBadge}>
+                <Text style={styles.premiumBadgeText}>Premium</Text>
+              </View>
+            )}
+          </View>
           <TouchableOpacity 
             style={styles.checkboxRow}
-            onPress={() => setManageStock(!manageStock)}
+            onPress={() => {
+              if (!isPremium) {
+                Alert.alert(
+                  'Fonctionnalité Premium',
+                  'La gestion du stock est réservée aux utilisateurs Premium. Passez à Premium pour 3500 FCFA/mois pour accéder à cette fonctionnalité.',
+                  [
+                    { text: 'OK', style: 'cancel' },
+                  ]
+                );
+              } else {
+                setManageStock(!manageStock);
+              }
+            }}
           >
-            <View style={[styles.checkbox, manageStock && styles.checkboxChecked]}>
+            <View style={[styles.checkbox, manageStock && styles.checkboxChecked, !isPremium && styles.checkboxDisabled]}>
               {manageStock && <Text style={styles.checkboxCheck}>✓</Text>}
             </View>
-            <Text style={styles.checkboxLabel}>Gérer le stock de ce produit</Text>
+            <Text style={[styles.checkboxLabel, !isPremium && styles.checkboxLabelDisabled]}>Gérer le stock de ce produit</Text>
           </TouchableOpacity>
           {manageStock && (
             <>
@@ -701,5 +740,24 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: '#00A651',
     fontWeight: '700' as const,
+  },
+  premiumBadge: {
+    backgroundColor: '#FFD700',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  premiumBadgeText: {
+    fontSize: 11,
+    fontWeight: '700' as const,
+    color: '#fff',
+  },
+  checkboxDisabled: {
+    opacity: 0.5,
+    borderColor: '#999',
+  },
+  checkboxLabelDisabled: {
+    opacity: 0.5,
+    color: '#999',
   },
 });

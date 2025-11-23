@@ -311,6 +311,12 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
 
   const updateProduct = useCallback(async (productId: string, updates: Partial<Product>) => {
     try {
+      const product = products.find(p => p.id === productId);
+      if (!product) {
+        console.error('Product not found');
+        return;
+      }
+
       const updateData: any = {};
       if (updates.title !== undefined) updateData.title = updates.title;
       if (updates.description !== undefined) updateData.description = updates.description;
@@ -320,11 +326,31 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
       if (updates.subCategory !== undefined) updateData.sub_category = updates.subCategory;
       if (updates.location !== undefined) updateData.location = updates.location;
       if (updates.condition !== undefined) updateData.condition = updates.condition;
-      if (updates.stockQuantity !== undefined) updateData.stock_quantity = updates.stockQuantity;
-      if (updates.isOutOfStock !== undefined) updateData.is_out_of_stock = updates.isOutOfStock;
-      if (updates.hasDiscount !== undefined) updateData.has_discount = updates.hasDiscount;
-      if (updates.discountPercent !== undefined) updateData.discount_percent = updates.discountPercent;
-      if (updates.originalPrice !== undefined) updateData.original_price = updates.originalPrice;
+      
+      if (currentUser?.type === 'premium') {
+        if (updates.stockQuantity !== undefined) updateData.stock_quantity = updates.stockQuantity;
+        if (updates.isOutOfStock !== undefined) updateData.is_out_of_stock = updates.isOutOfStock;
+        if (updates.hasDiscount !== undefined) updateData.has_discount = updates.hasDiscount;
+        if (updates.discountPercent !== undefined) updateData.discount_percent = updates.discountPercent;
+        if (updates.originalPrice !== undefined) updateData.original_price = updates.originalPrice;
+      } else {
+        if (product.stockQuantity !== undefined && updates.stockQuantity !== undefined) {
+          updateData.stock_quantity = updates.stockQuantity;
+        }
+        if (product.isOutOfStock !== undefined && updates.isOutOfStock !== undefined) {
+          updateData.is_out_of_stock = updates.isOutOfStock;
+        }
+        if (product.hasDiscount && updates.hasDiscount !== undefined) {
+          updateData.has_discount = updates.hasDiscount;
+        }
+        if (product.hasDiscount && updates.discountPercent !== undefined) {
+          updateData.discount_percent = updates.discountPercent;
+        }
+        if (product.hasDiscount && updates.originalPrice !== undefined) {
+          updateData.original_price = updates.originalPrice;
+        }
+      }
+      
       if (updates.serviceDetails !== undefined) updateData.service_details = updates.serviceDetails;
       if (updates.listingType !== undefined) updateData.listing_type = updates.listingType;
 
@@ -338,11 +364,28 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
         return;
       }
 
-      setProducts(products.map(p => p.id === productId ? { ...p, ...updates } : p));
+      const finalUpdates: Partial<Product> = {};
+      if (updateData.title !== undefined) finalUpdates.title = updateData.title;
+      if (updateData.description !== undefined) finalUpdates.description = updateData.description;
+      if (updateData.price !== undefined) finalUpdates.price = updateData.price;
+      if (updateData.images !== undefined) finalUpdates.images = updateData.images;
+      if (updateData.category !== undefined) finalUpdates.category = updateData.category as Category;
+      if (updateData.sub_category !== undefined) finalUpdates.subCategory = updateData.sub_category;
+      if (updateData.location !== undefined) finalUpdates.location = updateData.location;
+      if (updateData.condition !== undefined) finalUpdates.condition = updateData.condition;
+      if (updateData.stock_quantity !== undefined) finalUpdates.stockQuantity = updateData.stock_quantity;
+      if (updateData.is_out_of_stock !== undefined) finalUpdates.isOutOfStock = updateData.is_out_of_stock;
+      if (updateData.has_discount !== undefined) finalUpdates.hasDiscount = updateData.has_discount;
+      if (updateData.discount_percent !== undefined) finalUpdates.discountPercent = updateData.discount_percent;
+      if (updateData.original_price !== undefined) finalUpdates.originalPrice = updateData.original_price;
+      if (updateData.service_details !== undefined) finalUpdates.serviceDetails = updateData.service_details;
+      if (updateData.listing_type !== undefined) finalUpdates.listingType = updateData.listing_type as ListingType;
+
+      setProducts(products.map(p => p.id === productId ? { ...p, ...finalUpdates } : p));
     } catch (error) {
       console.error('Error updating product:', error);
     }
-  }, [products]);
+  }, [products, currentUser]);
 
   const deleteProduct = useCallback(async (productId: string) => {
     try {
