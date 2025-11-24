@@ -59,7 +59,7 @@ export default function AdminScreen() {
     rejectPremiumUpgrade,
     toggleAdminStatus,
   } = useMarketplace();
-  const [selectedFilter, setSelectedFilter] = useState<OrderStatus | 'all'>('paid');
+  const [selectedFilter, setSelectedFilter] = useState<OrderStatus | 'all' | 'pending'>('pending');
   const [selectedTab, setSelectedTab] = useState<TabType>('products');
 
   // Rejection Modal State
@@ -255,11 +255,13 @@ export default function AdminScreen() {
 
   const filteredOrders = orders.filter(order => {
     if (selectedFilter === 'all') return true;
+    if (selectedFilter === 'pending') return order.status === 'pending_payment' || order.status === 'paid';
     return order.status === selectedFilter;
   });
 
-  const getFilterCount = (filter: OrderStatus | 'all') => {
+  const getFilterCount = (filter: OrderStatus | 'all' | 'pending') => {
     if (filter === 'all') return orders.length;
+    if (filter === 'pending') return orders.filter(order => order.status === 'pending_payment' || order.status === 'paid').length;
     return orders.filter(order => order.status === filter).length;
   };
 
@@ -312,14 +314,14 @@ export default function AdminScreen() {
           <Text style={styles.totalAmount}>{formatPrice(order.totalAmount)}</Text>
         </View>
 
-        {order.status === 'paid' && (
+        {(order.status === 'pending_payment' || order.status === 'paid') && (
           <View style={styles.actionsContainer}>
             <TouchableOpacity
               style={[styles.actionButton, styles.validateButton]}
               onPress={() => handleValidate(order.id)}
             >
               <CheckCircle size={18} color="#fff" />
-              <Text style={styles.actionButtonText}>Valider</Text>
+              <Text style={styles.actionButtonText}>Valider paiement</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.actionButton, styles.rejectButton]}
@@ -458,7 +460,7 @@ export default function AdminScreen() {
         </View>
         <View style={styles.statCard}>
           <Clock size={20} color="#FFA500" />
-          <Text style={styles.statValue}>{getFilterCount('paid')}</Text>
+          <Text style={styles.statValue}>{getFilterCount('pending')}</Text>
           <Text style={styles.statLabel}>À valider</Text>
         </View>
         <View style={styles.statCard}>
@@ -475,19 +477,19 @@ export default function AdminScreen() {
         contentContainerStyle={styles.filtersContent}
       >
         <TouchableOpacity
+          style={[styles.filterChip, selectedFilter === 'pending' && styles.filterChipActive]}
+          onPress={() => setSelectedFilter('pending')}
+        >
+          <Text style={[styles.filterChipText, selectedFilter === 'pending' && styles.filterChipTextActive]}>
+            À valider ({getFilterCount('pending')})
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
           style={[styles.filterChip, selectedFilter === 'all' && styles.filterChipActive]}
           onPress={() => setSelectedFilter('all')}
         >
           <Text style={[styles.filterChipText, selectedFilter === 'all' && styles.filterChipTextActive]}>
             Toutes ({getFilterCount('all')})
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.filterChip, selectedFilter === 'paid' && styles.filterChipActive]}
-          onPress={() => setSelectedFilter('paid')}
-        >
-          <Text style={[styles.filterChipText, selectedFilter === 'paid' && styles.filterChipTextActive]}>
-            Payées ({getFilterCount('paid')})
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
