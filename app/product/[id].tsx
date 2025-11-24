@@ -360,8 +360,7 @@ export default function ProductDetailScreen() {
             <View style={styles.actionButtons}>
               <TouchableOpacity
                 style={styles.iconButton}
-                onPress={handleCopyLink}
-                onLongPress={handleShare}
+                onPress={handleShare}
               >
                 <Share2
                   size={22}
@@ -547,19 +546,6 @@ export default function ProductDetailScreen() {
       </ScrollView>
 
       <View style={styles.footer}>
-        <TouchableOpacity 
-          style={[
-            styles.button, 
-            styles.buyNowButton,
-            product.isOutOfStock && styles.buttonDisabled
-          ]} 
-          onPress={handleBuyNow}
-          disabled={product.isOutOfStock}
-        >
-          <Text style={styles.buttonText}>
-            {product.isOutOfStock ? 'Rupture de stock' : 'Acheter maintenant'}
-          </Text>
-        </TouchableOpacity>
         <View style={styles.footerMainButtons}>
           <TouchableOpacity 
             style={[

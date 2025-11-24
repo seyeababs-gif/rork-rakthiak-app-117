@@ -998,9 +998,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f5f5f5',
     borderRadius: 12,
-    padding: 12,
+    padding: 8,
     alignItems: 'center',
-    gap: 4,
+    gap: 2,
   },
   statValue: {
     fontSize: 20,

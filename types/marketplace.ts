@@ -3,6 +3,7 @@ export type Category = 'electronics' | 'fashion' | 'home' | 'vehicles' | 'delive
 export type SubCategory = 
   | 'homme' 
   | 'femme' 
+  | 'unisexe'
   | 'enfant' 
   | 'bebe'
   | 'smartphones'

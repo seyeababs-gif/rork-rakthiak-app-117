@@ -19,6 +19,7 @@ export interface CategoryInfo {
 export const subCategories: SubCategoryInfo[] = [
   { id: 'homme', name: 'Homme', icon: '👨', parentCategory: 'fashion' },
   { id: 'femme', name: 'Femme', icon: '👩', parentCategory: 'fashion' },
+  { id: 'unisexe', name: 'Unisexe', icon: '👤', parentCategory: 'fashion' },
   { id: 'enfant', name: 'Enfant', icon: '👧', parentCategory: 'fashion' },
   { id: 'bebe', name: 'Bébé', icon: '👶', parentCategory: 'fashion' },
   { id: 'smartphones', name: 'Smartphones', icon: '📱', parentCategory: 'electronics' },

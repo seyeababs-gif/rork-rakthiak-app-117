@@ -208,7 +208,7 @@ export default function AddProductScreen() {
         toast.showAlert('Erreur', 'Veuillez sélectionner une catégorie');
         return;
       }
-      if (getSubCategoriesForCategory(category).length > 0 && !subCategory) {
+      if (category !== 'all' && getSubCategoriesForCategory(category).length > 0 && !subCategory) {
         toast.showAlert('Erreur', 'Veuillez sélectionner une sous-catégorie');
         return;
       }
