@@ -168,6 +168,23 @@ export default function AdminScreen() {
     );
   };
 
+  const handleComplete = (orderId: string) => {
+    toast.showAlert(
+      'Marquer comme livrée',
+      'Cette commande a-t-elle été livrée ?',
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Livrée',
+          onPress: async () => {
+            await updateOrderStatus(orderId, 'completed');
+            toast.showSuccess('La commande a été marquée comme livrée');
+          },
+        },
+      ]
+    );
+  };
+
   const handleApproveProduct = (productId: string, productTitle: string) => {
     toast.showAlert(
       'Approuver le produit',
@@ -321,6 +338,16 @@ export default function AdminScreen() {
           >
             <Truck size={18} color="#fff" />
             <Text style={styles.actionButtonText}>Marquer comme expédié</Text>
+          </TouchableOpacity>
+        )}
+
+        {order.status === 'shipped' && (
+          <TouchableOpacity
+            style={[styles.actionButton, styles.completeButton]}
+            onPress={() => handleComplete(order.id)}
+          >
+            <CheckCheck size={18} color="#fff" />
+            <Text style={styles.actionButtonText}>Marquer comme livrée</Text>
           </TouchableOpacity>
         )}
 
@@ -1154,6 +1181,10 @@ const styles = StyleSheet.create({
   },
   shipButton: {
     backgroundColor: '#8E44AD',
+    marginTop: 16,
+  },
+  completeButton: {
+    backgroundColor: '#27AE60',
     marginTop: 16,
   },
   actionButtonText: {

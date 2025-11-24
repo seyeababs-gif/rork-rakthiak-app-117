@@ -68,6 +68,8 @@ export default function CartScreen() {
   const handleCompleteOrder = async () => {
     if (!currentUser) return;
     
+    setIsProcessing(true);
+    
     try {
       const order = await createOrder(
         cartItems, 
@@ -83,10 +85,15 @@ export default function CartScreen() {
         setShowPaymentConfirmModal(false);
         setIsProcessing(false);
         
-        Alert.alert(
-          '✅ Paiement confirmé !',
-          'Votre paiement a été enregistré et est en attente de validation par l\'administrateur. Vous recevrez une notification une fois validée.\n\nVous pouvez suivre votre commande dans "Mes Commandes".'
-        );
+        setTimeout(() => {
+          Alert.alert(
+            '✅ Paiement confirmé !',
+            'Votre paiement a été enregistré et est en attente de validation par l\'administrateur. Vous recevrez une notification une fois validée.\n\nVous pouvez suivre votre commande dans "Mes Commandes".',
+            [
+              { text: 'OK', onPress: () => router.push('/orders') }
+            ]
+          );
+        }, 100);
       } else {
         Alert.alert('Erreur', 'Une erreur est survenue lors de la création de la commande.');
         setIsProcessing(false);
