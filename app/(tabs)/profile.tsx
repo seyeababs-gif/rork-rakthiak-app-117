@@ -9,13 +9,15 @@ import {
   Dimensions,
   Share,
   Linking,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { MapPin, Phone, Package, Crown, LogOut, Calendar, Star, MoreVertical, Shield, Clock, CheckCircle, XCircle, ExternalLink } from 'lucide-react-native';
+import { MapPin, Phone, Package, Crown, LogOut, Calendar, Star, MoreVertical, Shield, Clock, CheckCircle, XCircle, ExternalLink, Camera } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useMarketplace } from '@/contexts/MarketplaceContext';
 import { Product } from '@/types/marketplace';
 import { useToast } from '@/contexts/ToastContext';
+import * as ImagePicker from 'expo-image-picker';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2;
@@ -25,10 +27,102 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const { currentUser, userProducts, logout, getSellerRating, deleteProduct, updateUser, requestPremiumUpgrade } = useMarketplace();
   const toast = useToast();
+  const [isUploadingImage, setIsUploadingImage] = React.useState(false);
 
   if (!currentUser) {
     return null;
   }
+
+  const handleChangeProfilePicture = async () => {
+    try {
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      
+      if (permissionResult.granted === false) {
+        toast.showError('Permission d\'accès à la galerie est requise');
+        return;
+      }
+
+      toast.showAlert(
+        'Changer la photo de profil',
+        'Choisissez une option',
+        [
+          {
+            text: 'Prendre une photo',
+            onPress: async () => {
+              const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
+              if (cameraPermission.granted === false) {
+                toast.showError('Permission d\'accès à la caméra est requise');
+                return;
+              }
+              
+              const result = await ImagePicker.launchCameraAsync({
+                mediaTypes: ['images'],
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 0.7,
+              });
+
+              if (!result.canceled && result.assets[0]) {
+                await uploadProfilePicture(result.assets[0].uri);
+              }
+            },
+          },
+          {
+            text: 'Choisir de la galerie',
+            onPress: async () => {
+              const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ['images'],
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 0.7,
+              });
+
+              if (!result.canceled && result.assets[0]) {
+                await uploadProfilePicture(result.assets[0].uri);
+              }
+            },
+          },
+          {
+            text: 'Annuler',
+            style: 'cancel',
+          },
+        ]
+      );
+    } catch (error) {
+      console.error('Error changing profile picture:', error);
+      toast.showError('Erreur lors du changement de photo');
+    }
+  };
+
+  const uploadProfilePicture = async (uri: string) => {
+    try {
+      setIsUploadingImage(true);
+      
+      const base64 = await fetch(uri)
+        .then(res => res.blob())
+        .then(blob => {
+          return new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          });
+        });
+
+      const result = await updateUser({ avatar: base64 });
+      
+      if (result && result.success) {
+        toast.showSuccess('Photo de profil mise à jour');
+      } else {
+        toast.showError(result?.error || 'Erreur lors de la mise à jour');
+      }
+    } catch (error) {
+      console.error('Error uploading profile picture:', error);
+      toast.showError('Erreur lors du téléchargement de l\'image');
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
 
   const handleUpgrade = async () => {
     const waveUrl = 'https://pay.wave.com/m/M_sn_rplUWv_SWooz/c/sn/?amount=3500';
@@ -281,7 +375,21 @@ export default function ProfileScreen() {
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
         <View style={styles.profileHeader}>
-          <Image source={{ uri: currentUser.avatar }} style={styles.avatar} />
+          <View style={styles.avatarContainer}>
+            <Image source={{ uri: currentUser.avatar }} style={styles.avatar} />
+            <TouchableOpacity 
+              style={styles.changePictureButton} 
+              onPress={handleChangeProfilePicture}
+              activeOpacity={0.7}
+              disabled={isUploadingImage}
+            >
+              {isUploadingImage ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Camera size={16} color="#fff" />
+              )}
+            </TouchableOpacity>
+          </View>
           <View style={styles.profileInfo}>
             <View style={styles.userNameRow}>
               <Text style={styles.userName}>{currentUser.name}</Text>
@@ -407,11 +515,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 16,
   },
+  avatarContainer: {
+    position: 'relative',
+  },
   avatar: {
     width: 80,
     height: 80,
     borderRadius: 40,
     backgroundColor: '#f5f5f5',
+  },
+  changePictureButton: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: '#1E3A8A',
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 4,
   },
   profileInfo: {
     flex: 1,
