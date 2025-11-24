@@ -395,8 +395,13 @@ export default function CartScreen() {
             <ScrollView showsVerticalScrollIndicator={false}>
               <Text style={styles.modalTitle}>Confirmation de paiement</Text>
               <Text style={styles.modalSubtitle}>
-                Avez-vous effectué le paiement via Wave ?{' '}\n\nVotre commande sera en attente de validation par l&apos;administrateur.
+                Avez-vous effectué le paiement via Wave ?
               </Text>
+              <View style={styles.infoBox}>
+                <Text style={styles.infoBoxText}>
+                  ℹ️ Votre paiement sera en attente de validation par l&apos;administrateur. Vous recevrez une notification une fois validée.{' '}\n\nVous pourrez suivre votre commande dans &quot;Mes Commandes&quot;.
+                </Text>
+              </View>
               
               <View style={styles.formContainer}>
                 <View style={styles.inputGroup}>
@@ -680,5 +685,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700' as const,
     color: '#fff',
+  },
+  infoBox: {
+    backgroundColor: '#E8F4F8',
+    borderRadius: 12,
+    padding: 12,
+    marginTop: 12,
+    marginBottom: 12,
+    borderLeftWidth: 3,
+    borderLeftColor: '#1E3A8A',
+  },
+  infoBoxText: {
+    fontSize: 14,
+    color: '#334155',
+    lineHeight: 20,
   },
 });

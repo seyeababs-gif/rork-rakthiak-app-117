@@ -298,20 +298,20 @@ const styles = StyleSheet.create({
   },
   filtersContent: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    gap: 8,
+    paddingVertical: 6,
+    gap: 6,
   },
   filterChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 16,
     backgroundColor: '#f5f5f5',
   },
   filterChipActive: {
     backgroundColor: '#1E3A8A',
   },
   filterChipText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600' as const,
     color: '#666',
   },
