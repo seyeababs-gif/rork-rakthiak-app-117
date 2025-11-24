@@ -154,7 +154,7 @@ export default function ProfileScreen() {
 
   const handleShareShop = async () => {
     try {
-      const shopUrl = `https://votresite.com/shop/${currentUser.id}`;
+      const shopUrl = `https://rakthiak.com/shop/${currentUser.id}`;
       const message = `🏪 Ma Boutique sur Marketplace\n\n` +
         `👤 ${currentUser.name}\n` +
         `📍 ${currentUser.location}\n` +
@@ -172,7 +172,7 @@ export default function ProfileScreen() {
 
   const handleShareProduct = async (product: Product) => {
     try {
-      const productUrl = `https://votresite.com/product/${product.id}`;
+      const productUrl = `https://rakthiak.com/product/${product.id}`;
       const message = `🛍️ ${product.title}\n\n` +
         `💰 Prix: ${formatPrice(product.price)}\n` +
         `📍 Localisation: ${product.location}\n\n` +

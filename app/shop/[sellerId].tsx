@@ -34,6 +34,19 @@ export default function ShopScreen() {
     return seller ? getSellerRating(seller.id) : { average: 0, count: 0 };
   }, [seller, getSellerRating]);
 
+  const isLoading = allUsers.length === 0 && products.length === 0;
+
+  if (isLoading) {
+    return (
+      <View style={styles.container}>
+        <Stack.Screen options={{ title: 'Chargement...', headerShown: true }} />
+        <View style={styles.errorContainer}>
+          <Text style={styles.loadingText}>Chargement de la boutique...</Text>
+        </View>
+      </View>
+    );
+  }
+
   if (!seller) {
     return (
       <View style={styles.container}>
@@ -464,6 +477,10 @@ const styles = StyleSheet.create({
   errorText: {
     fontSize: 18,
     color: '#666',
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#999',
   },
   shareButton: {
     marginRight: 16,
