@@ -198,7 +198,7 @@ export default function RegisterScreen() {
                 <View style={styles.countryPicker}>
                   {countries.map((country, index) => (
                     <TouchableOpacity
-                      key={`${country.code}-${country.name}-${index}`}
+                      key={`country-${index}-${country.code}`}
                       style={[
                         styles.countryOption,
                         countryCode === country.code && styles.countryOptionSelected
@@ -210,7 +210,7 @@ export default function RegisterScreen() {
                     >
                       <Text style={styles.countryFlag}>{country.flag}</Text>
                       <Text style={styles.countryName}>{country.name}</Text>
-                      <Text style={styles.countryCode}>{country.code}</Text>
+                      <Text style={styles.countryCodeText}>{country.code}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -532,7 +532,7 @@ const styles = StyleSheet.create({
     fontWeight: '600' as const,
     color: '#0D2D5E',
   },
-  countryCode: {
+  countryCodeText: {
     fontSize: 16,
     fontWeight: '600' as const,
     color: '#666',
