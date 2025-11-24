@@ -366,11 +366,11 @@ export default function HomeScreen() {
           style={styles.categoriesContainer}
           contentContainerStyle={styles.categoriesContent}
         >
-          {categories.filter(c => c.id !== 'delivery').map((category) => {
+          {categories.filter(c => c.id !== 'delivery').map((category, index) => {
             const isSelected = selectedCategory === category.id;
             return (
               <TouchableOpacity
-                key={category.id}
+                key={category.id || `category-${index}`}
                 onPress={() => {
                   setSelectedCategory(category.id);
                   setSelectedSubCategory(undefined);
