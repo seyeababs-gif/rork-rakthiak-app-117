@@ -12,6 +12,7 @@ import {
   Modal,
   TextInput,
   ScrollView,
+  Platform,
 } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { Trash2, Plus, Minus, CreditCard } from 'lucide-react-native';
@@ -26,6 +27,8 @@ export default function CartScreen() {
   const { createOrder } = useOrders();
   const [isProcessing, setIsProcessing] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showPaymentConfirmModal, setShowPaymentConfirmModal] = useState(false);
+  const [transactionReference, setTransactionReference] = useState('');
   const [deliveryInfo, setDeliveryInfo] = useState({
     name: '',
     phone: '',
@@ -62,6 +65,25 @@ export default function CartScreen() {
     setShowConfirmModal(true);
   };
 
+  const handleCompleteOrder = () => {
+    if (!currentUser) return;
+    createOrder(
+      cartItems, 
+      currentUser, 
+      transactionReference.trim() || undefined, 
+      deliveryInfo
+    );
+    clearCart();
+    setDeliveryInfo({ name: '', phone: '', address: '', city: '' });
+    setTransactionReference('');
+    setShowPaymentConfirmModal(false);
+    setIsProcessing(false);
+    Alert.alert(
+      'Commande créée !',
+      'Votre commande est en attente de validation par l\'administrateur. Vous recevrez une notification une fois validée.'
+    );
+  };
+
   const handleConfirmPayment = async () => {
     if (!deliveryInfo.name.trim() || !deliveryInfo.phone.trim() || !deliveryInfo.address.trim() || !deliveryInfo.city.trim()) {
       Alert.alert('Erreur', 'Veuillez remplir tous les champs');
@@ -79,56 +101,61 @@ export default function CartScreen() {
       if (supported) {
         await Linking.openURL(waveUrl);
         
-        Alert.alert(
-          'Paiement Wave',
-          'Après avoir effectué le paiement, revenez ici pour confirmer.',
-          [
-            {
-              text: 'Annuler',
-              style: 'cancel',
-              onPress: () => {
-                setIsProcessing(false);
-                setShowConfirmModal(true);
+        if (Platform.OS === 'web') {
+          setShowPaymentConfirmModal(true);
+          setIsProcessing(false);
+        } else {
+          Alert.alert(
+            'Paiement Wave',
+            'Après avoir effectué le paiement, revenez ici pour confirmer.',
+            [
+              {
+                text: 'Annuler',
+                style: 'cancel',
+                onPress: () => {
+                  setIsProcessing(false);
+                  setShowConfirmModal(true);
+                },
               },
-            },
-            {
-              text: 'J\'ai payé',
-              onPress: () => {
-                Alert.prompt(
-                  'Référence de transaction',
-                  'Entrez votre numéro de référence Wave (optionnel)',
-                  [
-                    {
-                      text: 'Annuler',
-                      style: 'cancel',
-                      onPress: () => setIsProcessing(false),
-                    },
-                    {
-                      text: 'Confirmer',
-                      onPress: (transactionId: string | undefined) => {
-                        if (!currentUser) return;
-                        createOrder(
-                          cartItems, 
-                          currentUser, 
-                          transactionId || undefined, 
-                          deliveryInfo
-                        );
-                        clearCart();
-                        setDeliveryInfo({ name: '', phone: '', address: '', city: '' });
-                        setIsProcessing(false);
-                        Alert.alert(
-                          'Commande créée !',
-                          'Votre commande est en attente de validation par l\'administrateur. Vous recevrez une notification une fois validée.'
-                        );
+              {
+                text: 'J\'ai payé',
+                onPress: () => {
+                  Alert.prompt(
+                    'Référence de transaction',
+                    'Entrez votre numéro de référence Wave (optionnel)',
+                    [
+                      {
+                        text: 'Annuler',
+                        style: 'cancel',
+                        onPress: () => setIsProcessing(false),
                       },
-                    },
-                  ],
-                  'plain-text'
-                );
+                      {
+                        text: 'Confirmer',
+                        onPress: (transactionId: string | undefined) => {
+                          if (!currentUser) return;
+                          createOrder(
+                            cartItems, 
+                            currentUser, 
+                            transactionId || undefined, 
+                            deliveryInfo
+                          );
+                          clearCart();
+                          setDeliveryInfo({ name: '', phone: '', address: '', city: '' });
+                          setIsProcessing(false);
+                          Alert.alert(
+                            'Commande créée !',
+                            'Votre commande est en attente de validation par l\'administrateur. Vous recevrez une notification une fois validée.'
+                          );
+                        },
+                      },
+                    ],
+                    'plain-text'
+                  );
+                },
               },
-            },
-          ]
-        );
+            ]
+          );
+        }
       } else {
         Alert.alert(
           'Erreur',
@@ -314,6 +341,66 @@ export default function CartScreen() {
                   onPress={handleConfirmPayment}
                 >
                   <Text style={styles.modalConfirmButtonText}>Confirmer et payer</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={showPaymentConfirmModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => {
+          setShowPaymentConfirmModal(false);
+          setShowConfirmModal(true);
+        }}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <Text style={styles.modalTitle}>Confirmation de paiement</Text>
+              <Text style={styles.modalSubtitle}>
+                Avez-vous effectué le paiement via Wave ?
+              </Text>
+              
+              <View style={styles.formContainer}>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Référence de transaction (optionnel)</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Entrez votre numéro de référence Wave"
+                    value={transactionReference}
+                    onChangeText={setTransactionReference}
+                  />
+                </View>
+              </View>
+
+              <View style={styles.orderSummary}>
+                <Text style={styles.summaryTitle}>Montant payé</Text>
+                <View style={styles.summaryRow}>
+                  <Text style={styles.summaryLabel}>Total</Text>
+                  <Text style={styles.summaryValue}>{formatPrice(getCartTotal())}</Text>
+                </View>
+              </View>
+
+              <View style={styles.modalButtons}>
+                <TouchableOpacity 
+                  style={[styles.modalButton, styles.modalCancelButton]} 
+                  onPress={() => {
+                    setShowPaymentConfirmModal(false);
+                    setTransactionReference('');
+                    setShowConfirmModal(true);
+                  }}
+                >
+                  <Text style={styles.modalCancelButtonText}>Annuler</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.modalButton, styles.modalConfirmButton]} 
+                  onPress={handleCompleteOrder}
+                >
+                  <Text style={styles.modalConfirmButtonText}>J&apos;ai payé</Text>
                 </TouchableOpacity>
               </View>
             </ScrollView>
