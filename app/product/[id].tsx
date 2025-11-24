@@ -635,6 +635,98 @@ export default function ProductDetailScreen() {
           </View>
         </View>
       </Modal>
+
+      <Modal
+        visible={showBuyNowModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowBuyNowModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Acheter maintenant</Text>
+            <Text style={styles.modalSubtitle}>
+              Veuillez remplir vos informations de livraison
+            </Text>
+            
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Nom complet</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Votre nom"
+                value={deliveryName}
+                onChangeText={setDeliveryName}
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Téléphone</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Ex: 77 123 45 67"
+                value={deliveryPhone}
+                onChangeText={setDeliveryPhone}
+                keyboardType="phone-pad"
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Adresse de livraison</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Rue, quartier..."
+                value={deliveryAddress}
+                onChangeText={setDeliveryAddress}
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Ville</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Votre ville"
+                value={deliveryCity}
+                onChangeText={setDeliveryCity}
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Numéro Wave pour le paiement</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Ex: 77 123 45 67"
+                value={paymentWaveNumber}
+                onChangeText={setPaymentWaveNumber}
+                keyboardType="phone-pad"
+              />
+            </View>
+
+            <View style={styles.productSummary}>
+              <Text style={styles.summaryLabel}>Produit:</Text>
+              <Text style={styles.summaryValue}>{product.title}</Text>
+              <Text style={styles.summaryLabel}>Montant:</Text>
+              <Text style={styles.summaryAmount}>{formatPrice(product.price)}</Text>
+            </View>
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity 
+                style={[styles.modalButton, styles.modalCancelButton]} 
+                onPress={() => {
+                  setShowBuyNowModal(false);
+                }}
+              >
+                <Text style={styles.modalCancelButtonText}>Annuler</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.modalButton, styles.modalConfirmButton]} 
+                onPress={handleConfirmBuyNow}
+              >
+                <Text style={styles.modalConfirmButtonText}>Payer avec Wave</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }

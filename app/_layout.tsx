@@ -29,6 +29,13 @@ function RootLayoutNav() {
           headerShown: true,
         }} 
       />
+      <Stack.Screen 
+        name="shop/[sellerId]" 
+        options={{ 
+          title: "Boutique",
+          headerShown: true,
+        }} 
+      />
       <Stack.Screen name="bilan" options={{ headerShown: false }} />
     </Stack>
   );
