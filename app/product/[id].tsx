@@ -24,12 +24,18 @@ const { width } = Dimensions.get('window');
 export default function ProductDetailScreen() {
   const { id } = useLocalSearchParams();
   const { products, toggleFavorite, isFavorite, getProductReviews, getProductRating, getSellerRating, isAuthenticated, currentUser } = useMarketplace();
-  const { addToCart, isInCart } = useCart();
+  const { addToCart, isInCart, getCartItemsCount } = useCart();
   const router = useRouter();
   
   const [showAllReviews, setShowAllReviews] = useState(false);
   const [showContactModal, setShowContactModal] = useState(false);
   const [wavePhoneNumber, setWavePhoneNumber] = useState('');
+  const [showBuyNowModal, setShowBuyNowModal] = useState(false);
+  const [deliveryName, setDeliveryName] = useState('');
+  const [deliveryPhone, setDeliveryPhone] = useState('');
+  const [deliveryAddress, setDeliveryAddress] = useState('');
+  const [deliveryCity, setDeliveryCity] = useState('');
+  const [paymentWaveNumber, setPaymentWaveNumber] = useState('');
 
   const product = products.find(p => p.id === id);
   
@@ -127,6 +133,68 @@ export default function ProductDetailScreen() {
     setShowContactModal(true);
   };
 
+  const handleBuyNow = () => {
+    if (!isAuthenticated) {
+      Alert.alert(
+        'Connexion requise',
+        'Vous devez être connecté pour acheter.',
+        [
+          { text: 'Annuler', style: 'cancel' },
+          { text: 'Se connecter', onPress: () => router.push('/auth/login') },
+        ]
+      );
+      return;
+    }
+
+    if (product.isOutOfStock) {
+      Alert.alert('Rupture de stock', 'Ce produit n\'est plus disponible.');
+      return;
+    }
+
+    if (currentUser) {
+      setDeliveryName(currentUser.name);
+      setDeliveryPhone(currentUser.deliveryPhone || currentUser.phone);
+      setDeliveryAddress(currentUser.deliveryAddress || '');
+      setDeliveryCity(currentUser.deliveryCity || '');
+    }
+    setShowBuyNowModal(true);
+  };
+
+  const handleConfirmBuyNow = () => {
+    if (!deliveryName.trim() || !deliveryPhone.trim() || !deliveryAddress.trim() || !deliveryCity.trim()) {
+      Alert.alert('Erreur', 'Veuillez remplir toutes les informations de livraison');
+      return;
+    }
+
+    if (!paymentWaveNumber.trim()) {
+      Alert.alert('Erreur', 'Veuillez entrer votre numéro Wave');
+      return;
+    }
+
+    setShowBuyNowModal(false);
+    const waveUrl = `https://pay.wave.com/m/M_sn_rplUWv_SWooz/c/sn/?amount=${product.price}`;
+    
+    Linking.canOpenURL(waveUrl)
+      .then((supported) => {
+        if (supported) {
+          Linking.openURL(waveUrl);
+          Alert.alert(
+            'Paiement Wave',
+            'Après le paiement, veuillez confirmer votre paiement pour que votre commande soit validée par un administrateur.',
+            [
+              { text: 'OK' },
+            ]
+          );
+        } else {
+          Alert.alert('Erreur', 'Impossible d\'ouvrir Wave');
+        }
+      })
+      .catch((err) => {
+        console.error('Error opening Wave:', err);
+        Alert.alert('Erreur', 'Une erreur est survenue');
+      });
+  };
+
   const handleWavePayment = () => {
     if (!wavePhoneNumber.trim()) {
       Alert.alert('Erreur', 'Veuillez entrer votre numéro Wave');
@@ -180,7 +248,7 @@ export default function ProductDetailScreen() {
 
   const handleShare = async () => {
     try {
-      const productUrl = `https://votresite.com/product/${product.id}`;
+      const productUrl = `https://rakthiak.com/product/${product.id}`;
       const message = `🛍️ ${product.title}\n\n` +
         `💰 Prix: ${formatPrice(product.price)}\n` +
         `📍 Localisation: ${product.location}\n\n` +
@@ -202,7 +270,7 @@ export default function ProductDetailScreen() {
 
   const handleCopyLink = async () => {
     try {
-      const productUrl = `https://votresite.com/product/${product.id}`;
+      const productUrl = `https://rakthiak.com/product/${product.id}`;
       await Clipboard.setStringAsync(productUrl);
       Alert.alert('Lien copié', 'Le lien du produit a été copié dans le presse-papiers.');
     } catch (error) {
@@ -230,14 +298,29 @@ export default function ProductDetailScreen() {
         options={{ 
           title: canViewAndEdit && product.status !== 'approved' ? `${product.title} (${statusDisplay.label})` : product.title,
           headerShown: true,
-          headerRight: canViewAndEdit ? () => (
-            <TouchableOpacity
-              style={styles.headerEditButton}
-              onPress={() => router.push(`/product/edit/${product.id}` as any)}
-            >
-              <Edit size={22} color="#007AFF" />
-            </TouchableOpacity>
-          ) : undefined,
+          headerRight: () => (
+            <View style={styles.headerActions}>
+              <TouchableOpacity
+                style={styles.headerCartButton}
+                onPress={() => router.push('/cart')}
+              >
+                <ShoppingCart size={22} color="#007AFF" />
+                {getCartItemsCount() > 0 && (
+                  <View style={styles.cartBadge}>
+                    <Text style={styles.cartBadgeText}>{getCartItemsCount()}</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+              {canViewAndEdit && (
+                <TouchableOpacity
+                  style={styles.headerEditButton}
+                  onPress={() => router.push(`/product/edit/${product.id}` as any)}
+                >
+                  <Edit size={22} color="#007AFF" />
+                </TouchableOpacity>
+              )}
+            </View>
+          ),
         }} 
       />
       <ScrollView
@@ -464,6 +547,19 @@ export default function ProductDetailScreen() {
       </ScrollView>
 
       <View style={styles.footer}>
+        <TouchableOpacity 
+          style={[
+            styles.button, 
+            styles.buyNowButton,
+            product.isOutOfStock && styles.buttonDisabled
+          ]} 
+          onPress={handleBuyNow}
+          disabled={product.isOutOfStock}
+        >
+          <Text style={styles.buttonText}>
+            {product.isOutOfStock ? 'Rupture de stock' : 'Acheter maintenant'}
+          </Text>
+        </TouchableOpacity>
         <View style={styles.footerMainButtons}>
           <TouchableOpacity 
             style={[
@@ -475,8 +571,8 @@ export default function ProductDetailScreen() {
             disabled={isInCart(product.id) || product.isOutOfStock}
           >
             <ShoppingCart size={22} color="#fff" />
-            <Text style={styles.buttonText}>
-              {product.isOutOfStock ? 'Rupture de stock' : isInCart(product.id) ? 'Dans le panier' : 'Ajouter au panier'}
+            <Text style={styles.smallButtonText}>
+              {product.isOutOfStock ? 'Rupture' : isInCart(product.id) ? 'Dans le panier' : 'Panier'}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity 
@@ -486,12 +582,6 @@ export default function ProductDetailScreen() {
             <MessageCircle size={24} color="#25D366" fill="#25D366" />
           </TouchableOpacity>
         </View>
-        <TouchableOpacity 
-          style={styles.waveLink} 
-          onPress={handleContactWave}
-        >
-          <Text style={styles.waveLinkText}>Ou payer avec Wave</Text>
-        </TouchableOpacity>
       </View>
 
       <Modal
@@ -1000,8 +1090,34 @@ const styles = StyleSheet.create({
     backgroundColor: '#9CA3AF',
     opacity: 0.6,
   },
+  headerActions: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 8,
+    marginRight: 8,
+  },
+  headerCartButton: {
+    padding: 8,
+    position: 'relative' as const,
+  },
+  cartBadge: {
+    position: 'absolute' as const,
+    top: 2,
+    right: 2,
+    backgroundColor: '#E31B23',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    paddingHorizontal: 4,
+  },
+  cartBadgeText: {
+    fontSize: 11,
+    fontWeight: '700' as const,
+    color: '#fff',
+  },
   headerEditButton: {
-    marginRight: 16,
     padding: 8,
   },
   adminStatusBanner: {
@@ -1019,5 +1135,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     marginTop: 4,
+  },
+  buyNowButton: {
+    backgroundColor: '#00A651',
+  },
+  smallButtonText: {
+    fontSize: 15,
+    fontWeight: '700' as const,
+    color: '#fff',
   },
 });

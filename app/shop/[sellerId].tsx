@@ -20,7 +20,7 @@ const CARD_WIDTH = (width - 48) / 2;
 export default function ShopScreen() {
   const { sellerId } = useLocalSearchParams();
   const router = useRouter();
-  const { products, allUsers, getSellerRating, isAuthenticated } = useMarketplace();
+  const { products, allUsers, getSellerRating } = useMarketplace();
 
   const seller = useMemo(() => {
     return allUsers.find(u => u.id === sellerId);
@@ -50,9 +50,6 @@ export default function ShopScreen() {
   };
 
   const handleContactWhatsApp = () => {
-    if (!isAuthenticated) {
-      return;
-    }
 
     const message = encodeURIComponent(
       `Bonjour, je suis intéressé par vos produits sur votre boutique.`
@@ -71,7 +68,7 @@ export default function ShopScreen() {
 
   const handleShareShop = async () => {
     try {
-      const shopUrl = `https://votresite.com/shop/${seller.id}`;
+      const shopUrl = `https://rakthiak.com/shop/${seller.id}`;
       const message = `🏪 Boutique de ${seller.name}\n\n` +
         `📍 ${seller.location}\n` +
         `⭐ Note: ${sellerRating.average > 0 ? sellerRating.average.toFixed(1) : 'Pas encore d\'avis'}\n` +
