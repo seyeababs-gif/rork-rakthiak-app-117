@@ -45,7 +45,7 @@ export default function OrdersScreen() {
       case 'pending_payment':
         return { label: 'En attente paiement', color: '#FFA500', icon: Clock };
       case 'paid':
-        return { label: 'Payé', color: '#3B82F6', icon: CheckCircle };
+        return { label: 'En attente validation', color: '#3B82F6', icon: Clock };
       case 'validated':
         return { label: 'Validé', color: '#1E3A8A', icon: CheckCircle };
       case 'rejected':

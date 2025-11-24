@@ -65,23 +65,37 @@ export default function CartScreen() {
     setShowConfirmModal(true);
   };
 
-  const handleCompleteOrder = () => {
+  const handleCompleteOrder = async () => {
     if (!currentUser) return;
-    createOrder(
-      cartItems, 
-      currentUser, 
-      transactionReference.trim() || undefined, 
-      deliveryInfo
-    );
-    clearCart();
-    setDeliveryInfo({ name: '', phone: '', address: '', city: '' });
-    setTransactionReference('');
-    setShowPaymentConfirmModal(false);
-    setIsProcessing(false);
-    Alert.alert(
-      'Commande créée !',
-      'Votre commande est en attente de validation par l\'administrateur. Vous recevrez une notification une fois validée.'
-    );
+    
+    try {
+      const order = await createOrder(
+        cartItems, 
+        currentUser, 
+        transactionReference.trim() || undefined, 
+        deliveryInfo
+      );
+      
+      if (order) {
+        clearCart();
+        setDeliveryInfo({ name: '', phone: '', address: '', city: '' });
+        setTransactionReference('');
+        setShowPaymentConfirmModal(false);
+        setIsProcessing(false);
+        
+        Alert.alert(
+          '✅ Paiement confirmé !',
+          'Votre paiement a été enregistré et est en attente de validation par l\'administrateur. Vous recevrez une notification une fois validée.\n\nVous pouvez suivre votre commande dans "Mes Commandes".'
+        );
+      } else {
+        Alert.alert('Erreur', 'Une erreur est survenue lors de la création de la commande.');
+        setIsProcessing(false);
+      }
+    } catch (error) {
+      console.error('Error creating order:', error);
+      Alert.alert('Erreur', 'Une erreur est survenue lors de la création de la commande.');
+      setIsProcessing(false);
+    }
   };
 
   const handleConfirmPayment = async () => {
@@ -131,21 +145,33 @@ export default function CartScreen() {
                       },
                       {
                         text: 'Confirmer',
-                        onPress: (transactionId: string | undefined) => {
+                        onPress: async (transactionId: string | undefined) => {
                           if (!currentUser) return;
-                          createOrder(
-                            cartItems, 
-                            currentUser, 
-                            transactionId || undefined, 
-                            deliveryInfo
-                          );
-                          clearCart();
-                          setDeliveryInfo({ name: '', phone: '', address: '', city: '' });
-                          setIsProcessing(false);
-                          Alert.alert(
-                            'Commande créée !',
-                            'Votre commande est en attente de validation par l\'administrateur. Vous recevrez une notification une fois validée.'
-                          );
+                          try {
+                            const order = await createOrder(
+                              cartItems, 
+                              currentUser, 
+                              transactionId || undefined, 
+                              deliveryInfo
+                            );
+                            
+                            if (order) {
+                              clearCart();
+                              setDeliveryInfo({ name: '', phone: '', address: '', city: '' });
+                              setIsProcessing(false);
+                              Alert.alert(
+                                '✅ Paiement confirmé !',
+                                'Votre paiement a été enregistré et est en attente de validation par l\'administrateur. Vous recevrez une notification une fois validée.\n\nVous pouvez suivre votre commande dans "Mes Commandes".'
+                              );
+                            } else {
+                              Alert.alert('Erreur', 'Une erreur est survenue lors de la création de la commande.');
+                              setIsProcessing(false);
+                            }
+                          } catch (error) {
+                            console.error('Error creating order:', error);
+                            Alert.alert('Erreur', 'Une erreur est survenue lors de la création de la commande.');
+                            setIsProcessing(false);
+                          }
                         },
                       },
                     ],
@@ -362,7 +388,7 @@ export default function CartScreen() {
             <ScrollView showsVerticalScrollIndicator={false}>
               <Text style={styles.modalTitle}>Confirmation de paiement</Text>
               <Text style={styles.modalSubtitle}>
-                Avez-vous effectué le paiement via Wave ?
+                Avez-vous effectué le paiement via Wave ?{' '}\n\nVotre commande sera en attente de validation par l&apos;administrateur.
               </Text>
               
               <View style={styles.formContainer}>
