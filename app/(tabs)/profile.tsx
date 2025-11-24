@@ -11,7 +11,7 @@ import {
   Linking,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { MapPin, Phone, Package, Crown, LogOut, Calendar, Star, MoreVertical, Shield, Clock, CheckCircle, XCircle } from 'lucide-react-native';
+import { MapPin, Phone, Package, Crown, LogOut, Calendar, Star, MoreVertical, Shield, Clock, CheckCircle, XCircle, ExternalLink } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useMarketplace } from '@/contexts/MarketplaceContext';
 import { Product } from '@/types/marketplace';
@@ -152,13 +152,32 @@ export default function ProfileScreen() {
     return new Intl.NumberFormat('fr-FR').format(price) + ' FCFA';
   };
 
+  const handleShareShop = async () => {
+    try {
+      const shopUrl = `https://votresite.com/shop/${currentUser.id}`;
+      const message = `🏪 Ma Boutique sur Marketplace\n\n` +
+        `👤 ${currentUser.name}\n` +
+        `📍 ${currentUser.location}\n` +
+        `📦 ${userProducts.length} produit${userProducts.length > 1 ? 's' : ''} disponible${userProducts.length > 1 ? 's' : ''}\n\n` +
+        `Découvrez tous mes produits ici:\n${shopUrl}`;
+
+      await Share.share({
+        message,
+      });
+    } catch (error) {
+      console.error('Error sharing shop:', error);
+      toast.showError('Impossible de partager la boutique.');
+    }
+  };
+
   const handleShareProduct = async (product: Product) => {
     try {
+      const productUrl = `https://votresite.com/product/${product.id}`;
       const message = `🛍️ ${product.title}\n\n` +
         `💰 Prix: ${formatPrice(product.price)}\n` +
         `📍 Localisation: ${product.location}\n\n` +
         `${product.description}\n\n` +
-        `👉 Voir le produit sur notre marketplace !`;
+        `👉 Voir ce produit: ${productUrl}`;
 
       const result = await Share.share({
         message,
@@ -283,6 +302,10 @@ export default function ProfileScreen() {
             </View>
           </View>
         </View>
+        <TouchableOpacity style={styles.shareShopButton} onPress={handleShareShop}>
+          <ExternalLink size={16} color="#1E3A8A" />
+          <Text style={styles.shareShopButtonText}>Partager ma boutique</Text>
+        </TouchableOpacity>
         <View style={styles.buttonRow}>
           {currentUser.type === 'standard' && !currentUser.premiumPaymentPending && (
             <TouchableOpacity style={styles.upgradeButton} onPress={handleUpgrade}>
@@ -669,5 +692,23 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700' as const,
     color: '#FFA500',
+  },
+  shareShopButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#EFF6FF',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#1E3A8A',
+    marginBottom: 12,
+  },
+  shareShopButtonText: {
+    fontSize: 14,
+    fontWeight: '700' as const,
+    color: '#1E3A8A',
   },
 });

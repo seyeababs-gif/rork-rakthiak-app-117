@@ -13,8 +13,9 @@ import {
   Modal,
   TextInput,
 } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
-import { MapPin, Heart, ShoppingCart, Star, Share2, MessageCircle, Edit } from 'lucide-react-native';
+import { MapPin, Heart, ShoppingCart, Star, Share2, MessageCircle, Edit, Store } from 'lucide-react-native';
 import { useMarketplace } from '@/contexts/MarketplaceContext';
 import { useCart } from '@/contexts/CartContext';
 
@@ -179,11 +180,12 @@ export default function ProductDetailScreen() {
 
   const handleShare = async () => {
     try {
+      const productUrl = `https://votresite.com/product/${product.id}`;
       const message = `🛍️ ${product.title}\n\n` +
         `💰 Prix: ${formatPrice(product.price)}\n` +
         `📍 Localisation: ${product.location}\n\n` +
         `${product.description}\n\n` +
-        `👉 Voir le produit sur notre marketplace !`;
+        `👉 ${productUrl}`;
 
       const result = await Share.share({
         message,
@@ -195,6 +197,17 @@ export default function ProductDetailScreen() {
     } catch (error) {
       console.error('Error sharing product:', error);
       Alert.alert('Erreur', 'Impossible de partager ce produit.');
+    }
+  };
+
+  const handleCopyLink = async () => {
+    try {
+      const productUrl = `https://votresite.com/product/${product.id}`;
+      await Clipboard.setStringAsync(productUrl);
+      Alert.alert('Lien copié', 'Le lien du produit a été copié dans le presse-papiers.');
+    } catch (error) {
+      console.error('Error copying link:', error);
+      Alert.alert('Erreur', 'Impossible de copier le lien.');
     }
   };
 
@@ -264,7 +277,8 @@ export default function ProductDetailScreen() {
             <View style={styles.actionButtons}>
               <TouchableOpacity
                 style={styles.iconButton}
-                onPress={handleShare}
+                onPress={handleCopyLink}
+                onLongPress={handleShare}
               >
                 <Share2
                   size={22}
@@ -363,10 +377,17 @@ export default function ProductDetailScreen() {
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Vendeur</Text>
-            <View style={styles.sellerCard}>
+            <TouchableOpacity
+              style={styles.sellerCard}
+              onPress={() => router.push(`/shop/${product.sellerId}` as any)}
+              activeOpacity={0.7}
+            >
               <Image source={{ uri: product.sellerAvatar }} style={styles.sellerAvatar} />
               <View style={styles.sellerInfo}>
-                <Text style={styles.sellerName}>{product.sellerName}</Text>
+                <View style={styles.sellerNameRow}>
+                  <Text style={styles.sellerName}>{product.sellerName}</Text>
+                  <Store size={16} color="#1E3A8A" />
+                </View>
                 {sellerRating.count > 0 && (
                   <View style={styles.ratingRow}>
                     <Star size={14} color="#FFB800" fill="#FFB800" />
@@ -382,8 +403,9 @@ export default function ProductDetailScreen() {
                 <Text style={styles.sellerDate}>
                   Publié le {formatDate(product.createdAt)}
                 </Text>
+                <Text style={styles.viewShopText}>Voir la boutique ›</Text>
               </View>
-            </View>
+            </TouchableOpacity>
           </View>
           
           {productReviews.length > 0 && (
@@ -632,6 +654,17 @@ const styles = StyleSheet.create({
     gap: 12,
     borderWidth: 1,
     borderColor: '#B3D9E6',
+  },
+  sellerNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  viewShopText: {
+    fontSize: 13,
+    fontWeight: '600' as const,
+    color: '#1E3A8A',
+    marginTop: 4,
   },
   sellerAvatar: {
     width: 60,
