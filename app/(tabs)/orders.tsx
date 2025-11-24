@@ -67,6 +67,80 @@ export default function OrdersScreen() {
     return userOrders.filter(order => order.status === filter).length;
   };
 
+  const getProgressPercentage = (status: OrderStatus) => {
+    switch (status) {
+      case 'pending_payment':
+      case 'paid':
+        return 0;
+      case 'validated':
+        return 33;
+      case 'shipped':
+        return 66;
+      case 'completed':
+        return 100;
+      case 'rejected':
+        return 0;
+    }
+  };
+
+  const renderProgressBar = (status: OrderStatus) => {
+    const progress = getProgressPercentage(status);
+    const isRejected = status === 'rejected';
+    
+    if (isRejected) return null;
+
+    const steps = [
+      { label: 'Validé', status: 'validated' },
+      { label: 'Expédié', status: 'shipped' },
+      { label: 'Livré', status: 'completed' },
+    ];
+
+    return (
+      <View style={styles.progressContainer}>
+        <View style={styles.progressBarBackground}>
+          <View style={[styles.progressBarFill, { width: `${progress}%` }]} />
+        </View>
+        <View style={styles.stepsContainer}>
+          {steps.map((step, index) => {
+            const isActive = status === step.status || 
+              (status === 'completed' && (step.status === 'validated' || step.status === 'shipped'));
+            const isPassed = 
+              (status === 'shipped' && step.status === 'validated') ||
+              (status === 'completed' && (step.status === 'validated' || step.status === 'shipped'));
+
+            return (
+              <View key={index} style={styles.stepItem}>
+                <View style={[
+                  styles.stepDot,
+                  (isActive || isPassed) && styles.stepDotActive
+                ]}>
+                  {step.status === 'shipped' && status === 'shipped' && (
+                    <Truck size={12} color="#fff" />
+                  )}
+                  {step.status === 'shipped' && status === 'completed' && (
+                    <CheckCircle size={12} color="#fff" />
+                  )}
+                  {step.status === 'validated' && (status === 'validated' || status === 'shipped' || status === 'completed') && (
+                    <CheckCircle size={12} color="#fff" />
+                  )}
+                  {step.status === 'completed' && status === 'completed' && (
+                    <CheckCircle size={12} color="#fff" />
+                  )}
+                </View>
+                <Text style={[
+                  styles.stepLabel,
+                  (isActive || isPassed) && styles.stepLabelActive
+                ]}>
+                  {step.label}
+                </Text>
+              </View>
+            );
+          })}
+        </View>
+      </View>
+    );
+  };
+
   if (!isAuthenticated) {
     return (
       <View style={styles.container}>
@@ -194,6 +268,8 @@ export default function OrdersScreen() {
                   )}
                 </View>
 
+                {renderProgressBar(order.status)}
+
                 <View style={styles.orderFooter}>
                   <View>
                     <Text style={styles.totalLabel}>Total</Text>
@@ -298,13 +374,13 @@ const styles = StyleSheet.create({
   },
   filtersContent: {
     paddingHorizontal: 16,
-    paddingVertical: 4,
-    gap: 6,
+    paddingVertical: 8,
+    gap: 8,
   },
   filterChip: {
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 16,
     backgroundColor: '#f5f5f5',
   },
   filterChipActive: {
@@ -524,5 +600,51 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700' as const,
     color: '#fff',
+  },
+  progressContainer: {
+    marginBottom: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+  },
+  progressBarBackground: {
+    height: 4,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 2,
+    overflow: 'hidden',
+    marginBottom: 16,
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: '#1E3A8A',
+    borderRadius: 2,
+  },
+  stepsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 8,
+  },
+  stepItem: {
+    alignItems: 'center',
+    gap: 8,
+  },
+  stepDot: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#E5E7EB',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepDotActive: {
+    backgroundColor: '#1E3A8A',
+  },
+  stepLabel: {
+    fontSize: 11,
+    color: '#9CA3AF',
+    fontWeight: '600' as const,
+  },
+  stepLabelActive: {
+    color: '#1E3A8A',
   },
 });

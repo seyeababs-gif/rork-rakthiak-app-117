@@ -398,8 +398,9 @@ export default function CartScreen() {
                 Avez-vous effectué le paiement via Wave ?
               </Text>
               <View style={styles.infoBox}>
+                <Text style={styles.infoBoxTitle}>ℹ️ Important</Text>
                 <Text style={styles.infoBoxText}>
-                  ℹ️ Votre paiement sera en attente de validation par l&apos;administrateur. Vous recevrez une notification une fois validée.{' '}\n\nVous pourrez suivre votre commande dans &quot;Mes Commandes&quot;.
+                  Votre paiement sera en attente de validation par l&apos;administrateur. Vous recevrez une notification une fois validée.{' '}\n\nVous pourrez suivre votre commande dans &quot;Mes Commandes&quot;.
                 </Text>
               </View>
               
@@ -689,11 +690,17 @@ const styles = StyleSheet.create({
   infoBox: {
     backgroundColor: '#E8F4F8',
     borderRadius: 12,
-    padding: 12,
+    padding: 16,
     marginTop: 12,
     marginBottom: 12,
-    borderLeftWidth: 3,
+    borderLeftWidth: 4,
     borderLeftColor: '#1E3A8A',
+  },
+  infoBoxTitle: {
+    fontSize: 16,
+    fontWeight: '700' as const,
+    color: '#1E3A8A',
+    marginBottom: 8,
   },
   infoBoxText: {
     fontSize: 14,
