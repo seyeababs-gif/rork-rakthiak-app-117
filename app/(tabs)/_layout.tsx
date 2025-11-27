@@ -42,6 +42,7 @@ export default function TabLayout() {
         name="index"
         options={{
           title: "Accueil",
+          
           tabBarIcon: ({ color, size }) => <Home color={color} size={size} />,
         }}
       />
