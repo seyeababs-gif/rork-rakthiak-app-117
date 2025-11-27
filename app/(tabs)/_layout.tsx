@@ -4,7 +4,7 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { useCart } from "@/contexts/CartContext";
 import { useMarketplace } from "@/contexts/MarketplaceContext";
-<meta name="facebook-domain-verification" content="f6d7ntfsr0kaopn74m7txgaz8qxkvi" />
+
 function CartBadge({ color, size }: { color: string; size: number }) {
   const { getCartItemsCount } = useCart();
   const count = getCartItemsCount();
