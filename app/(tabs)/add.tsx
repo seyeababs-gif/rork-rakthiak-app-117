@@ -526,8 +526,11 @@ export default function AddProductScreen() {
           </View>
         )}
 
-        {/* Photos Section */}
-        <View style={styles.section}>
+        {/* Step 3: Photos & Information */}
+        {category && subCategory && (
+          <View style={styles.stepContainer}>
+            {/* Photos Section */}
+            <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Photos</Text>
             <Text style={styles.photoCount}>
@@ -863,6 +866,8 @@ export default function AddProductScreen() {
             {isSubmitting ? 'Publication en cours...' : "Publier l'annonce"}
           </Text>
         </TouchableOpacity>
+          </View>
+        )}
       </ScrollView>
 
       {Platform.OS !== 'web' && showDatePicker && (
@@ -1066,6 +1071,46 @@ export default function AddProductScreen() {
 }
 
 const styles = StyleSheet.create({
+  stepContainer: {
+    // Container for active step content
+  },
+  selectedItemContainer: {
+    marginBottom: 24,
+  },
+  selectedItemHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  selectedItemLabel: {
+    fontSize: 14,
+    color: '#666',
+    fontWeight: '600',
+  },
+  changeButtonText: {
+    fontSize: 14,
+    color: '#1E3A8A',
+    fontWeight: '700',
+  },
+  selectedItemCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#1E3A8A',
+    gap: 12,
+  },
+  selectedItemIcon: {
+    fontSize: 24,
+  },
+  selectedItemText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1E3A8A',
+  },
   container: {
     flex: 1,
     backgroundColor: '#E8F4F8',

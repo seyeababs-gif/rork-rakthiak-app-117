@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Image,
   Dimensions,
+  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -23,6 +24,8 @@ const CARD_WIDTH = (width - 48) / 2;
 // --- FIX RESPONSIVE DESKTOP ---
 const MAX_CARD_WIDTH = 260; 
 const RESPONSIVE_CARD_WIDTH = Math.min(CARD_WIDTH, MAX_CARD_WIDTH);
+const isWeb = Platform.OS === 'web';
+
 export default function HomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -278,100 +281,149 @@ export default function HomeScreen() {
         colors={['#0D2D5E', '#1E3A8A', '#2563EB', '#87CEEB']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={[styles.header, { paddingTop: insets.top + 20 }]}
+        style={[
+          styles.header, 
+          { paddingTop: insets.top + (isWeb ? 12 : 20), paddingBottom: isWeb ? 12 : 20 },
+          isWeb && styles.webHeader
+        ]}
       >
-        <View style={styles.headerContent}>
-          <View>
-            <Text style={styles.headerTitle}>RAKTHIAK</Text>
-            <Text style={styles.headerSubtitle}>Achetez et vendez au Sénégal</Text>
+        <View style={[styles.headerContent, isWeb && styles.webHeaderContent]}>
+          <View style={isWeb && styles.webHeaderLeft}>
+            <Text style={[styles.headerTitle, isWeb && styles.webHeaderTitle]}>RAKTHIAK</Text>
+            {!isWeb && <Text style={styles.headerSubtitle}>Achetez et vendez au Sénégal</Text>}
           </View>
-          <View style={styles.trendingBadge}>
-            <TrendingUp size={14} color="#0D2D5E" />
-            <Text style={styles.trendingText}>{filteredProducts.length}</Text>
-          </View>
-        </View>
-        
-        <View style={styles.viewModeSelector}>
-          <TouchableOpacity
-            style={[styles.viewModeButton, viewMode === 'products' && styles.viewModeButtonActive]}
-            onPress={() => setViewMode('products')}
-            activeOpacity={0.7}
-          >
-            <Package size={18} color={viewMode === 'products' ? '#0D2D5E' : '#fff'} />
-            <Text style={[styles.viewModeText, viewMode === 'products' && styles.viewModeTextActive]}>
-              Produits
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.viewModeButton, viewMode === 'services' && styles.viewModeButtonActive]}
-            onPress={() => setViewMode('services')}
-            activeOpacity={0.7}
-          >
-            <Car size={18} color={viewMode === 'services' ? '#0D2D5E' : '#fff'} />
-            <Text style={[styles.viewModeText, viewMode === 'services' && styles.viewModeTextActive]}>
-              Services
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </LinearGradient>
+          
+          {isWeb && (
+            <View style={styles.webSearchContainer}>
+              <View style={styles.webSearchBar}>
+                <Search size={16} color="#666" />
+                <TextInput
+                  style={styles.webSearchInput}
+                  placeholder={viewMode === 'products' ? 'Rechercher...' : 'Rechercher un service...'}
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  placeholderTextColor="#999"
+                />
+              </View>
+            </View>
+          )}
 
-      <View style={styles.searchContainer}>
-        <View style={styles.searchBar}>
-          <Search size={20} color="#666" />
-          <TextInput
-            style={styles.searchInput}
-            placeholder={viewMode === 'products' ? 'Rechercher un produit...' : 'Rechercher un service...'}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            placeholderTextColor="#999"
-          />
-          <TouchableOpacity 
-            style={styles.filterButton}
-            onPress={() => setShowFilters(!showFilters)}
-          >
-            <SlidersHorizontal size={20} color={showFilters ? '#0D2D5E' : '#87CEEB'} />
-          </TouchableOpacity>
-        </View>
-        
-        {showFilters && (
-          <View style={styles.filtersPanel}>
-            <Text style={styles.filterLabel}>Trier par:</Text>
-            <View style={styles.sortButtons}>
+          {isWeb && (
+            <View style={styles.webViewModeSelector}>
               <TouchableOpacity
-                style={[styles.sortButton, sortBy === 'recent' && styles.sortButtonActive]}
-                onPress={() => setSortBy('recent')}
+                style={[styles.webViewModeButton, viewMode === 'products' && styles.webViewModeButtonActive]}
+                onPress={() => setViewMode('products')}
               >
-                <Text style={[styles.sortButtonText, sortBy === 'recent' && styles.sortButtonTextActive]}>
-                  Plus récent
+                <Package size={14} color={viewMode === 'products' ? '#0D2D5E' : '#fff'} />
+                <Text style={[styles.webViewModeText, viewMode === 'products' && styles.webViewModeTextActive]}>
+                  Produits
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.sortButton, sortBy === 'price-low' && styles.sortButtonActive]}
-                onPress={() => setSortBy('price-low')}
+                style={[styles.webViewModeButton, viewMode === 'services' && styles.webViewModeButtonActive]}
+                onPress={() => setViewMode('services')}
               >
-                <Text style={[styles.sortButtonText, sortBy === 'price-low' && styles.sortButtonTextActive]}>
-                  Prix croissant
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.sortButton, sortBy === 'price-high' && styles.sortButtonActive]}
-                onPress={() => setSortBy('price-high')}
-              >
-                <Text style={[styles.sortButtonText, sortBy === 'price-high' && styles.sortButtonTextActive]}>
-                  Prix décroissant
+                <Car size={14} color={viewMode === 'services' ? '#0D2D5E' : '#fff'} />
+                <Text style={[styles.webViewModeText, viewMode === 'services' && styles.webViewModeTextActive]}>
+                  Services
                 </Text>
               </TouchableOpacity>
             </View>
+          )}
+
+          {!isWeb && (
+            <View style={styles.trendingBadge}>
+              <TrendingUp size={14} color="#0D2D5E" />
+              <Text style={styles.trendingText}>{filteredProducts.length}</Text>
+            </View>
+          )}
+        </View>
+        
+        {!isWeb && (
+          <View style={styles.viewModeSelector}>
+            <TouchableOpacity
+              style={[styles.viewModeButton, viewMode === 'products' && styles.viewModeButtonActive]}
+              onPress={() => setViewMode('products')}
+              activeOpacity={0.7}
+            >
+              <Package size={18} color={viewMode === 'products' ? '#0D2D5E' : '#fff'} />
+              <Text style={[styles.viewModeText, viewMode === 'products' && styles.viewModeTextActive]}>
+                Produits
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.viewModeButton, viewMode === 'services' && styles.viewModeButtonActive]}
+              onPress={() => setViewMode('services')}
+              activeOpacity={0.7}
+            >
+              <Car size={18} color={viewMode === 'services' ? '#0D2D5E' : '#fff'} />
+              <Text style={[styles.viewModeText, viewMode === 'services' && styles.viewModeTextActive]}>
+                Services
+              </Text>
+            </TouchableOpacity>
           </View>
         )}
-      </View>
+      </LinearGradient>
+
+      {!isWeb && (
+        <View style={styles.searchContainer}>
+          <View style={styles.searchBar}>
+            <Search size={20} color="#666" />
+            <TextInput
+              style={styles.searchInput}
+              placeholder={viewMode === 'products' ? 'Rechercher un produit...' : 'Rechercher un service...'}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholderTextColor="#999"
+            />
+            <TouchableOpacity 
+              style={styles.filterButton}
+              onPress={() => setShowFilters(!showFilters)}
+            >
+              <SlidersHorizontal size={20} color={showFilters ? '#0D2D5E' : '#87CEEB'} />
+            </TouchableOpacity>
+          </View>
+          
+          {showFilters && (
+            <View style={styles.filtersPanel}>
+              <Text style={styles.filterLabel}>Trier par:</Text>
+              <View style={styles.sortButtons}>
+                <TouchableOpacity
+                  style={[styles.sortButton, sortBy === 'recent' && styles.sortButtonActive]}
+                  onPress={() => setSortBy('recent')}
+                >
+                  <Text style={[styles.sortButtonText, sortBy === 'recent' && styles.sortButtonTextActive]}>
+                    Plus récent
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.sortButton, sortBy === 'price-low' && styles.sortButtonActive]}
+                  onPress={() => setSortBy('price-low')}
+                >
+                  <Text style={[styles.sortButtonText, sortBy === 'price-low' && styles.sortButtonTextActive]}>
+                    Prix croissant
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.sortButton, sortBy === 'price-high' && styles.sortButtonActive]}
+                  onPress={() => setSortBy('price-high')}
+                >
+                  <Text style={[styles.sortButtonText, sortBy === 'price-high' && styles.sortButtonTextActive]}>
+                    Prix décroissant
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+        </View>
+      )}
 
       {viewMode === 'products' && (
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          style={styles.categoriesContainer}
-          contentContainerStyle={styles.categoriesContent}
+          style={[styles.categoriesContainer, isWeb && styles.webCategoriesContainer]}
+          contentContainerStyle={[styles.categoriesContent, isWeb && styles.webCategoriesContent]}
         >
           {categories.filter(c => c.id !== 'delivery').map((category, index) => {
             const isSelected = selectedCategory === category.id;
@@ -386,15 +438,16 @@ export default function HomeScreen() {
               >
                 <LinearGradient
                   colors={isSelected ? category.gradient : ['#f5f5f5', '#f5f5f5']}
-                  style={styles.categoryCard}
+                  style={[styles.categoryCard, isWeb && styles.webCategoryCard]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                 >
-                  <Text style={styles.categoryIcon}>{category.icon}</Text>
+                  <Text style={[styles.categoryIcon, isWeb && styles.webCategoryIcon]}>{category.icon}</Text>
                   <Text
                     style={[
                       styles.categoryName,
                       isSelected && styles.categoryNameSelected,
+                      isWeb && styles.webCategoryName
                     ]}
                   >
                     {category.name}
@@ -1120,5 +1173,87 @@ const styles = StyleSheet.create({
     fontWeight: '800' as const,
     color: '#87CEEB',
     letterSpacing: -0.3,
+  },
+  // Web specific styles
+  webHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 20,
+  },
+  webHeaderContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    gap: 20,
+  },
+  webHeaderLeft: {
+    flexShrink: 0,
+  },
+  webHeaderTitle: {
+    fontSize: 22,
+    marginBottom: 0,
+  },
+  webSearchContainer: {
+    flex: 1,
+    maxWidth: 600,
+  },
+  webSearchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    gap: 8,
+  },
+  webSearchInput: {
+    flex: 1,
+    fontSize: 14,
+    color: '#000',
+    padding: 0,
+  },
+  webViewModeSelector: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  webViewModeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    gap: 6,
+  },
+  webViewModeButtonActive: {
+    backgroundColor: '#fff',
+  },
+  webViewModeText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  webViewModeTextActive: {
+    color: '#0D2D5E',
+  },
+  webCategoriesContainer: {
+    maxHeight: 70,
+    marginBottom: 10,
+  },
+  webCategoriesContent: {
+    paddingVertical: 8,
+  },
+  webCategoryCard: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    minWidth: 90,
+    borderRadius: 12,
+  },
+  webCategoryIcon: {
+    fontSize: 18,
+    marginBottom: 4,
+  },
+  webCategoryName: {
+    fontSize: 11,
   },
 });
