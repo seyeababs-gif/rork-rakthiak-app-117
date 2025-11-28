@@ -233,18 +233,6 @@ export default function ProductDetailScreen() {
       return;
     }
 
-    if (!isAuthenticated) {
-      Alert.alert(
-        'Connexion requise',
-        'Vous devez être connecté pour ajouter au panier.',
-        [
-          { text: 'Annuler', style: 'cancel' },
-          { text: 'Se connecter', onPress: () => router.push('/auth/login') },
-        ]
-      );
-      return;
-    }
-
     addToCart(product, 1);
     Alert.alert('Succès', 'Produit ajouté au panier !');
   };

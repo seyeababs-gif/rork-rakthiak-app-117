@@ -9,6 +9,7 @@ import {
   Dimensions,
   Share,
   Linking,
+  Alert,
 } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { MapPin, Phone, Star, Package, Calendar, ExternalLink, MessageCircle } from 'lucide-react-native';
@@ -20,7 +21,7 @@ const CARD_WIDTH = (width - 48) / 2;
 export default function ShopScreen() {
   const { sellerId } = useLocalSearchParams();
   const router = useRouter();
-  const { products, allUsers, getSellerRating } = useMarketplace();
+  const { products, allUsers, getSellerRating, isAuthenticated } = useMarketplace();
 
   const seller = useMemo(() => {
     return allUsers.find(u => u.id === sellerId);
@@ -63,6 +64,17 @@ export default function ShopScreen() {
   };
 
   const handleContactWhatsApp = () => {
+    if (!isAuthenticated) {
+      Alert.alert(
+        'Connexion requise',
+        'Vous devez être connecté pour contacter le vendeur.',
+        [
+          { text: 'Annuler', style: 'cancel' },
+          { text: 'Se connecter', onPress: () => router.push('/auth/login') },
+        ]
+      );
+      return;
+    }
 
     const message = encodeURIComponent(
       `Bonjour, je suis intéressé par vos produits sur votre boutique.`
@@ -132,7 +144,9 @@ export default function ShopScreen() {
             </View>
             <View style={styles.infoRow}>
               <Phone size={16} color="#666" />
-              <Text style={styles.infoText}>{seller.phone}</Text>
+              <Text style={styles.infoText}>
+                {isAuthenticated ? seller.phone : `${seller.phone.substring(0, 2)} ** ** ** **`}
+              </Text>
             </View>
             {sellerRating.count > 0 && (
               <View style={styles.ratingRow}>
