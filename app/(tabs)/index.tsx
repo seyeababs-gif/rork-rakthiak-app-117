@@ -20,7 +20,9 @@ import { Product } from '@/types/marketplace';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2;
-
+// --- FIX RESPONSIVE DESKTOP ---
+const MAX_CARD_WIDTH = 260; 
+const RESPONSIVE_CARD_WIDTH = Math.min(CARD_WIDTH, MAX_CARD_WIDTH);
 export default function HomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
