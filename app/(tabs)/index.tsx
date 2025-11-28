@@ -7,8 +7,6 @@ import {
   TextInput,
   TouchableOpacity,
   Image,
-  Dimensions,
-  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -17,23 +15,14 @@ import { useRouter } from 'expo-router';
 import { useMarketplace } from '@/contexts/MarketplaceContext';
 import { categories, getSubCategoriesForCategory } from '@/constants/categories';
 import { Product } from '@/types/marketplace';
-
-const isWeb = Platform.OS === 'web';
-
-const getResponsiveCardWidth = () => {
-  const { width } = Dimensions.get('window');
-  
-  if (isWeb) {
-    if (width > 1400) return (Math.min(width, 1600) - 80) / 5;
-    if (width > 1200) return (width - 80) / 4;
-    if (width > 900) return (width - 64) / 3;
-    if (width > 600) return (width - 48) / 2;
-  }
-  
-  return (width - 48) / 2;
-};
-
-const CARD_WIDTH = getResponsiveCardWidth();
+import { 
+  isWeb, 
+  getProductCardWidth, 
+  getGridColumns,
+  getContainerPadding,
+  getMaxContainerWidth,
+  getResponsiveValue 
+} from '@/constants/responsive';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -772,8 +761,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
   },
   productCard: {
-    width: CARD_WIDTH,
-    maxWidth: isWeb ? 280 : undefined,
+    width: getProductCardWidth(),
     backgroundColor: '#fff',
     borderRadius: 16,
     overflow: 'hidden',
@@ -788,8 +776,7 @@ const styles = StyleSheet.create({
   imageContainer: {
     position: 'relative',
     width: '100%',
-    height: CARD_WIDTH * 1.15,
-    maxHeight: 320,
+    height: getProductCardWidth() * 1.1,
     backgroundColor: '#f5f5f5',
   },
   productImage: {

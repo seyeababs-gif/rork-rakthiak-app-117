@@ -15,6 +15,7 @@ import { useRouter } from 'expo-router';
 import { ArrowRight, Eye, EyeOff } from 'lucide-react-native';
 import { useMarketplace } from '@/contexts/MarketplaceContext';
 import { useToast } from '@/contexts/ToastContext';
+import { getButtonHeight, getInputHeight, getResponsiveValue } from '@/constants/responsive';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -230,8 +231,10 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: 24,
+    paddingHorizontal: getResponsiveValue({ mobile: 24, tablet: 32, desktop: 48 }),
     paddingBottom: 40,
+    width: '100%',
+    alignSelf: 'center',
   },
   header: {
     alignItems: 'center',
@@ -291,7 +294,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#0D2D5E',
     paddingHorizontal: 16,
-    paddingVertical: 16,
+    height: getInputHeight(),
   },
   phoneInput: {
     paddingLeft: 12,
@@ -315,7 +318,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     backgroundColor: '#0D2D5E',
-    paddingVertical: 16,
+    height: getButtonHeight(),
     borderRadius: 12,
     marginTop: 8,
     shadowColor: '#0D2D5E',
