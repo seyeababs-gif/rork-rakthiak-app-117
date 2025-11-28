@@ -12,15 +12,16 @@ import {
   Share,
   Modal,
   TextInput,
+  Platform,
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
-import { MapPin, Heart, ShoppingCart, Star, Share2, MessageCircle, Edit, Store } from 'lucide-react-native';
+import { MapPin, ShoppingCart, Star, Share2, MessageCircle, Edit, Store } from 'lucide-react-native';
 import { useMarketplace } from '@/contexts/MarketplaceContext';
 import { useCart } from '@/contexts/CartContext';
 
 const { width } = Dimensions.get('window');
-const MAX_IMAGE_WIDTH = 800;
+const MAX_IMAGE_WIDTH = 600;
 const RESPONSIVE_IMAGE_WIDTH = Math.min(width, MAX_IMAGE_WIDTH);
 
 export default function ProductDetailScreen() {
@@ -90,14 +91,20 @@ export default function ProductDetailScreen() {
 
   const handleContactWhatsApp = () => {
     if (!isAuthenticated) {
-      Alert.alert(
-        'Connexion requise',
-        'Vous devez être connecté pour contacter le vendeur.',
-        [
-          { text: 'Annuler', style: 'cancel' },
-          { text: 'Se connecter', onPress: () => router.push('/auth/login') },
-        ]
-      );
+      if (Platform.OS === 'web') {
+        if (confirm('Vous devez être connecté pour contacter le vendeur. Voulez-vous vous connecter ?')) {
+          router.push('/auth/login');
+        }
+      } else {
+        Alert.alert(
+          'Connexion requise',
+          'Vous devez être connecté pour contacter le vendeur.',
+          [
+            { text: 'Annuler', style: 'cancel' },
+            { text: 'Se connecter', onPress: () => router.push('/auth/login') },
+          ]
+        );
+      }
       return;
     }
 
@@ -122,14 +129,20 @@ export default function ProductDetailScreen() {
 
   const handleContactWave = () => {
     if (!isAuthenticated) {
-      Alert.alert(
-        'Connexion requise',
-        'Vous devez être connecté pour contacter le vendeur.',
-        [
-          { text: 'Annuler', style: 'cancel' },
-          { text: 'Se connecter', onPress: () => router.push('/auth/login') },
-        ]
-      );
+      if (Platform.OS === 'web') {
+        if (confirm('Vous devez être connecté pour contacter le vendeur. Voulez-vous vous connecter ?')) {
+          router.push('/auth/login');
+        }
+      } else {
+        Alert.alert(
+          'Connexion requise',
+          'Vous devez être connecté pour contacter le vendeur.',
+          [
+            { text: 'Annuler', style: 'cancel' },
+            { text: 'Se connecter', onPress: () => router.push('/auth/login') },
+          ]
+        );
+      }
       return;
     }
     setShowContactModal(true);
@@ -137,14 +150,20 @@ export default function ProductDetailScreen() {
 
   const handleBuyNow = () => {
     if (!isAuthenticated) {
-      Alert.alert(
-        'Connexion requise',
-        'Vous devez être connecté pour acheter.',
-        [
-          { text: 'Annuler', style: 'cancel' },
-          { text: 'Se connecter', onPress: () => router.push('/auth/login') },
-        ]
-      );
+      if (Platform.OS === 'web') {
+        if (confirm('Vous devez être connecté pour acheter. Voulez-vous vous connecter ?')) {
+          router.push('/auth/login');
+        }
+      } else {
+        Alert.alert(
+          'Connexion requise',
+          'Vous devez être connecté pour acheter.',
+          [
+            { text: 'Annuler', style: 'cancel' },
+            { text: 'Se connecter', onPress: () => router.push('/auth/login') },
+          ]
+        );
+      }
       return;
     }
 
@@ -356,16 +375,6 @@ export default function ProductDetailScreen() {
                 <Share2
                   size={22}
                   color="#1E3A8A"
-                />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.iconButton}
-                onPress={() => toggleFavorite(product.id)}
-              >
-                <Heart
-                  size={22}
-                  color={favorite ? '#E31B23' : '#666'}
-                  fill={favorite ? '#E31B23' : 'transparent'}
                 />
               </TouchableOpacity>
             </View>
@@ -724,14 +733,14 @@ const styles = StyleSheet.create({
     paddingBottom: 180,
   },
   imagesCarousel: {
-    height: Math.min(width * 0.75, 500),
+    height: Math.min(width * 0.75, 400),
     alignSelf: 'center',
     width: '100%',
     maxWidth: MAX_IMAGE_WIDTH,
   },
   productImage: {
     width: RESPONSIVE_IMAGE_WIDTH,
-    height: Math.min(width * 0.75, 500),
+    height: Math.min(width * 0.75, 400),
     backgroundColor: '#f5f5f5',
     resizeMode: 'contain',
   },

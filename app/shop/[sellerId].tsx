@@ -10,13 +10,15 @@ import {
   Share,
   Linking,
   Alert,
+  Platform,
 } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { MapPin, Phone, Star, Package, Calendar, ExternalLink, MessageCircle } from 'lucide-react-native';
 import { useMarketplace } from '@/contexts/MarketplaceContext';
 
 const { width } = Dimensions.get('window');
-const CARD_WIDTH = (width - 48) / 2;
+const MAX_CARD_WIDTH = 260;
+const RESPONSIVE_CARD_WIDTH = Math.min((width - 48) / 2, MAX_CARD_WIDTH);
 
 export default function ShopScreen() {
   const { sellerId } = useLocalSearchParams();
@@ -65,14 +67,20 @@ export default function ShopScreen() {
 
   const handleContactWhatsApp = () => {
     if (!isAuthenticated) {
-      Alert.alert(
-        'Connexion requise',
-        'Vous devez être connecté pour contacter le vendeur.',
-        [
-          { text: 'Annuler', style: 'cancel' },
-          { text: 'Se connecter', onPress: () => router.push('/auth/login') },
-        ]
-      );
+      if (Platform.OS === 'web') {
+        if (confirm('Vous devez être connecté pour contacter le vendeur. Voulez-vous vous connecter ?')) {
+          router.push('/auth/login');
+        }
+      } else {
+        Alert.alert(
+          'Connexion requise',
+          'Vous devez être connecté pour contacter le vendeur.',
+          [
+            { text: 'Annuler', style: 'cancel' },
+            { text: 'Se connecter', onPress: () => router.push('/auth/login') },
+          ]
+        );
+      }
       return;
     }
 
@@ -391,7 +399,7 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   productCard: {
-    width: CARD_WIDTH,
+    width: RESPONSIVE_CARD_WIDTH,
     backgroundColor: '#fff',
     borderRadius: 16,
     overflow: 'hidden',
@@ -403,7 +411,7 @@ const styles = StyleSheet.create({
   },
   productImage: {
     width: '100%',
-    height: CARD_WIDTH,
+    height: RESPONSIVE_CARD_WIDTH,
     backgroundColor: '#f5f5f5',
   },
   discountBadge: {

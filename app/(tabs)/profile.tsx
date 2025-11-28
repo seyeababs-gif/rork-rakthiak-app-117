@@ -12,7 +12,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { MapPin, Phone, Package, Crown, LogOut, Calendar, Star, MoreVertical, Shield, Clock, CheckCircle, XCircle, ExternalLink, Camera } from 'lucide-react-native';
+import { MapPin, Phone, Package, Crown, LogOut, Calendar, Star, MoreVertical, Shield, Clock, CheckCircle, XCircle, ExternalLink, Camera, User } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useMarketplace } from '@/contexts/MarketplaceContext';
 import { Product } from '@/types/marketplace';
@@ -32,7 +32,25 @@ export default function ProfileScreen() {
   const [isUploadingImage, setIsUploadingImage] = React.useState(false);
 
   if (!currentUser) {
-    return null;
+    return (
+      <View style={[styles.container, styles.centerContent]}>
+        <View style={styles.loginPromptContainer}>
+          <View style={styles.loginIconContainer}>
+            <User size={48} color="#1E3A8A" />
+          </View>
+          <Text style={styles.loginTitle}>Connexion requise</Text>
+          <Text style={styles.loginSubtitle}>
+            Connectez-vous pour accéder à votre profil, gérer vos annonces et suivre vos commandes.
+          </Text>
+          <TouchableOpacity 
+            style={styles.loginButton}
+            onPress={() => router.push('/auth/login')}
+          >
+            <Text style={styles.loginButtonText}>Se connecter</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
   }
 
   const handleChangeProfilePicture = async () => {
@@ -841,5 +859,56 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700' as const,
     color: '#1E3A8A',
+  },
+  centerContent: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  loginPromptContainer: {
+    alignItems: 'center',
+    maxWidth: 400,
+    width: '100%',
+    gap: 16,
+  },
+  loginIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#EFF6FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  loginTitle: {
+    fontSize: 24,
+    fontWeight: '700' as const,
+    color: '#000',
+    textAlign: 'center',
+  },
+  loginSubtitle: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 16,
+  },
+  loginButton: {
+    backgroundColor: '#1E3A8A',
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    borderRadius: 16,
+    width: '100%',
+    alignItems: 'center',
+    shadowColor: '#1E3A8A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  loginButtonText: {
+    fontSize: 16,
+    fontWeight: '700' as const,
+    color: '#fff',
   },
 });

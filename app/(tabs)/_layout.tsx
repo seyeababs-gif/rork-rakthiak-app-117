@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { Home, Heart, PlusCircle, Package, User, ShoppingCart, Shield } from "lucide-react-native";
+import { Home, PlusCircle, Package, User, ShoppingCart, Shield } from "lucide-react-native";
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { useCart } from "@/contexts/CartContext";
@@ -45,13 +45,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => <Home color={color} size={size} />,
         }}
       />
-      <Tabs.Screen
-        name="favorites"
-        options={{
-          title: "Favoris",
-          tabBarIcon: ({ color, size }) => <Heart color={color} size={size} />,
-        }}
-      />
+
       <Tabs.Screen
         name="cart"
         options={{
