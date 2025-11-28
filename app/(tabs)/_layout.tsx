@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { Home, PlusCircle, Package, User, ShoppingCart, Shield } from "lucide-react-native";
+import { Home, PlusCircle, Package, User, ShoppingCart, Shield, Search } from "lucide-react-native";
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { useCart } from "@/contexts/CartContext";
@@ -43,6 +43,14 @@ export default function TabLayout() {
         options={{
           title: "Accueil",
           tabBarIcon: ({ color, size }) => <Home color={color} size={size} />,
+        }}
+      />
+
+      <Tabs.Screen
+        name="search"
+        options={{
+          title: "Recherche",
+          tabBarIcon: ({ color, size }) => <Search color={color} size={size} />,
         }}
       />
 

@@ -13,7 +13,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 
-import { Search, MapPin, Heart, SlidersHorizontal, TrendingUp, Sparkles, Calendar, ArrowRight, Package, Car } from 'lucide-react-native';
+import { Search, MapPin, Heart, TrendingUp, Sparkles, Calendar, ArrowRight, Package, Car } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useMarketplace } from '@/contexts/MarketplaceContext';
 import { categories, getSubCategoriesForCategory } from '@/constants/categories';
@@ -42,8 +42,6 @@ export default function HomeScreen() {
     isAuthenticated,
   } = useMarketplace();
   
-  const [sortBy, setSortBy] = useState<'recent' | 'price-low' | 'price-high'>('recent');
-  const [showFilters, setShowFilters] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | undefined>(undefined);
   const [availableDates, setAvailableDates] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<'products' | 'services'>('products');
@@ -82,16 +80,9 @@ export default function HomeScreen() {
       });
     }
     
-    switch (sortBy) {
-      case 'price-low':
-        return sorted.sort((a, b) => a.price - b.price);
-      case 'price-high':
-        return sorted.sort((a, b) => b.price - a.price);
-      case 'recent':
-      default:
-        return sorted.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-    }
-  }, [filteredProducts, sortBy, selectedDate, viewMode]);
+    // Sort by recent
+    return sorted.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }, [filteredProducts, selectedDate, viewMode]);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('fr-FR').format(price) + ' FCFA';
@@ -364,59 +355,6 @@ export default function HomeScreen() {
           </View>
         )}
       </LinearGradient>
-
-      {!isWeb && (
-        <View style={styles.searchContainer}>
-          <View style={styles.searchBar}>
-            <Search size={20} color="#666" />
-            <TextInput
-              style={styles.searchInput}
-              placeholder={viewMode === 'products' ? 'Rechercher un produit...' : 'Rechercher un service...'}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              placeholderTextColor="#999"
-            />
-            <TouchableOpacity 
-              style={styles.filterButton}
-              onPress={() => setShowFilters(!showFilters)}
-            >
-              <SlidersHorizontal size={20} color={showFilters ? '#0D2D5E' : '#87CEEB'} />
-            </TouchableOpacity>
-          </View>
-          
-          {showFilters && (
-            <View style={styles.filtersPanel}>
-              <Text style={styles.filterLabel}>Trier par:</Text>
-              <View style={styles.sortButtons}>
-                <TouchableOpacity
-                  style={[styles.sortButton, sortBy === 'recent' && styles.sortButtonActive]}
-                  onPress={() => setSortBy('recent')}
-                >
-                  <Text style={[styles.sortButtonText, sortBy === 'recent' && styles.sortButtonTextActive]}>
-                    Plus récent
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.sortButton, sortBy === 'price-low' && styles.sortButtonActive]}
-                  onPress={() => setSortBy('price-low')}
-                >
-                  <Text style={[styles.sortButtonText, sortBy === 'price-low' && styles.sortButtonTextActive]}>
-                    Prix croissant
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.sortButton, sortBy === 'price-high' && styles.sortButtonActive]}
-                  onPress={() => setSortBy('price-high')}
-                >
-                  <Text style={[styles.sortButtonText, sortBy === 'price-high' && styles.sortButtonTextActive]}>
-                    Prix décroissant
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
-        </View>
-      )}
 
       {viewMode === 'products' && (
         <ScrollView
