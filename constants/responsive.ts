@@ -49,24 +49,26 @@ export const getResponsiveValue = <T,>(values: {
 };
 
 export const getGridColumns = () => {
-  return getResponsiveValue({
-    mobile: 2,
-    tablet: 3,
-    desktop: 4,
-    largeDesktop: 5,
-  });
+  if (width < 400) return 2;
+  if (width < BREAKPOINTS.mobile) return 2;
+  if (width < BREAKPOINTS.tablet) return 3;
+  if (width < BREAKPOINTS.desktop) return 4;
+  if (width < BREAKPOINTS.largeDesktop) return 5;
+  return 6;
 };
 
 export const getProductCardWidth = () => {
   const columns = getGridColumns();
-  const gap = getResponsiveValue({ mobile: 12, tablet: 16, desktop: 16, largeDesktop: 20 });
-  const containerPadding = getResponsiveValue({ mobile: 16, tablet: 20, desktop: 32, largeDesktop: 40 });
+  const gap = width < BREAKPOINTS.mobile ? 12 : (width < BREAKPOINTS.desktop ? 16 : 20);
+  const containerPadding = width < BREAKPOINTS.mobile ? 16 : (width < BREAKPOINTS.desktop ? 20 : 32);
   
-  const availableWidth = width - (containerPadding * 2);
+  const maxContainerWidth = width < BREAKPOINTS.desktop ? width : 1600;
+  const containerWidth = Math.min(width, maxContainerWidth);
+  const availableWidth = containerWidth - (containerPadding * 2);
   const cardWidth = (availableWidth - (gap * (columns - 1))) / columns;
   
-  const maxCardWidth = getResponsiveValue({ mobile: 250, tablet: 280, desktop: 300, largeDesktop: 320 });
-  const minCardWidth = getResponsiveValue({ mobile: 150, tablet: 180, desktop: 200, largeDesktop: 240 });
+  const maxCardWidth = width < BREAKPOINTS.mobile ? 200 : (width < BREAKPOINTS.desktop ? 280 : 320);
+  const minCardWidth = width < BREAKPOINTS.mobile ? 140 : (width < BREAKPOINTS.desktop ? 180 : 220);
   
   return Math.max(Math.min(cardWidth, maxCardWidth), minCardWidth);
 };

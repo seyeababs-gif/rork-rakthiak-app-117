@@ -15,7 +15,7 @@ import { useRouter } from 'expo-router';
 import { ArrowRight, Eye, EyeOff } from 'lucide-react-native';
 import { useMarketplace } from '@/contexts/MarketplaceContext';
 import { useToast } from '@/contexts/ToastContext';
-import { isDesktop } from '@/constants/responsive';
+import { getResponsiveValue, isDesktop } from '@/constants/responsive';
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -349,7 +349,7 @@ export default function RegisterScreen() {
   );
 }
 
-const contentMaxWidth = isDesktop() ? 600 : '100%';
+const contentMaxWidth = isDesktop() ? 450 : '100%';
 
 const styles = StyleSheet.create({
   container: {
@@ -361,7 +361,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: 24,
+    paddingHorizontal: getResponsiveValue({ mobile: 24, tablet: 28, desktop: 32 }),
     paddingBottom: 40,
     width: '100%',
     maxWidth: contentMaxWidth,
@@ -369,34 +369,34 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    marginBottom: 40,
+    marginBottom: getResponsiveValue({ mobile: 40, tablet: 32, desktop: 24 }),
   },
   logo: {
-    width: 120,
-    height: 120,
-    marginBottom: 24,
+    width: getResponsiveValue({ mobile: 120, tablet: 100, desktop: 80 }),
+    height: getResponsiveValue({ mobile: 120, tablet: 100, desktop: 80 }),
+    marginBottom: getResponsiveValue({ mobile: 24, tablet: 20, desktop: 16 }),
   },
   title: {
-    fontSize: 28,
+    fontSize: getResponsiveValue({ mobile: 28, tablet: 26, desktop: 24 }),
     fontWeight: '700' as const,
     color: '#0D2D5E',
-    marginBottom: 12,
+    marginBottom: getResponsiveValue({ mobile: 12, tablet: 10, desktop: 8 }),
     textAlign: 'center',
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: getResponsiveValue({ mobile: 16, tablet: 15, desktop: 14 }),
     color: '#666',
     textAlign: 'center',
-    lineHeight: 24,
+    lineHeight: getResponsiveValue({ mobile: 24, tablet: 22, desktop: 20 }),
   },
   form: {
-    gap: 20,
+    gap: getResponsiveValue({ mobile: 20, tablet: 16, desktop: 14 }),
   },
   inputContainer: {
     gap: 8,
   },
   label: {
-    fontSize: 14,
+    fontSize: getResponsiveValue({ mobile: 14, tablet: 13, desktop: 13 }),
     fontWeight: '600' as const,
     color: '#0D2D5E',
     marginBottom: 4,
@@ -406,26 +406,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 2,
     borderColor: '#BFDBFE',
-    borderRadius: 12,
+    borderRadius: getResponsiveValue({ mobile: 12, tablet: 10, desktop: 10 }),
     backgroundColor: '#FFFFFF',
   },
   phonePrefix: {
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingHorizontal: getResponsiveValue({ mobile: 16, tablet: 14, desktop: 12 }),
+    paddingVertical: getResponsiveValue({ mobile: 16, tablet: 14, desktop: 12 }),
     borderRightWidth: 1,
     borderRightColor: '#BFDBFE',
   },
   phonePrefixText: {
-    fontSize: 16,
+    fontSize: getResponsiveValue({ mobile: 16, tablet: 15, desktop: 14 }),
     fontWeight: '600' as const,
     color: '#0D2D5E',
   },
   input: {
     flex: 1,
-    fontSize: 16,
+    fontSize: getResponsiveValue({ mobile: 16, tablet: 15, desktop: 14 }),
     color: '#0D2D5E',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingHorizontal: getResponsiveValue({ mobile: 16, tablet: 14, desktop: 12 }),
+    paddingVertical: getResponsiveValue({ mobile: 16, tablet: 14, desktop: 12 }),
   },
   phoneInput: {
     paddingLeft: 12,
@@ -439,9 +439,9 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   hint: {
-    fontSize: 12,
+    fontSize: getResponsiveValue({ mobile: 12, tablet: 11, desktop: 11 }),
     color: '#999',
-    lineHeight: 18,
+    lineHeight: getResponsiveValue({ mobile: 18, tablet: 16, desktop: 16 }),
   },
   button: {
     flexDirection: 'row',
@@ -449,9 +449,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     backgroundColor: '#0D2D5E',
-    paddingVertical: 16,
-    borderRadius: 12,
-    marginTop: 8,
+    paddingVertical: getResponsiveValue({ mobile: 16, tablet: 14, desktop: 12 }),
+    borderRadius: getResponsiveValue({ mobile: 12, tablet: 10, desktop: 10 }),
+    marginTop: getResponsiveValue({ mobile: 8, tablet: 6, desktop: 4 }),
     shadowColor: '#0D2D5E',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -462,7 +462,7 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   buttonText: {
-    fontSize: 16,
+    fontSize: getResponsiveValue({ mobile: 16, tablet: 15, desktop: 15 }),
     fontWeight: '700' as const,
     color: '#fff',
   },
