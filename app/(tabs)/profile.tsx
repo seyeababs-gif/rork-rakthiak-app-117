@@ -653,7 +653,7 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   productCard: {
-    width: CARD_WIDTH,
+    width: RESPONSIVE_CARD_WIDTH,
     backgroundColor: '#fff',
     borderRadius: 16,
     overflow: 'hidden',
@@ -713,7 +713,7 @@ const styles = StyleSheet.create({
   },
   productImage: {
     width: '100%',
-    height: CARD_WIDTH,
+    height: RESPONSIVE_CARD_WIDTH,
     backgroundColor: '#f5f5f5',
   },
   productInfo: {
