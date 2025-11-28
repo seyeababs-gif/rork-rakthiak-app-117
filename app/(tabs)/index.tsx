@@ -212,7 +212,12 @@ export default function HomeScreen() {
         activeOpacity={0.9}
       >
         <View style={styles.imageContainer}>
-          <Image source={{ uri: product.images[0] }} style={styles.productImage} />
+          <Image 
+            source={{ uri: product.images[0] }} 
+            style={styles.productImage}
+            resizeMode="cover"
+            fadeDuration={300}
+          />
           {hasDiscount && (
             <View style={styles.discountBadge}>
               <Text style={styles.discountBadgeText}>-{product.discountPercent}%</Text>

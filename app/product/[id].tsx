@@ -20,6 +20,8 @@ import { useMarketplace } from '@/contexts/MarketplaceContext';
 import { useCart } from '@/contexts/CartContext';
 
 const { width } = Dimensions.get('window');
+const MAX_IMAGE_WIDTH = 800;
+const RESPONSIVE_IMAGE_WIDTH = Math.min(width, MAX_IMAGE_WIDTH);
 
 export default function ProductDetailScreen() {
   const { id } = useLocalSearchParams();
@@ -226,6 +228,11 @@ export default function ProductDetailScreen() {
   };
 
   const handleAddToCart = () => {
+    if (product.isOutOfStock) {
+      Alert.alert('Rupture de stock', 'Ce produit n\'est plus disponible.');
+      return;
+    }
+
     if (!isAuthenticated) {
       Alert.alert(
         'Connexion requise',
@@ -238,12 +245,8 @@ export default function ProductDetailScreen() {
       return;
     }
 
-    if (product.isOutOfStock) {
-      Alert.alert('Rupture de stock', 'Ce produit n\'est plus disponible.');
-      return;
-    }
-
     addToCart(product, 1);
+    Alert.alert('Succès', 'Produit ajouté au panier !');
   };
 
   const handleShare = async () => {
@@ -721,20 +724,28 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#E8F4F8',
+    maxWidth: 1200,
+    width: '100%',
+    alignSelf: 'center',
   },
   content: {
     flex: 1,
+    width: '100%',
   },
   contentContainer: {
     paddingBottom: 180,
   },
   imagesCarousel: {
-    height: 300,
+    height: Math.min(width * 0.75, 500),
+    alignSelf: 'center',
+    width: '100%',
+    maxWidth: MAX_IMAGE_WIDTH,
   },
   productImage: {
-    width,
-    height: 300,
+    width: RESPONSIVE_IMAGE_WIDTH,
+    height: Math.min(width * 0.75, 500),
     backgroundColor: '#f5f5f5',
+    resizeMode: 'contain',
   },
   infoContainer: {
     padding: 16,
