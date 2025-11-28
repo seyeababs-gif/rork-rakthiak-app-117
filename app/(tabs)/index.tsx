@@ -283,7 +283,7 @@ export default function HomeScreen() {
         end={{ x: 1, y: 1 }}
         style={[
           styles.header, 
-          { paddingTop: insets.top + (isWeb ? 12 : 20), paddingBottom: isWeb ? 12 : 20 },
+          { paddingTop: insets.top + (isWeb ? 8 : 20), paddingBottom: isWeb ? 8 : 20 },
           isWeb && styles.webHeader
         ]}
       >
@@ -1237,23 +1237,33 @@ const styles = StyleSheet.create({
     color: '#0D2D5E',
   },
   webCategoriesContainer: {
-    maxHeight: 70,
-    marginBottom: 10,
+    maxHeight: 50,
+    marginBottom: 4,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
   },
   webCategoriesContent: {
     paddingVertical: 8,
+    paddingHorizontal: 20,
   },
   webCategoryCard: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    minWidth: 90,
-    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    minWidth: 'auto',
+    borderRadius: 8,
+    gap: 8,
+    marginRight: 8,
   },
   webCategoryIcon: {
-    fontSize: 18,
-    marginBottom: 4,
+    fontSize: 16,
+    marginBottom: 0,
   },
   webCategoryName: {
-    fontSize: 11,
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#333',
   },
 });
