@@ -17,11 +17,7 @@ import { categories, getSubCategoriesForCategory } from '@/constants/categories'
 import { Product } from '@/types/marketplace';
 import { 
   isWeb, 
-  getProductCardWidth, 
-  getGridColumns,
-  getContainerPadding,
-  getMaxContainerWidth,
-  getResponsiveValue 
+  getProductCardWidth
 } from '@/constants/responsive';
 
 export default function HomeScreen() {

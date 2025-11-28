@@ -15,6 +15,7 @@ import { useRouter } from 'expo-router';
 import { ArrowRight, Eye, EyeOff } from 'lucide-react-native';
 import { useMarketplace } from '@/contexts/MarketplaceContext';
 import { useToast } from '@/contexts/ToastContext';
+import { isDesktop } from '@/constants/responsive';
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -348,6 +349,8 @@ export default function RegisterScreen() {
   );
 }
 
+const contentMaxWidth = isDesktop() ? 600 : '100%';
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -360,6 +363,9 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 24,
     paddingBottom: 40,
+    width: '100%',
+    maxWidth: contentMaxWidth,
+    alignSelf: 'center',
   },
   header: {
     alignItems: 'center',

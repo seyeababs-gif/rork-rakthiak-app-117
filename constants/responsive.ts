@@ -61,13 +61,14 @@ export const getProductCardWidth = () => {
   const columns = getGridColumns();
   const gap = getResponsiveValue({ mobile: 12, tablet: 16, desktop: 16, largeDesktop: 20 });
   const containerPadding = getResponsiveValue({ mobile: 16, tablet: 20, desktop: 32, largeDesktop: 40 });
-  const maxContainerWidth = getResponsiveValue({ mobile: width, tablet: width, desktop: width, largeDesktop: BREAKPOINTS.largeDesktop });
   
-  const availableWidth = Math.min(width, maxContainerWidth) - (containerPadding * 2);
+  const availableWidth = width - (containerPadding * 2);
   const cardWidth = (availableWidth - (gap * (columns - 1))) / columns;
   
-  const maxCardWidth = getResponsiveValue({ mobile: 200, tablet: 280, desktop: 300, largeDesktop: 320 });
-  return Math.min(cardWidth, maxCardWidth);
+  const maxCardWidth = getResponsiveValue({ mobile: 250, tablet: 280, desktop: 300, largeDesktop: 320 });
+  const minCardWidth = getResponsiveValue({ mobile: 150, tablet: 180, desktop: 200, largeDesktop: 240 });
+  
+  return Math.max(Math.min(cardWidth, maxCardWidth), minCardWidth);
 };
 
 export const getButtonHeight = () => {
