@@ -839,7 +839,7 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   productCard: {
-    width: CARD_WIDTH,
+    width: RESPONSIVE_CARD_WIDTH,
     backgroundColor: '#fff',
     borderRadius: 20,
     overflow: 'hidden',
