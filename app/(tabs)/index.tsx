@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -12,39 +12,60 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-
-import { Search, MapPin, Heart, TrendingUp, Sparkles, Calendar, ArrowRight, Package, Car } from 'lucide-react-native';
+import { Search, MapPin, Sparkles, Calendar, ArrowRight, Package, Car, X } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useMarketplace } from '@/contexts/MarketplaceContext';
 import { categories, getSubCategoriesForCategory } from '@/constants/categories';
 import { Product } from '@/types/marketplace';
 
-const { width } = Dimensions.get('window');
-const CARD_WIDTH = (width - 48) / 2;
-// --- FIX RESPONSIVE DESKTOP ---
-const MAX_CARD_WIDTH = 260; 
-const RESPONSIVE_CARD_WIDTH = Math.min(CARD_WIDTH, MAX_CARD_WIDTH);
 const isWeb = Platform.OS === 'web';
+
+const getResponsiveCardWidth = () => {
+  const { width } = Dimensions.get('window');
+  
+  if (isWeb) {
+    if (width > 1400) return (Math.min(width, 1600) - 80) / 5;
+    if (width > 1200) return (width - 80) / 4;
+    if (width > 900) return (width - 64) / 3;
+    if (width > 600) return (width - 48) / 2;
+  }
+  
+  return (width - 48) / 2;
+};
+
+const CARD_WIDTH = getResponsiveCardWidth();
 
 export default function HomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const {
-    filteredProducts,
-    searchQuery,
-    setSearchQuery,
+    products,
     selectedCategory,
     setSelectedCategory,
     selectedSubCategory,
     setSelectedSubCategory,
-    toggleFavorite,
-    isFavorite,
-    isAuthenticated,
+    currentUser,
   } = useMarketplace();
   
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedDate, setSelectedDate] = useState<string | undefined>(undefined);
   const [availableDates, setAvailableDates] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<'products' | 'services'>('products');
+  const [showSearch, setShowSearch] = useState<boolean>(false);
+
+  const filteredProducts = useMemo(() => {
+    return products.filter(product => {
+      const isApproved = product.status === 'approved';
+      const isAdmin = currentUser?.isAdmin === true;
+      const isSuperAdmin = currentUser?.isSuperAdmin === true;
+      const matchesSearch = searchQuery.trim() === '' || 
+        product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        product.description.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
+      const matchesSubCategory = !selectedSubCategory || product.subCategory === selectedSubCategory;
+      return (isAdmin || isSuperAdmin || isApproved) && matchesSearch && matchesCategory && matchesSubCategory;
+    });
+  }, [products, searchQuery, selectedCategory, selectedSubCategory, currentUser]);
   
   React.useEffect(() => {
     if (viewMode === 'services') {
@@ -112,7 +133,6 @@ export default function HomeScreen() {
   };
 
   const renderServiceCard = (product: Product) => {
-    const favorite = isFavorite(product.id);
     const departureDateTime = product.serviceDetails?.departureDate 
       ? formatDateTime(product.serviceDetails.departureDate) 
       : null;
@@ -132,24 +152,7 @@ export default function HomeScreen() {
               <Text style={styles.serviceTitle} numberOfLines={1}>
                 {product.title}
               </Text>
-              <TouchableOpacity
-                onPress={(e) => {
-                  e.stopPropagation();
-                  if (!isAuthenticated) {
-                    router.push('/auth/login');
-                    return;
-                  }
-                  toggleFavorite(product.id);
-                }}
-                activeOpacity={0.8}
-              >
-                <Heart
-                  size={20}
-                  color={favorite ? '#E31B23' : '#87CEEB'}
-                  fill={favorite ? '#E31B23' : 'transparent'}
-                  strokeWidth={2}
-                />
-              </TouchableOpacity>
+
             </View>
             
             <View style={styles.serviceRoute}>
@@ -190,7 +193,6 @@ export default function HomeScreen() {
   };
 
   const renderProductCard = (product: Product) => {
-    const favorite = isFavorite(product.id);
     const isNew = (Date.now() - product.createdAt.getTime()) < 7 * 24 * 60 * 60 * 1000;
     const hasDiscount = product.hasDiscount && product.discountPercent && product.discountPercent > 0;
     
@@ -223,25 +225,7 @@ export default function HomeScreen() {
               <Text style={styles.newBadgeText}>Nouveau</Text>
             </View>
           )}
-          <TouchableOpacity
-            style={styles.favoriteButton}
-            onPress={(e) => {
-              e.stopPropagation();
-              if (!isAuthenticated) {
-                router.push('/auth/login');
-                return;
-              }
-              toggleFavorite(product.id);
-            }}
-            activeOpacity={0.8}
-          >
-            <Heart
-              size={18}
-              color={favorite ? '#E31B23' : '#fff'}
-              fill={favorite ? '#E31B23' : 'transparent'}
-              strokeWidth={2.5}
-            />
-          </TouchableOpacity>
+
         </View>
         <View style={styles.productInfo}>
           <Text style={styles.productTitle} numberOfLines={2}>
@@ -274,94 +258,77 @@ export default function HomeScreen() {
         end={{ x: 1, y: 1 }}
         style={[
           styles.header, 
-          { paddingTop: insets.top + (isWeb ? 8 : 20), paddingBottom: isWeb ? 8 : 20 },
-          isWeb && styles.webHeader
+          { paddingTop: insets.top + (isWeb ? 12 : 20), paddingBottom: isWeb ? 12 : 20 }
         ]}
       >
-        <View style={[styles.headerContent, isWeb && styles.webHeaderContent]}>
-          <View style={isWeb && styles.webHeaderLeft}>
-            <Text style={[styles.headerTitle, isWeb && styles.webHeaderTitle]}>RAKTHIAK</Text>
+        <View style={styles.headerContent}>
+          <View style={styles.headerLeft}>
+            <Text style={styles.headerTitle}>RAKTHIAK</Text>
             {!isWeb && <Text style={styles.headerSubtitle}>Achetez et vendez au Sénégal</Text>}
           </View>
           
-          {isWeb && (
-            <View style={styles.webSearchContainer}>
-              <View style={styles.webSearchBar}>
-                <Search size={16} color="#666" />
-                <TextInput
-                  style={styles.webSearchInput}
-                  placeholder={viewMode === 'products' ? 'Rechercher...' : 'Rechercher un service...'}
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                  placeholderTextColor="#999"
-                />
-              </View>
-            </View>
-          )}
-
-          {isWeb && (
-            <View style={styles.webViewModeSelector}>
-              <TouchableOpacity
-                style={[styles.webViewModeButton, viewMode === 'products' && styles.webViewModeButtonActive]}
-                onPress={() => setViewMode('products')}
-              >
-                <Package size={14} color={viewMode === 'products' ? '#0D2D5E' : '#fff'} />
-                <Text style={[styles.webViewModeText, viewMode === 'products' && styles.webViewModeTextActive]}>
-                  Produits
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.webViewModeButton, viewMode === 'services' && styles.webViewModeButtonActive]}
-                onPress={() => setViewMode('services')}
-              >
-                <Car size={14} color={viewMode === 'services' ? '#0D2D5E' : '#fff'} />
-                <Text style={[styles.webViewModeText, viewMode === 'services' && styles.webViewModeTextActive]}>
-                  Services
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
-          {!isWeb && (
-            <View style={styles.trendingBadge}>
-              <TrendingUp size={14} color="#0D2D5E" />
-              <Text style={styles.trendingText}>{filteredProducts.length}</Text>
-            </View>
-          )}
-        </View>
-        
-        {!isWeb && (
-          <View style={styles.viewModeSelector}>
+          <View style={styles.headerActions}>
             <TouchableOpacity
-              style={[styles.viewModeButton, viewMode === 'products' && styles.viewModeButtonActive]}
-              onPress={() => setViewMode('products')}
+              style={styles.searchButton}
+              onPress={() => setShowSearch(!showSearch)}
               activeOpacity={0.7}
             >
-              <Package size={18} color={viewMode === 'products' ? '#0D2D5E' : '#fff'} />
-              <Text style={[styles.viewModeText, viewMode === 'products' && styles.viewModeTextActive]}>
-                Produits
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.viewModeButton, viewMode === 'services' && styles.viewModeButtonActive]}
-              onPress={() => setViewMode('services')}
-              activeOpacity={0.7}
-            >
-              <Car size={18} color={viewMode === 'services' ? '#0D2D5E' : '#fff'} />
-              <Text style={[styles.viewModeText, viewMode === 'services' && styles.viewModeTextActive]}>
-                Services
-              </Text>
+              <Search size={20} color="#fff" />
             </TouchableOpacity>
           </View>
+        </View>
+        
+        {showSearch && (
+          <View style={styles.searchBarContainer}>
+            <View style={styles.searchBar}>
+              <Search size={18} color="#666" />
+              <TextInput
+                style={styles.searchInput}
+                placeholder={viewMode === 'products' ? 'Rechercher un produit...' : 'Rechercher un service...'}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                placeholderTextColor="#999"
+                autoFocus
+              />
+              {searchQuery.length > 0 && (
+                <TouchableOpacity onPress={() => setSearchQuery('')}>
+                  <X size={18} color="#666" />
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
         )}
+
+        <View style={styles.viewModeSelector}>
+          <TouchableOpacity
+            style={[styles.viewModeButton, viewMode === 'products' && styles.viewModeButtonActive]}
+            onPress={() => setViewMode('products')}
+            activeOpacity={0.7}
+          >
+            <Package size={16} color={viewMode === 'products' ? '#0D2D5E' : '#fff'} />
+            <Text style={[styles.viewModeText, viewMode === 'products' && styles.viewModeTextActive]}>
+              Produits
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.viewModeButton, viewMode === 'services' && styles.viewModeButtonActive]}
+            onPress={() => setViewMode('services')}
+            activeOpacity={0.7}
+          >
+            <Car size={16} color={viewMode === 'services' ? '#0D2D5E' : '#fff'} />
+            <Text style={[styles.viewModeText, viewMode === 'services' && styles.viewModeTextActive]}>
+              Services
+            </Text>
+          </TouchableOpacity>
+        </View>
       </LinearGradient>
 
       {viewMode === 'products' && (
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          style={[styles.categoriesContainer, isWeb && styles.webCategoriesContainer]}
-          contentContainerStyle={[styles.categoriesContent, isWeb && styles.webCategoriesContent]}
+          style={styles.categoriesContainer}
+          contentContainerStyle={styles.categoriesContent}
         >
           {categories.filter(c => c.id !== 'delivery').map((category, index) => {
             const isSelected = selectedCategory === category.id;
@@ -376,16 +343,15 @@ export default function HomeScreen() {
               >
                 <LinearGradient
                   colors={isSelected ? category.gradient : ['#f5f5f5', '#f5f5f5']}
-                  style={[styles.categoryCard, isWeb && styles.webCategoryCard]}
+                  style={styles.categoryCard}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                 >
-                  <Text style={[styles.categoryIcon, isWeb && styles.webCategoryIcon]}>{category.icon}</Text>
+                  <Text style={styles.categoryIcon}>{category.icon}</Text>
                   <Text
                     style={[
                       styles.categoryName,
-                      isSelected && styles.categoryNameSelected,
-                      isWeb && styles.webCategoryName
+                      isSelected && styles.categoryNameSelected
                     ]}
                   >
                     {category.name}
@@ -560,8 +526,8 @@ export default function HomeScreen() {
 
       <ScrollView
         style={styles.productsContainer}
-        contentContainerStyle={styles.productsContent}
-        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[styles.productsContent, isWeb && styles.webProductsContent]}
+        showsVerticalScrollIndicator={isWeb ? true : false}
       >
         <View style={styles.productsHeader}>
           <Text style={styles.sectionTitle}>
@@ -577,7 +543,7 @@ export default function HomeScreen() {
             {sortedProducts.map(renderServiceCard)}
           </View>
         ) : (
-          <View style={styles.productsGrid}>
+          <View style={[styles.productsGrid, isWeb && styles.webProductsGrid]}>
             {sortedProducts.map(renderProductCard)}
           </View>
         )}
@@ -602,8 +568,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#EFF6FF',
   },
   header: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingHorizontal: 16,
+    paddingBottom: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
@@ -614,156 +580,116 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 12,
+  },
+  headerLeft: {
+    flex: 1,
   },
   headerTitle: {
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: '800' as const,
     color: '#fff',
-    marginBottom: 4,
+    marginBottom: 2,
     letterSpacing: -0.5,
   },
   headerSubtitle: {
-    fontSize: 13,
+    fontSize: 12,
     color: 'rgba(255,255,255,0.9)',
     fontWeight: '500' as const,
   },
-  trendingBadge: {
-    backgroundColor: '#fff',
+  headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    gap: 8,
   },
-  trendingText: {
-    fontSize: 14,
-    fontWeight: '700' as const,
-    color: '#0D2D5E',
+  searchButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  searchBarContainer: {
+    marginTop: 8,
+    marginBottom: 12,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    gap: 10,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
+    color: '#000',
+    padding: 0,
   },
   viewModeSelector: {
     flexDirection: 'row',
-    gap: 12,
-    marginTop: 16,
+    gap: 8,
+    marginTop: 4,
   },
   viewModeButton: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 10,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    gap: 8,
+    gap: 6,
   },
   viewModeButtonActive: {
     backgroundColor: '#fff',
   },
   viewModeText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700' as const,
     color: '#fff',
   },
   viewModeTextActive: {
     color: '#0D2D5E',
   },
-  searchContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 12,
-    backgroundColor: '#fff',
-  },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f8f9fa',
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    gap: 12,
-    borderWidth: 1,
-    borderColor: '#e8e9eb',
-  },
-  filterButton: {
-    padding: 4,
-  },
-  filtersPanel: {
-    marginTop: 12,
-    padding: 16,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 12,
-  },
-  filterLabel: {
-    fontSize: 14,
-    fontWeight: '600' as const,
-    color: '#000',
-    marginBottom: 12,
-  },
-  sortButtons: {
-    flexDirection: 'row',
-    gap: 8,
-    flexWrap: 'wrap',
-  },
-  sortButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-  },
-  sortButtonActive: {
-    backgroundColor: '#0D2D5E',
-    borderColor: '#0D2D5E',
-  },
-  sortButtonText: {
-    fontSize: 13,
-    fontWeight: '600' as const,
-    color: '#666',
-  },
-  sortButtonTextActive: {
-    color: '#fff',
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    color: '#000',
-  },
+
   categoriesContainer: {
-    maxHeight: 100,
+    maxHeight: 90,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
   },
   categoriesContent: {
     paddingHorizontal: 16,
-    gap: 12,
+    paddingVertical: 12,
+    gap: 10,
   },
   categoryCard: {
-    paddingHorizontal: 24,
-    paddingVertical: 14,
-    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    minWidth: 110,
+    minWidth: 90,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   categoryIcon: {
-    fontSize: 28,
-    marginBottom: 6,
+    fontSize: 24,
+    marginBottom: 4,
   },
   categoryName: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700' as const,
     color: '#666',
-    letterSpacing: 0.2,
+    letterSpacing: 0.1,
   },
   categoryNameSelected: {
     color: '#fff',
@@ -811,7 +737,13 @@ const styles = StyleSheet.create({
   productsContent: {
     paddingHorizontal: 16,
     paddingTop: 16,
-    paddingBottom: 32,
+    paddingBottom: 80,
+  },
+  webProductsContent: {
+    paddingHorizontal: 20,
+    alignSelf: 'center',
+    width: '100%',
+    maxWidth: 1600,
   },
   productsHeader: {
     flexDirection: 'row',
@@ -832,12 +764,18 @@ const styles = StyleSheet.create({
   productsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    gap: 12,
+    justifyContent: 'flex-start',
+  },
+  webProductsGrid: {
     gap: 16,
+    justifyContent: 'flex-start',
   },
   productCard: {
-    width: RESPONSIVE_CARD_WIDTH,
+    width: CARD_WIDTH,
+    maxWidth: isWeb ? 280 : undefined,
     backgroundColor: '#fff',
-    borderRadius: 20,
+    borderRadius: 16,
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -850,7 +788,8 @@ const styles = StyleSheet.create({
   imageContainer: {
     position: 'relative',
     width: '100%',
-    height: CARD_WIDTH * 1.1,
+    height: CARD_WIDTH * 1.15,
+    maxHeight: 320,
     backgroundColor: '#f5f5f5',
   },
   productImage: {
@@ -858,22 +797,7 @@ const styles = StyleSheet.create({
     height: '100%',
     backgroundColor: '#f5f5f5',
   },
-  favoriteButton: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 3,
-  },
+
   newBadge: {
     position: 'absolute',
     top: 10,
@@ -1112,96 +1036,5 @@ const styles = StyleSheet.create({
     color: '#87CEEB',
     letterSpacing: -0.3,
   },
-  // Web specific styles
-  webHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 20,
-  },
-  webHeaderContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '100%',
-    gap: 20,
-  },
-  webHeaderLeft: {
-    flexShrink: 0,
-  },
-  webHeaderTitle: {
-    fontSize: 22,
-    marginBottom: 0,
-  },
-  webSearchContainer: {
-    flex: 1,
-    maxWidth: 600,
-  },
-  webSearchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    gap: 8,
-  },
-  webSearchInput: {
-    flex: 1,
-    fontSize: 14,
-    color: '#000',
-    padding: 0,
-  },
-  webViewModeSelector: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  webViewModeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    gap: 6,
-  },
-  webViewModeButtonActive: {
-    backgroundColor: '#fff',
-  },
-  webViewModeText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#fff',
-  },
-  webViewModeTextActive: {
-    color: '#0D2D5E',
-  },
-  webCategoriesContainer: {
-    maxHeight: 50,
-    marginBottom: 4,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  webCategoriesContent: {
-    paddingVertical: 8,
-    paddingHorizontal: 20,
-  },
-  webCategoryCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    minWidth: 'auto',
-    borderRadius: 8,
-    gap: 8,
-    marginRight: 8,
-  },
-  webCategoryIcon: {
-    fontSize: 16,
-    marginBottom: 0,
-  },
-  webCategoryName: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#333',
-  },
+
 });
