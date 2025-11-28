@@ -34,7 +34,7 @@ export default function EditProductScreen() {
   const [description, setDescription] = useState<string>('');
   const [price, setPrice] = useState<string>('');
   const [location, setLocation] = useState<string>('');
-  const [category, setCategory] = useState<Category>('electronics');
+  const [category, setCategory] = useState<Category>('telephone_tablette');
   const [subCategory, setSubCategory] = useState<SubCategory | undefined>(undefined);
   const [condition, setCondition] = useState<'new' | 'used' | 'refurbished'>('used');
   const [images, setImages] = useState<string[]>([]);
@@ -148,10 +148,37 @@ export default function EditProductScreen() {
       allowsEditing: true,
       aspect: [4, 3],
       quality: 0.8,
+      base64: true,
     });
 
     if (!result.canceled && result.assets[0]) {
-      setImages([...images, result.assets[0].uri]);
+      const asset = result.assets[0];
+      let imageUri = asset.uri;
+
+      // Handle Web: Convert blob URL to base64
+      if (Platform.OS === 'web') {
+        try {
+          const response = await fetch(asset.uri);
+          const blob = await response.blob();
+          const base64 = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          });
+          imageUri = base64 as string;
+        } catch (e) {
+          console.error('Error converting blob to base64:', e);
+          toast.showError('Erreur lors du traitement de l\'image');
+          return;
+        }
+      } else if (asset.base64) {
+        // Native: use base64 if available
+        const mimeType = asset.mimeType || 'image/jpeg';
+        imageUri = `data:${mimeType};base64,${asset.base64}`;
+      }
+
+      setImages([...images, imageUri]);
     }
   };
 
@@ -181,10 +208,19 @@ export default function EditProductScreen() {
       allowsEditing: true,
       aspect: [4, 3],
       quality: 0.8,
+      base64: true,
     });
 
     if (!result.canceled && result.assets[0]) {
-      setImages([...images, result.assets[0].uri]);
+      const asset = result.assets[0];
+      let imageUri = asset.uri;
+
+      if (asset.base64) {
+        const mimeType = asset.mimeType || 'image/jpeg';
+        imageUri = `data:${mimeType};base64,${asset.base64}`;
+      }
+      
+      setImages([...images, imageUri]);
     }
   };
 
@@ -322,6 +358,63 @@ export default function EditProductScreen() {
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Catégorie</Text>
+          <View style={styles.categoriesGrid}>
+            {categories.filter(c => c.id !== 'all').filter(c => listingType === 'product' ? c.id !== 'delivery' : c.id === 'delivery').map((cat) => (
+              <TouchableOpacity
+                key={cat.id}
+                style={[
+                  styles.categoryButton,
+                  category === cat.id && styles.categoryButtonSelected,
+                ]}
+                onPress={() => {
+                  setCategory(cat.id);
+                  setSubCategory(undefined);
+                }}
+              >
+                <Text style={styles.categoryButtonIcon}>{cat.icon}</Text>
+                <Text
+                  style={[
+                    styles.categoryButtonText,
+                    category === cat.id && styles.categoryButtonTextSelected,
+                  ]}
+                >
+                  {cat.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {getSubCategoriesForCategory(category).length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>{listingType === 'service' ? 'Type de service' : 'Sous-catégorie'}</Text>
+            <View style={styles.categoriesGrid}>
+              {getSubCategoriesForCategory(category).map((subCat) => (
+                <TouchableOpacity
+                  key={subCat.id}
+                  style={[
+                    styles.categoryButton,
+                    subCategory === subCat.id && styles.categoryButtonSelected,
+                  ]}
+                  onPress={() => setSubCategory(subCat.id)}
+                >
+                  <Text style={styles.categoryButtonIcon}>{subCat.icon}</Text>
+                  <Text
+                    style={[
+                      styles.categoryButtonText,
+                      subCategory === subCat.id && styles.categoryButtonTextSelected,
+                    ]}
+                  >
+                    {subCat.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        )}
+
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Photos</Text>
@@ -502,63 +595,6 @@ export default function EditProductScreen() {
             </>
           )}
         </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Catégorie *</Text>
-          <View style={styles.categoriesGrid}>
-            {categories.filter(c => c.id !== 'all').filter(c => listingType === 'product' ? c.id !== 'delivery' : c.id === 'delivery').map((cat) => (
-              <TouchableOpacity
-                key={cat.id}
-                style={[
-                  styles.categoryButton,
-                  category === cat.id && styles.categoryButtonSelected,
-                ]}
-                onPress={() => {
-                  setCategory(cat.id);
-                  setSubCategory(undefined);
-                }}
-              >
-                <Text style={styles.categoryButtonIcon}>{cat.icon}</Text>
-                <Text
-                  style={[
-                    styles.categoryButtonText,
-                    category === cat.id && styles.categoryButtonTextSelected,
-                  ]}
-                >
-                  {cat.name}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {getSubCategoriesForCategory(category).length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{listingType === 'service' ? 'Type de service *' : 'Sous-catégorie *'}</Text>
-            <View style={styles.categoriesGrid}>
-              {getSubCategoriesForCategory(category).map((subCat) => (
-                <TouchableOpacity
-                  key={subCat.id}
-                  style={[
-                    styles.categoryButton,
-                    subCategory === subCat.id && styles.categoryButtonSelected,
-                  ]}
-                  onPress={() => setSubCategory(subCat.id as SubCategory)}
-                >
-                  <Text style={styles.categoryButtonIcon}>{subCat.icon}</Text>
-                  <Text
-                    style={[
-                      styles.categoryButtonText,
-                      subCategory === subCat.id && styles.categoryButtonTextSelected,
-                    ]}
-                  >
-                    {subCat.name}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-        )}
 
         {listingType === 'product' && (
           <View style={styles.section}>

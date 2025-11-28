@@ -1,23 +1,105 @@
-export type Category = 'electronics' | 'fashion' | 'home' | 'vehicles' | 'delivery' | 'all';
+export type Category = 
+  | 'telephone_tablette' 
+  | 'informatique' 
+  | 'tv_audio' 
+  | 'photo_video' 
+  | 'jeux_video' 
+  | 'fashion' 
+  | 'sante_beaute' 
+  | 'maison' 
+  | 'enfant' 
+  | 'sport' 
+  | 'supermarche' 
+  | 'librairie' 
+  | 'musique' 
+  | 'vehicles' 
+  | 'delivery' 
+  | 'autres' 
+  | 'all';
 
 export type SubCategory = 
+  // Fashion
   | 'homme' 
   | 'femme' 
   | 'unisexe'
-  | 'enfant' 
+  | 'enfant_mode' 
   | 'bebe'
+  | 'accessoires_mode'
+  | 'chaussures'
+  | 'sacs'
+  // Sante & Beaute
+  | 'maquillage'
+  | 'soins_visage'
+  | 'soins_corps'
+  | 'soins_cheveux'
+  | 'parfums'
+  | 'hygiene'
+  // Telephone & Tablette
   | 'smartphones'
-  | 'ordinateurs'
-  | 'accessoires'
-  | 'voitures'
-  | 'motos'
+  | 'tablettes'
+  | 'accessoires_telephonie'
+  | 'smartwatches'
+  // Informatique
+  | 'ordinateurs_portables'
+  | 'ordinateurs_bureau'
+  | 'imprimantes_scanners'
+  | 'stockage'
+  | 'accessoires_informatique'
+  // TV & Audio
+  | 'televiseurs'
+  | 'home_cinema'
+  | 'enceintes'
+  | 'casques_ecouteurs'
+  // Jeux Video
+  | 'consoles'
+  | 'jeux_video'
+  | 'accessoires_gaming'
+  // Photo & Video
+  | 'appareils_photo'
+  | 'cameras'
+  | 'drones'
+  | 'accessoires_photo'
+  // Maison
   | 'meubles'
   | 'decoration'
-  | 'menage'
+  | 'electromenager'
+  | 'vaisselle'
+  | 'bricolage'
+  | 'jardin'
+  | 'fournitures_maison'
+  // Enfant (Jeux & Puericulture)
+  | 'jouets'
+  | 'puericulture'
+  | 'ecole'
+  // Sport
+  | 'fitness'
+  | 'sports_collectifs'
+  | 'velo'
+  | 'camping'
+  | 'nutrition_sportive'
+  // Supermarche
+  | 'alimentation'
+  | 'boissons'
+  | 'produits_menagers'
+  // Librairie
+  | 'livres'
+  | 'fournitures_scolaires'
+  | 'papeterie'
+  // Musique
+  | 'instruments'
+  | 'sonorisation'
+  // Vehicles
+  | 'voitures'
+  | 'motos'
+  | 'pieces_detachees'
+  | 'location_vehicules'
+  // Delivery
   | 'covoiturage'
   | 'thiaktiak'
   | 'gp'
   | 'conteneur'
+  | 'demenagement'
+  // General
   | 'autres'
   | 'all';
 

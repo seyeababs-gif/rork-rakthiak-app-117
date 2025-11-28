@@ -29,20 +29,11 @@ export default function AddProductScreen() {
 
   const [listingType, setListingType] = useState<ListingType>('product');
 
-  React.useEffect(() => {
-    if (listingType === 'service') {
-      setCategory('delivery');
-      setSubCategory(undefined);
-    } else {
-      setCategory('electronics');
-      setSubCategory(undefined);
-    }
-  }, [listingType]);
   const [title, setTitle] = useState<string>('');
   const [description, setDescription] = useState<string>('');
   const [price, setPrice] = useState<string>('');
   const [location, setLocation] = useState<string>('');
-  const [category, setCategory] = useState<Category>('electronics');
+  const [category, setCategory] = useState<Category>('telephone_tablette');
   const [subCategory, setSubCategory] = useState<string | undefined>(undefined);
   const [condition, setCondition] = useState<'new' | 'used' | 'refurbished'>('used');
   const [images, setImages] = useState<string[]>([]);
@@ -60,6 +51,16 @@ export default function AddProductScreen() {
   const [manageStock, setManageStock] = useState<boolean>(false);
   const [hasDiscount, setHasDiscount] = useState<boolean>(false);
   const [discountPercent, setDiscountPercent] = useState<string>('');
+
+  React.useEffect(() => {
+    if (listingType === 'service') {
+      setCategory('delivery');
+      setSubCategory(undefined);
+    } else {
+      setCategory('telephone_tablette');
+      setSubCategory(undefined);
+    }
+  }, [listingType]);
 
   const pickImage = async () => {
     const maxImages = getMaxImages();
@@ -320,7 +321,7 @@ export default function AddProductScreen() {
         setDescription('');
         setPrice('');
         setLocation('');
-        setCategory('electronics');
+        setCategory('telephone_tablette');
         setSubCategory(undefined);
         setImages([]);
         setDepartureLocation('');
@@ -439,6 +440,93 @@ export default function AddProductScreen() {
           </View>
         </View>
 
+        {/* Categories Section - Moved up */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Catégorie</Text>
+          <View style={styles.categoriesGrid}>
+            {categories.filter(c => c.id !== 'all').filter(c => listingType === 'product' ? c.id !== 'delivery' : c.id === 'delivery').map((cat) => (
+              <TouchableOpacity
+                key={cat.id}
+                style={[
+                  styles.categoryButton,
+                  category === cat.id && styles.categoryButtonSelected,
+                ]}
+                onPress={() => {
+                  setCategory(cat.id);
+                  setSubCategory(undefined);
+                }}
+              >
+                <Text style={styles.categoryButtonIcon}>{cat.icon}</Text>
+                <Text
+                  style={[
+                    styles.categoryButtonText,
+                    category === cat.id && styles.categoryButtonTextSelected,
+                  ]}
+                >
+                  {cat.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {listingType === 'service' && category === 'delivery' && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Type de service</Text>
+            <View style={styles.categoriesGrid}>
+              {getSubCategoriesForCategory('delivery').map((subCat) => (
+                <TouchableOpacity
+                  key={subCat.id}
+                  style={[
+                    styles.categoryButton,
+                    subCategory === subCat.id && styles.categoryButtonSelected,
+                  ]}
+                  onPress={() => setSubCategory(subCat.id)}
+                >
+                  <Text style={styles.categoryButtonIcon}>{subCat.icon}</Text>
+                  <Text
+                    style={[
+                      styles.categoryButtonText,
+                      subCategory === subCat.id && styles.categoryButtonTextSelected,
+                    ]}
+                  >
+                    {subCat.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {listingType === 'product' && getSubCategoriesForCategory(category).length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Sous-catégorie</Text>
+            <View style={styles.categoriesGrid}>
+              {getSubCategoriesForCategory(category).map((subCat) => (
+                <TouchableOpacity
+                  key={subCat.id}
+                  style={[
+                    styles.categoryButton,
+                    subCategory === subCat.id && styles.categoryButtonSelected,
+                  ]}
+                  onPress={() => setSubCategory(subCat.id)}
+                >
+                  <Text style={styles.categoryButtonIcon}>{subCat.icon}</Text>
+                  <Text
+                    style={[
+                      styles.categoryButtonText,
+                      subCategory === subCat.id && styles.categoryButtonTextSelected,
+                    ]}
+                  >
+                    {subCat.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* Photos Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Photos</Text>
@@ -619,91 +707,6 @@ export default function AddProductScreen() {
             </>
           )}
         </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Catégorie</Text>
-          <View style={styles.categoriesGrid}>
-            {categories.filter(c => c.id !== 'all').filter(c => listingType === 'product' ? c.id !== 'delivery' : c.id === 'delivery').map((cat) => (
-              <TouchableOpacity
-                key={cat.id}
-                style={[
-                  styles.categoryButton,
-                  category === cat.id && styles.categoryButtonSelected,
-                ]}
-                onPress={() => {
-                  setCategory(cat.id);
-                  setSubCategory(undefined);
-                }}
-              >
-                <Text style={styles.categoryButtonIcon}>{cat.icon}</Text>
-                <Text
-                  style={[
-                    styles.categoryButtonText,
-                    category === cat.id && styles.categoryButtonTextSelected,
-                  ]}
-                >
-                  {cat.name}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {listingType === 'service' && category === 'delivery' && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Type de service</Text>
-            <View style={styles.categoriesGrid}>
-              {getSubCategoriesForCategory('delivery').map((subCat) => (
-                <TouchableOpacity
-                  key={subCat.id}
-                  style={[
-                    styles.categoryButton,
-                    subCategory === subCat.id && styles.categoryButtonSelected,
-                  ]}
-                  onPress={() => setSubCategory(subCat.id)}
-                >
-                  <Text style={styles.categoryButtonIcon}>{subCat.icon}</Text>
-                  <Text
-                    style={[
-                      styles.categoryButtonText,
-                      subCategory === subCat.id && styles.categoryButtonTextSelected,
-                    ]}
-                  >
-                    {subCat.name}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-        )}
-
-        {listingType === 'product' && getSubCategoriesForCategory(category).length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Sous-catégorie</Text>
-            <View style={styles.categoriesGrid}>
-              {getSubCategoriesForCategory(category).map((subCat) => (
-                <TouchableOpacity
-                  key={subCat.id}
-                  style={[
-                    styles.categoryButton,
-                    subCategory === subCat.id && styles.categoryButtonSelected,
-                  ]}
-                  onPress={() => setSubCategory(subCat.id)}
-                >
-                  <Text style={styles.categoryButtonIcon}>{subCat.icon}</Text>
-                  <Text
-                    style={[
-                      styles.categoryButtonText,
-                      subCategory === subCat.id && styles.categoryButtonTextSelected,
-                    ]}
-                  >
-                    {subCat.name}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-        )}
 
         {listingType === 'product' && (
           <View style={styles.section}>
