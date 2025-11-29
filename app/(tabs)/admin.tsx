@@ -1338,8 +1338,8 @@ const styles = StyleSheet.create({
   },
   productImage: {
     width: '100%',
-    height: getProductCardWidth() * 1.1,
-    maxHeight: 330,
+    height: Math.min(getProductCardWidth() * 0.85, 140),
+    maxHeight: 140,
     backgroundColor: '#f5f5f5',
   },
   productStatusBadge: {
