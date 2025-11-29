@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -39,12 +39,33 @@ export default function ShopScreen() {
 
   const isLoading = allUsers.length === 0 && products.length === 0;
 
+  useEffect(() => {
+    if (Platform.OS === 'web' && seller) {
+      const metaTitle = document.querySelector('meta[property="og:title"]');
+      const metaDescription = document.querySelector('meta[property="og:description"]');
+      const metaImage = document.querySelector('meta[property="og:image"]');
+      const metaUrl = document.querySelector('meta[property="og:url"]');
+
+      if (metaTitle) metaTitle.setAttribute('content', `Boutique de ${seller.name}`);
+      if (metaDescription) metaDescription.setAttribute('content', `Découvrez les produits de ${seller.name} sur Rakthiak`);
+      if (metaImage) metaImage.setAttribute('content', seller.avatar);
+      if (metaUrl) metaUrl.setAttribute('content', `https://rakthiak.com/shop/${seller.id}`);
+
+      document.title = `Boutique de ${seller.name} - Rakthiak`;
+    }
+  }, [seller]);
+
   if (isLoading) {
     return (
       <View style={styles.container}>
         <Stack.Screen options={{ title: 'Chargement...', headerShown: true }} />
-        <View style={styles.errorContainer}>
-          <Text style={styles.loadingText}>Chargement de la boutique...</Text>
+        <View style={styles.loadingContainer}>
+          <View style={styles.loadingContent}>
+            <View style={styles.spinner}>
+              <View style={styles.spinnerCircle} />
+            </View>
+            <Text style={styles.loadingText}>Chargement de la boutique...</Text>
+          </View>
         </View>
       </View>
     );
@@ -547,9 +568,38 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#666',
   },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fff',
+  },
+  loadingContent: {
+    alignItems: 'center',
+    gap: 24,
+  },
+  spinner: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 4,
+    borderColor: '#B3D9E6',
+    borderTopColor: '#1E3A8A',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  spinnerCircle: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    borderWidth: 3,
+    borderColor: '#E8F4F8',
+    borderTopColor: '#00A651',
+  },
   loadingText: {
     fontSize: 16,
-    color: '#999',
+    fontWeight: '600' as const,
+    color: '#1E3A8A',
   },
   shareButton: {
     marginRight: 16,

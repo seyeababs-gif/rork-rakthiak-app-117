@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -41,6 +41,22 @@ export default function ProductDetailScreen() {
   const [paymentWaveNumber, setPaymentWaveNumber] = useState('');
 
   const product = products.find(p => p.id === id);
+
+  useEffect(() => {
+    if (Platform.OS === 'web' && product) {
+      const metaTitle = document.querySelector('meta[property="og:title"]');
+      const metaDescription = document.querySelector('meta[property="og:description"]');
+      const metaImage = document.querySelector('meta[property="og:image"]');
+      const metaUrl = document.querySelector('meta[property="og:url"]');
+
+      if (metaTitle) metaTitle.setAttribute('content', product.title);
+      if (metaDescription) metaDescription.setAttribute('content', product.description);
+      if (metaImage) metaImage.setAttribute('content', product.images[0]);
+      if (metaUrl) metaUrl.setAttribute('content', `https://rakthiak.com/product/${product.id}`);
+
+      document.title = `${product.title} - Rakthiak`;
+    }
+  }, [product]);
   
   const productReviews = product ? getProductReviews(product.id) : [];
   const productRating = product ? getProductRating(product.id) : { average: 0, count: 0 };
@@ -51,6 +67,24 @@ export default function ProductDetailScreen() {
   const isAdmin = currentUser?.isAdmin === true;
   const isSuperAdmin = currentUser?.isSuperAdmin === true;
   const canViewAndEdit = isAdmin || isSuperAdmin;
+
+  const isLoading = products.length === 0;
+
+  if (isLoading) {
+    return (
+      <View style={styles.container}>
+        <Stack.Screen options={{ title: 'Chargement...', headerShown: true }} />
+        <View style={styles.loadingContainer}>
+          <View style={styles.loadingContent}>
+            <View style={styles.spinner}>
+              <View style={styles.spinnerCircle} />
+            </View>
+            <Text style={styles.loadingText}>Chargement du produit...</Text>
+          </View>
+        </View>
+      </View>
+    );
+  }
 
   if (!product) {
     return (
@@ -1063,6 +1097,39 @@ const styles = StyleSheet.create({
   errorText: {
     fontSize: 18,
     color: '#666',
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#E8F4F8',
+  },
+  loadingContent: {
+    alignItems: 'center',
+    gap: 24,
+  },
+  spinner: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 4,
+    borderColor: '#B3D9E6',
+    borderTopColor: '#1E3A8A',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  spinnerCircle: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    borderWidth: 3,
+    borderColor: '#E8F4F8',
+    borderTopColor: '#00A651',
+  },
+  loadingText: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    color: '#1E3A8A',
   },
   footerMainButtons: {
     flexDirection: 'row',
