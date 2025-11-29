@@ -15,6 +15,8 @@ import {
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { MapPin, Phone, Star, Package, Calendar, ExternalLink, MessageCircle } from 'lucide-react-native';
 import { useMarketplace } from '@/contexts/MarketplaceContext';
+import OptimizedImage from '@/components/OptimizedImage';
+import ProductSkeleton from '@/components/ProductSkeleton';
 
 const { width } = Dimensions.get('window');
 const MAX_CARD_WIDTH = 260;
@@ -37,9 +39,8 @@ export default function ShopScreen() {
     return seller ? getSellerRating(seller.id) : { average: 0, count: 0 };
   }, [seller, getSellerRating]);
 
-  const isLoading = allUsers.length === 0 && products.length === 0;
   const [displayCount, setDisplayCount] = useState<number>(10);
-  const [isTransitioning, setIsTransitioning] = useState(true);
+  const [isInitialLoad, setIsInitialLoad] = useState<boolean>(true);
 
   const displayedProducts = useMemo(() => {
     return sellerProducts.slice(0, displayCount);
@@ -58,18 +59,13 @@ export default function ShopScreen() {
   }, [hasMore, sellerProducts.length]);
 
   useEffect(() => {
-    if (seller) {
+    if (allUsers.length > 0 || products.length > 0) {
       const timer = setTimeout(() => {
-        setIsTransitioning(false);
-      }, 300);
-      return () => clearTimeout(timer);
-    } else {
-      const timer = setTimeout(() => {
-        setIsTransitioning(false);
-      }, 2000);
+        setIsInitialLoad(false);
+      }, 100);
       return () => clearTimeout(timer);
     }
-  }, [seller]);
+  }, [allUsers.length, products.length]);
 
   useEffect(() => {
     if (Platform.OS === 'web' && seller) {
@@ -87,7 +83,7 @@ export default function ShopScreen() {
     }
   }, [seller]);
 
-  if (isLoading || isTransitioning) {
+  if (isInitialLoad) {
     return (
       <View style={styles.container}>
         <Stack.Screen options={{ title: 'Chargement...', headerShown: true }} />
@@ -98,17 +94,6 @@ export default function ShopScreen() {
             </View>
             <Text style={styles.loadingText}>Chargement de la boutique...</Text>
           </View>
-        </View>
-      </View>
-    );
-  }
-
-  if (!seller && !isTransitioning) {
-    return (
-      <View style={styles.container}>
-        <Stack.Screen options={{ title: 'Boutique introuvable', headerShown: true }} />
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Boutique non trouvée</Text>
         </View>
       </View>
     );
@@ -117,14 +102,10 @@ export default function ShopScreen() {
   if (!seller) {
     return (
       <View style={styles.container}>
-        <Stack.Screen options={{ title: 'Chargement...', headerShown: true }} />
-        <View style={styles.loadingContainer}>
-          <View style={styles.loadingContent}>
-            <View style={styles.spinner}>
-              <View style={styles.spinnerCircle} />
-            </View>
-            <Text style={styles.loadingText}>Chargement de la boutique...</Text>
-          </View>
+        <Stack.Screen options={{ title: 'Boutique introuvable', headerShown: true }} />
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>Boutique non trouvée</Text>
+          <Text style={styles.errorSubtext}>Cette boutique n&apos;existe pas ou a été supprimée</Text>
         </View>
       </View>
     );
@@ -323,9 +304,15 @@ export default function ShopScreen() {
         </View>
 
         <View style={styles.productsSection}>
-          <Text style={styles.sectionTitle}>Produits ({displayedProducts.length} / {sellerProducts.length})</Text>
+          <Text style={styles.sectionTitle}>Produits ({sellerProducts.length})</Text>
           
-          {sellerProducts.length > 0 ? (
+          {products.length === 0 ? (
+            <View style={styles.skeletonContainer}>
+              {Array.from({ length: 4 }).map((_, index) => (
+                <ProductSkeleton key={`skeleton-${index}`} />
+              ))}
+            </View>
+          ) : sellerProducts.length > 0 ? (
             <View style={styles.productsGrid}>
               {displayedProducts.map(product => (
                 <TouchableOpacity
@@ -334,7 +321,7 @@ export default function ShopScreen() {
                   onPress={() => router.push(`/product/${product.id}` as any)}
                   activeOpacity={0.7}
                 >
-                  <Image source={{ uri: product.images[0] }} style={styles.productImage} />
+                  <OptimizedImage uri={product.images[0]} style={styles.productImage} />
                   {product.hasDiscount && product.discountPercent && (
                     <View style={styles.discountBadge}>
                       <Text style={styles.discountText}>-{product.discountPercent}%</Text>
@@ -624,6 +611,12 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 18,
+    fontWeight: '600' as const,
+    color: '#333',
+    marginBottom: 8,
+  },
+  errorSubtext: {
+    fontSize: 14,
     color: '#666',
   },
   loadingContainer: {
@@ -671,5 +664,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     fontWeight: '600' as const,
+  },
+  skeletonContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
   },
 });

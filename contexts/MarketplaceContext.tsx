@@ -105,7 +105,7 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
       
       const now = Date.now();
       const cacheAge = cachedTimestamp ? now - parseInt(cachedTimestamp, 10) : Infinity;
-      const MAX_CACHE_AGE = 10 * 60 * 1000;
+      const MAX_CACHE_AGE = 30 * 60 * 1000;
       
       if (cachedProducts && cacheAge < MAX_CACHE_AGE) {
         try {
@@ -117,16 +117,32 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
             rejectedAt: p.rejectedAt ? new Date(p.rejectedAt) : undefined,
           }));
           setProducts(mappedFromCache);
+          
+          if (cacheAge > 5 * 60 * 1000) {
+            loadProductsFromServer();
+          }
+          return;
         } catch (e) {
           console.error('Error parsing cached products:', e);
         }
       }
+      
+      await loadProductsFromServer();
+    } catch (error: any) {
+      const errorMsg = error?.message || String(error);
+      console.error('Error loading products:', errorMsg);
+      toast.showError('Error loading products: ' + errorMsg);
+    }
+  };
+  
+  const loadProductsFromServer = async () => {
+    try {
 
       const { data, error } = await supabase
         .from('products')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(100);
+        .limit(200);
       
       if (error) {
         console.error('Error loading products:', error.message || error);
@@ -200,8 +216,7 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
       }
     } catch (error: any) {
       const errorMsg = error?.message || String(error);
-      console.error('Error loading products:', errorMsg);
-      toast.showError('Error loading products: ' + errorMsg);
+      console.error('Error loading products from server:', errorMsg);
     }
   };
 
@@ -827,6 +842,36 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
 
   const loadAllUsers = async () => {
     try {
+      const cachedUsers = Platform.OS === 'web' 
+        ? localStorage.getItem('cached_users')
+        : await AsyncStorage.getItem('cached_users');
+      
+      const cachedTimestamp = Platform.OS === 'web'
+        ? localStorage.getItem('cached_users_timestamp')
+        : await AsyncStorage.getItem('cached_users_timestamp');
+      
+      const now = Date.now();
+      const cacheAge = cachedTimestamp ? now - parseInt(cachedTimestamp, 10) : Infinity;
+      const MAX_CACHE_AGE = 30 * 60 * 1000;
+      
+      if (cachedUsers && cacheAge < MAX_CACHE_AGE) {
+        try {
+          const parsed = JSON.parse(cachedUsers);
+          const mappedFromCache: User[] = parsed.map((u: any) => ({
+            ...u,
+            joinedDate: u.joinedDate ? new Date(u.joinedDate) : undefined,
+            premiumRequestDate: u.premiumRequestDate ? new Date(u.premiumRequestDate) : undefined,
+          }));
+          setAllUsers(mappedFromCache);
+          
+          if (cacheAge < 5 * 60 * 1000) {
+            return;
+          }
+        } catch (e) {
+          console.error('Error parsing cached users:', e);
+        }
+      }
+      
       const { data, error } = await supabase
         .from('users')
         .select('*')
@@ -860,6 +905,27 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
           deliveryPhone: u.delivery_phone,
         }));
         setAllUsers(users);
+        
+        const cacheData = JSON.stringify(users);
+        const timestamp = Date.now().toString();
+        
+        if (Platform.OS === 'web') {
+          try {
+            localStorage.setItem('cached_users', cacheData);
+            localStorage.setItem('cached_users_timestamp', timestamp);
+          } catch (e) {
+            console.error('Error caching users:', e);
+          }
+        } else {
+          try {
+            await AsyncStorage.multiSet([
+              ['cached_users', cacheData],
+              ['cached_users_timestamp', timestamp]
+            ]);
+          } catch (e) {
+            console.error('Error caching users:', e);
+          }
+        }
       }
     } catch (error: any) {
       const errorMsg = error?.message || String(error);
