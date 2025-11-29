@@ -93,7 +93,13 @@ export const [CartContext, useCart] = createContextHook(() => {
   }, [saveCart]);
 
   const getCartTotal = useCallback(() => {
-    return cartItems.reduce((total, item) => total + item.product.price * item.quantity, 0);
+    return cartItems.reduce((total, item) => {
+      const hasDiscount = item.product.hasDiscount && item.product.discountPercent && item.product.discountPercent > 0;
+      const price = hasDiscount && item.product.originalPrice 
+        ? item.product.originalPrice * (1 - (item.product.discountPercent || 0) / 100)
+        : item.product.price;
+      return total + price * item.quantity;
+    }, 0);
   }, [cartItems]);
 
   const getCartItemsCount = useCallback(() => {

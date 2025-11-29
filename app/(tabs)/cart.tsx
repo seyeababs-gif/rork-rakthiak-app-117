@@ -206,7 +206,11 @@ export default function CartScreen() {
   };
 
   const renderCartItem = ({ item }: { item: CartItem }) => {
-    const itemTotal = item.product.price * item.quantity;
+    const hasDiscount = item.product.hasDiscount && item.product.discountPercent && item.product.discountPercent > 0;
+    const price = hasDiscount && item.product.originalPrice 
+      ? item.product.originalPrice * (1 - (item.product.discountPercent || 0) / 100)
+      : item.product.price;
+    const itemTotal = price * item.quantity;
 
     return (
       <View style={styles.cartItem}>
@@ -215,7 +219,14 @@ export default function CartScreen() {
           <Text style={styles.productTitle} numberOfLines={2}>
             {item.product.title}
           </Text>
-          <Text style={styles.productPrice}>{formatPrice(item.product.price)}</Text>
+          {hasDiscount && item.product.originalPrice ? (
+            <View style={styles.priceDiscountContainer}>
+              <Text style={styles.productPriceDiscount}>{formatPrice(price)}</Text>
+              <Text style={styles.productPriceOriginal}>{formatPrice(item.product.originalPrice)}</Text>
+            </View>
+          ) : (
+            <Text style={styles.productPrice}>{formatPrice(item.product.price)}</Text>
+          )}
           <View style={styles.quantityContainer}>
             <TouchableOpacity
               style={styles.quantityButton}
@@ -720,5 +731,21 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#334155',
     lineHeight: 20,
+  },
+  priceDiscountContainer: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 8,
+  },
+  productPriceDiscount: {
+    fontSize: 14,
+    fontWeight: '700' as const,
+    color: '#E31B23',
+  },
+  productPriceOriginal: {
+    fontSize: 12,
+    fontWeight: '500' as const,
+    color: '#999',
+    textDecorationLine: 'line-through' as const,
   },
 });

@@ -511,9 +511,19 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.commissionInfoBanner}>
+          <View style={styles.commissionHeader}>
+            <Text style={styles.commissionIcon}>💼</Text>
+            <Text style={styles.commissionTitle}>Frais de service</Text>
+          </View>
           <Text style={styles.commissionText}>
-            ℹ️ Frais de service : <Text style={styles.commissionHighlight}>10%</Text> sur les ventes
+            Nous prélevons <Text style={styles.commissionHighlight}>10%</Text> sur chaque vente pour couvrir:
           </Text>
+          <View style={styles.commissionList}>
+            <Text style={styles.commissionListItem}>✓ Protection acheteur et vendeur</Text>
+            <Text style={styles.commissionListItem}>✓ Traitement sécurisé des paiements</Text>
+            <Text style={styles.commissionListItem}>✓ Support client et médiation</Text>
+            <Text style={styles.commissionListItem}>✓ Maintenance de la plateforme</Text>
+          </View>
         </View>
 
         <View style={styles.section}>
@@ -948,19 +958,45 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   commissionInfoBanner: {
-    backgroundColor: '#F5F5F5',
-    borderRadius: 8,
-    padding: 10,
+    backgroundColor: '#F0F7FF',
+    borderRadius: 12,
+    padding: 16,
     marginHorizontal: isWeb ? 20 : 16,
     marginBottom: 24,
+    borderWidth: 1,
+    borderColor: '#B3D9E6',
   },
-  commissionText: {
-    fontSize: 12,
-    color: '#666',
-    textAlign: 'center',
+  commissionHeader: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 8,
+    marginBottom: 8,
   },
-  commissionHighlight: {
+  commissionIcon: {
+    fontSize: 20,
+  },
+  commissionTitle: {
+    fontSize: 15,
     fontWeight: '700' as const,
     color: '#1E3A8A',
+  },
+  commissionText: {
+    fontSize: 13,
+    color: '#334155',
+    marginBottom: 12,
+    lineHeight: 18,
+  },
+  commissionHighlight: {
+    fontWeight: '800' as const,
+    color: '#E31B23',
+    fontSize: 14,
+  },
+  commissionList: {
+    gap: 6,
+  },
+  commissionListItem: {
+    fontSize: 12,
+    color: '#475569',
+    lineHeight: 16,
   },
 });

@@ -143,6 +143,23 @@ export default function ProductDetailScreen() {
         return `${formatPrice(product.serviceDetails.tripPrice)} (trajet)`;
       }
     }
+    
+    const hasDiscount = product.hasDiscount && product.discountPercent && product.discountPercent > 0;
+    if (hasDiscount && product.originalPrice) {
+      const discountedPrice = product.originalPrice * (1 - (product.discountPercent || 0) / 100);
+      return (
+        <View style={styles.priceWithDiscount}>
+          <Text style={styles.discountedPriceText}>{formatPrice(discountedPrice)}</Text>
+          <View style={styles.discountInfo}>
+            <Text style={styles.originalPriceText}>{formatPrice(product.originalPrice)}</Text>
+            <View style={styles.discountBadgeInline}>
+              <Text style={styles.discountBadgeInlineText}>-{product.discountPercent}%</Text>
+            </View>
+          </View>
+        </View>
+      );
+    }
+    
     return formatPrice(product.price);
   };
 
@@ -481,7 +498,11 @@ export default function ProductDetailScreen() {
           <View style={styles.headerRow}>
             <View style={styles.headerLeft}>
               <Text style={styles.productTitle}>{product.title}</Text>
-              <Text style={styles.productPrice}>{getPriceDisplay()}</Text>
+              {typeof getPriceDisplay() === 'string' ? (
+                <Text style={styles.productPrice}>{getPriceDisplay()}</Text>
+              ) : (
+                getPriceDisplay()
+              )}
             </View>
             <View style={styles.actionButtons}>
               <TouchableOpacity
@@ -1324,6 +1345,36 @@ const styles = StyleSheet.create({
   buttonDisabled: {
     backgroundColor: '#9CA3AF',
     opacity: 0.6,
+  },
+  priceWithDiscount: {
+    gap: 8,
+  },
+  discountedPriceText: {
+    fontSize: 28,
+    fontWeight: '700' as const,
+    color: '#E31B23',
+  },
+  discountInfo: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 8,
+  },
+  originalPriceText: {
+    fontSize: 18,
+    fontWeight: '500' as const,
+    color: '#999',
+    textDecorationLine: 'line-through' as const,
+  },
+  discountBadgeInline: {
+    backgroundColor: '#E31B23',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  discountBadgeInlineText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '700' as const,
   },
   headerActions: {
     flexDirection: 'row' as const,
