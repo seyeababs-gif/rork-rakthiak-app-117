@@ -459,7 +459,7 @@ export default function AdminScreen() {
   };
 
   const renderOrdersTab = () => (
-    <>
+    <View style={styles.tabContent}>
       <View style={styles.statsRow}>
         <View style={styles.statCard}>
           <Package size={20} color="#00A651" />
@@ -501,7 +501,7 @@ export default function AdminScreen() {
       <ScrollView
         style={styles.content}
         contentContainerStyle={styles.contentContainer}
-        showsVerticalScrollIndicator={false}
+        showsVerticalScrollIndicator={true}
       >
         {filteredOrders.length > 0 ? (
           filteredOrders.map(renderOrderCard)
@@ -515,11 +515,11 @@ export default function AdminScreen() {
           </View>
         )}
       </ScrollView>
-    </>
+    </View>
   );
 
   const renderProductsTab = () => (
-    <>
+    <View style={styles.tabContent}>
       <View style={styles.statsRow}>
         <View style={styles.statCard}>
           <Package size={20} color="#00A651" />
@@ -543,7 +543,7 @@ export default function AdminScreen() {
       <ScrollView
         style={styles.content}
         contentContainerStyle={styles.contentContainer}
-        showsVerticalScrollIndicator={false}
+        showsVerticalScrollIndicator={true}
       >
         {products.length > 0 ? (
           <View style={styles.productsGrid}>
@@ -559,7 +559,7 @@ export default function AdminScreen() {
           </View>
         )}
       </ScrollView>
-    </>
+    </View>
   );
 
   const handleChangeUserType = (userId: string, userName: string, currentType: string) => {
@@ -798,7 +798,7 @@ export default function AdminScreen() {
     const pendingPremium = allUsers.filter(u => u.premiumPaymentPending).length;
 
     return (
-      <>
+      <View style={styles.tabContent}>
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
             <Users size={20} color="#007AFF" />
@@ -820,7 +820,7 @@ export default function AdminScreen() {
         <ScrollView
           style={styles.content}
           contentContainerStyle={styles.contentContainer}
-          showsVerticalScrollIndicator={false}
+          showsVerticalScrollIndicator={true}
         >
           {allUsers.length > 0 ? (
             allUsers.map(renderUserCard)
@@ -834,7 +834,7 @@ export default function AdminScreen() {
             </View>
           )}
         </ScrollView>
-      </>
+      </View>
     );
   };
 
@@ -842,7 +842,7 @@ export default function AdminScreen() {
     <View style={styles.container}>
       <Stack.Screen options={{ title: 'Admin', headerShown: false }} />
       
-      <View style={[styles.header, { paddingTop: insets.top }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
         <View style={styles.tabsContainer}>
           <TouchableOpacity
             style={[styles.tab, selectedTab === 'products' && styles.tabActive]}
@@ -874,11 +874,9 @@ export default function AdminScreen() {
         </View>
       </View>
 
-      <View style={styles.tabContent}>
-        {selectedTab === 'orders' && renderOrdersTab()}
-        {selectedTab === 'products' && renderProductsTab()}
-        {selectedTab === 'users' && renderUsersTab()}
-      </View>
+      {selectedTab === 'orders' && renderOrdersTab()}
+      {selectedTab === 'products' && renderProductsTab()}
+      {selectedTab === 'users' && renderUsersTab()}
 
       <Modal
         visible={rejectModal.visible}

@@ -386,7 +386,7 @@ export default function AddProductScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 12, paddingBottom: 12 }]}>
         <Text style={styles.headerTitle}>Publier une annonce</Text>
         <Text style={styles.headerSubtitle}>
           {currentUser?.type === 'standard'
@@ -398,7 +398,7 @@ export default function AddProductScreen() {
       <ScrollView
         style={styles.content}
         contentContainerStyle={styles.contentContainer}
-        showsVerticalScrollIndicator={false}
+        showsVerticalScrollIndicator={true}
       >
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Type d&apos;annonce</Text>

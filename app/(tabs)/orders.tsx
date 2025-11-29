@@ -197,7 +197,7 @@ export default function OrdersScreen() {
       <ScrollView
         style={styles.content}
         contentContainerStyle={styles.contentContainer}
-        showsVerticalScrollIndicator={false}
+        showsVerticalScrollIndicator={true}
       >
         {filteredOrders.length > 0 ? (
           filteredOrders.map(order => {
