@@ -69,7 +69,7 @@ export const getProductCardWidth = () => {
   const cardWidth = (availableWidth - totalGapWidth) / columns;
   
   const maxCardWidth = 320;
-  const minCardWidth = width < BREAKPOINTS.mobile ? 150 : 180;
+  const minCardWidth = width < 400 ? 140 : (width < BREAKPOINTS.mobile ? 150 : 180);
   
   return Math.max(Math.min(cardWidth, maxCardWidth), minCardWidth);
 };

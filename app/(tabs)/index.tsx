@@ -758,6 +758,8 @@ const styles = StyleSheet.create({
   },
   productCard: {
     width: getProductCardWidth(),
+    minWidth: 140,
+    maxWidth: 320,
     backgroundColor: '#fff',
     borderRadius: 16,
     overflow: 'hidden',

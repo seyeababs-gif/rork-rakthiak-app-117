@@ -134,7 +134,7 @@ export default function RegisterScreen() {
 
   const content = (
     <ScrollView
-      style={styles.container}
+      style={styles.scrollViewContainer}
       contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 40 }]}
       keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false}
@@ -364,6 +364,10 @@ const contentMaxWidth = isDesktop() ? 450 : '100%';
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+    backgroundColor: '#EFF6FF',
+  },
+  scrollViewContainer: {
     flex: 1,
     backgroundColor: '#EFF6FF',
   },
