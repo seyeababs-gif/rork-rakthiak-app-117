@@ -396,7 +396,7 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
         <View style={styles.profileHeader}>
           <View style={styles.avatarContainer}>
             <Image source={{ uri: currentUser.avatar }} style={styles.avatar} />
@@ -528,7 +528,7 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: getContainerPadding(),
-    paddingBottom: 16,
+    paddingBottom: 12,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
@@ -650,7 +650,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     padding: getContainerPadding(),
-    paddingBottom: 80,
+    paddingBottom: 100,
     alignSelf: 'center',
     width: '100%',
     maxWidth: 1600,

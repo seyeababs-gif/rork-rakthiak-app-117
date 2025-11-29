@@ -723,7 +723,7 @@ const styles = StyleSheet.create({
   productsContent: {
     paddingHorizontal: 16,
     paddingTop: 16,
-    paddingBottom: 80,
+    paddingBottom: 100,
   },
   webProductsContent: {
     paddingHorizontal: 20,
@@ -781,6 +781,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     backgroundColor: '#f5f5f5',
+    resizeMode: 'cover' as const,
   },
 
   newBadge: {
@@ -950,6 +951,7 @@ const styles = StyleSheet.create({
     height: 50,
     borderRadius: 25,
     backgroundColor: '#f5f5f5',
+    resizeMode: 'cover' as const,
   },
   serviceDetails: {
     flex: 1,

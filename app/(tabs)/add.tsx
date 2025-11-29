@@ -386,7 +386,7 @@ export default function AddProductScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
         <Text style={styles.headerTitle}>Publier une annonce</Text>
         <Text style={styles.headerSubtitle}>
           {currentUser?.type === 'standard'
@@ -1152,7 +1152,7 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 16,
-    paddingBottom: 16,
+    paddingBottom: 12,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#B3D9E6',
@@ -1172,7 +1172,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     padding: 16,
-    paddingBottom: 32,
+    paddingBottom: 100,
   },
   section: {
     marginBottom: 24,

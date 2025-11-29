@@ -867,7 +867,7 @@ export default function AdminScreen() {
 
   return (
     <View style={styles.container}>
-      <Stack.Screen options={{ title: 'Admin', headerShown: true }} />
+      <Stack.Screen options={{ title: 'Admin', headerShown: false }} />
       
       <View style={[styles.header, { paddingTop: insets.top }]}>
         <View style={styles.tabsContainer}>
@@ -901,9 +901,11 @@ export default function AdminScreen() {
         </View>
       </View>
 
-      {selectedTab === 'orders' && renderOrdersTab()}
-      {selectedTab === 'products' && renderProductsTab()}
-      {selectedTab === 'users' && renderUsersTab()}
+      <View style={styles.tabContent}>
+        {selectedTab === 'orders' && renderOrdersTab()}
+        {selectedTab === 'products' && renderProductsTab()}
+        {selectedTab === 'users' && renderUsersTab()}
+      </View>
 
       <Modal
         visible={rejectModal.visible}
@@ -964,7 +966,7 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: '#fff',
     paddingHorizontal: getContainerPadding(),
-    paddingBottom: 16,
+    paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
   },
@@ -1051,10 +1053,13 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     padding: getContainerPadding(),
-    paddingBottom: 80,
+    paddingBottom: 100,
     alignSelf: 'center',
     width: '100%',
     maxWidth: 1600,
+  },
+  tabContent: {
+    flex: 1,
   },
   orderCard: {
     backgroundColor: '#fff',

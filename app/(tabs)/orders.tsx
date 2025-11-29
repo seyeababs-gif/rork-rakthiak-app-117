@@ -144,7 +144,7 @@ export default function OrdersScreen() {
   if (!isAuthenticated) {
     return (
       <View style={styles.container}>
-        <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
+        <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
           <Text style={styles.headerTitle}>Mes Commandes</Text>
           <Text style={styles.headerSubtitle}>Suivez vos achats</Text>
         </View>
@@ -168,7 +168,7 @@ export default function OrdersScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
         <Text style={styles.headerTitle}>Mes Commandes</Text>
         <Text style={styles.headerSubtitle}>{userOrders.length} commande(s)</Text>
       </View>
@@ -352,7 +352,7 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 16,
-    paddingBottom: 16,
+    paddingBottom: 12,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
@@ -399,7 +399,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     padding: 16,
-    paddingBottom: 32,
+    paddingBottom: 100,
   },
   orderCard: {
     backgroundColor: '#fff',
@@ -456,6 +456,7 @@ const styles = StyleSheet.create({
     height: 60,
     borderRadius: 8,
     backgroundColor: '#e0e0e0',
+    resizeMode: 'cover' as const,
   },
   itemInfo: {
     flex: 1,
