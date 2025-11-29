@@ -66,7 +66,7 @@ export default function AdminScreen() {
     rejectPremiumUpgrade,
     toggleAdminStatus,
   } = useMarketplace();
-  const [selectedFilter, setSelectedFilter] = useState<OrderStatus | 'all' | 'pending'>('pending');
+  const [selectedFilter, setSelectedFilter] = useState<OrderStatus | 'all' | 'pending'>('all');
   const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [selectedTab, setSelectedTab] = useState<TabType>('products');
 
@@ -312,6 +312,12 @@ export default function AdminScreen() {
   });
 
   const getFilterCount = (filter: OrderStatus | 'all' | 'pending') => {
+    const isSuperAdmin = currentUser?.isSuperAdmin === true;
+    
+    if (!isSuperAdmin) {
+      return 0;
+    }
+    
     if (filter === 'all') return orders.length;
     if (filter === 'pending') return orders.filter(order => order.status === 'pending_payment' || order.status === 'paid').length;
     return orders.filter(order => order.status === filter).length;
@@ -512,7 +518,24 @@ export default function AdminScreen() {
     );
   };
 
-  const renderOrdersTab = () => (
+  const renderOrdersTab = () => {
+    const isSuperAdmin = currentUser?.isSuperAdmin === true;
+    
+    if (!isSuperAdmin) {
+      return (
+        <View style={styles.tabContent}>
+          <View style={styles.emptyState}>
+            <ShieldAlert size={64} color="#E31B23" />
+            <Text style={styles.emptyStateText}>Accès restreint</Text>
+            <Text style={styles.emptyStateSubtext}>
+              Seul le super administrateur peut voir les commandes
+            </Text>
+          </View>
+        </View>
+      );
+    }
+    
+    return (
     <View style={styles.tabContent}>
       <View style={styles.statsRow}>
         <View style={styles.statCard}>
@@ -570,7 +593,8 @@ export default function AdminScreen() {
         )}
       </ScrollView>
     </View>
-  );
+    );
+  };
 
   const renderProductsTab = () => (
     <View style={styles.tabContent}>
@@ -1004,8 +1028,8 @@ export default function AdminScreen() {
           <View style={styles.filterModalContent}>
             <Text style={styles.filterModalTitle}>Filtrer par état</Text>
             {[
-              { value: 'pending', label: 'À valider', count: getFilterCount('pending') },
               { value: 'all', label: 'Toutes', count: getFilterCount('all') },
+              { value: 'pending', label: 'À valider', count: getFilterCount('pending') },
               { value: 'validated', label: 'Validées', count: getFilterCount('validated') },
               { value: 'shipped', label: 'Expédiées', count: getFilterCount('shipped') },
               { value: 'completed', label: 'Terminées', count: getFilterCount('completed') },
