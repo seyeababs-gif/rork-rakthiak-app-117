@@ -95,7 +95,7 @@ export default function LoginScreen() {
       style={styles.scrollViewContainer}
       contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 40 }]}
       keyboardShouldPersistTaps="handled"
-      showsVerticalScrollIndicator={true}
+      showsVerticalScrollIndicator={isWebPlatform}
     >
         <View style={styles.content}>
           <View style={styles.header}>
@@ -219,7 +219,7 @@ export default function LoginScreen() {
   );
 
   if (isWebPlatform) {
-    return <View style={styles.container}>{content}</View>;
+    return content;
   }
 
   return (
@@ -248,6 +248,7 @@ const styles = StyleSheet.create({
     paddingBottom: 60,
   },
   content: {
+    flex: 1,
     paddingHorizontal: getResponsiveValue({ mobile: 24, tablet: 28, desktop: 32 }),
     paddingBottom: 40,
     width: '100%',
@@ -366,7 +367,7 @@ const styles = StyleSheet.create({
     color: '#2563EB',
   },
   footer: {
-    marginTop: 32,
+    marginTop: 'auto',
     paddingTop: 32,
   },
   footerText: {
