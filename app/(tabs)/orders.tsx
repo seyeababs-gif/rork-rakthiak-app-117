@@ -6,9 +6,10 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
+  Modal,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Package, Clock, CheckCircle, XCircle, Truck, ChevronRight, Star } from 'lucide-react-native';
+import { Package, Clock, CheckCircle, XCircle, Truck, ChevronRight, Star, ChevronDown } from 'lucide-react-native';
 import { useOrders } from '@/contexts/OrderContext';
 import { useMarketplace } from '@/contexts/MarketplaceContext';
 import { useReviews } from '@/contexts/ReviewContext';
@@ -22,6 +23,7 @@ export default function OrdersScreen() {
   const { currentUser, isAuthenticated } = useMarketplace();
   const { canReviewOrder, addReview } = useReviews();
   const [selectedFilter, setSelectedFilter] = useState<OrderStatus | 'all'>('all');
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [reviewModalVisible, setReviewModalVisible] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
@@ -173,53 +175,24 @@ export default function OrdersScreen() {
         <Text style={styles.headerSubtitle}>{userOrders.length} commande(s)</Text>
       </View>
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.filtersContainer}
-        contentContainerStyle={styles.filtersContent}
-      >
+      <View style={styles.filterSelectorContainer}>
         <TouchableOpacity
-          style={[styles.filterChip, selectedFilter === 'all' && styles.filterChipActive]}
-          onPress={() => setSelectedFilter('all')}
+          style={styles.filterSelector}
+          onPress={() => setFilterModalVisible(true)}
         >
-          <Text style={[styles.filterChipText, selectedFilter === 'all' && styles.filterChipTextActive]}>
-            Toutes ({getFilterCount('all')})
+          <Text style={styles.filterSelectorLabel}>État:</Text>
+          <Text style={styles.filterSelectorValue}>
+            {selectedFilter === 'all' && 'Toutes'}
+            {selectedFilter === 'pending_payment' && 'En attente'}
+            {selectedFilter === 'paid' && 'Payées'}
+            {selectedFilter === 'validated' && 'Validées'}
+            {selectedFilter === 'shipped' && 'Expédiées'}
+            {selectedFilter === 'completed' && 'Terminées'}
+            {selectedFilter === 'rejected' && 'Rejetées'}
           </Text>
+          <ChevronDown size={20} color="#666" />
         </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.filterChip, selectedFilter === 'paid' && styles.filterChipActive]}
-          onPress={() => setSelectedFilter('paid')}
-        >
-          <Text style={[styles.filterChipText, selectedFilter === 'paid' && styles.filterChipTextActive]}>
-            Payées ({getFilterCount('paid')})
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.filterChip, selectedFilter === 'validated' && styles.filterChipActive]}
-          onPress={() => setSelectedFilter('validated')}
-        >
-          <Text style={[styles.filterChipText, selectedFilter === 'validated' && styles.filterChipTextActive]}>
-            Validées ({getFilterCount('validated')})
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.filterChip, selectedFilter === 'shipped' && styles.filterChipActive]}
-          onPress={() => setSelectedFilter('shipped')}
-        >
-          <Text style={[styles.filterChipText, selectedFilter === 'shipped' && styles.filterChipTextActive]}>
-            Expédiées ({getFilterCount('shipped')})
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.filterChip, selectedFilter === 'completed' && styles.filterChipActive]}
-          onPress={() => setSelectedFilter('completed')}
-        >
-          <Text style={[styles.filterChipText, selectedFilter === 'completed' && styles.filterChipTextActive]}>
-            Terminées ({getFilterCount('completed')})
-          </Text>
-        </TouchableOpacity>
-      </ScrollView>
+      </View>
 
       <ScrollView
         style={styles.content}
@@ -341,6 +314,57 @@ export default function OrdersScreen() {
           }
         }}
       />
+
+      <Modal
+        visible={filterModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setFilterModalVisible(false)}
+      >
+        <TouchableOpacity 
+          style={styles.filterModalOverlay}
+          activeOpacity={1}
+          onPress={() => setFilterModalVisible(false)}
+        >
+          <View style={styles.filterModalContent}>
+            <Text style={styles.filterModalTitle}>Filtrer par état</Text>
+            {[
+              { value: 'all', label: 'Toutes', count: getFilterCount('all') },
+              { value: 'pending_payment', label: 'En attente', count: getFilterCount('pending_payment') },
+              { value: 'paid', label: 'Payées', count: getFilterCount('paid') },
+              { value: 'validated', label: 'Validées', count: getFilterCount('validated') },
+              { value: 'shipped', label: 'Expédiées', count: getFilterCount('shipped') },
+              { value: 'completed', label: 'Terminées', count: getFilterCount('completed') },
+              { value: 'rejected', label: 'Rejetées', count: getFilterCount('rejected') },
+            ].map((option) => (
+              <TouchableOpacity
+                key={option.value}
+                style={[
+                  styles.filterModalOption,
+                  selectedFilter === option.value && styles.filterModalOptionActive
+                ]}
+                onPress={() => {
+                  setSelectedFilter(option.value as OrderStatus | 'all');
+                  setFilterModalVisible(false);
+                }}
+              >
+                <Text style={[
+                  styles.filterModalOptionText,
+                  selectedFilter === option.value && styles.filterModalOptionTextActive
+                ]}>
+                  {option.label}
+                </Text>
+                <Text style={[
+                  styles.filterModalOptionCount,
+                  selectedFilter === option.value && styles.filterModalOptionCountActive
+                ]}>
+                  {option.count}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }
@@ -367,32 +391,98 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
   },
-  filtersContainer: {
+  filterSelectorContainer: {
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
-  },
-  filtersContent: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: 12,
+  },
+  filterSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 8,
-  },
-  filterChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     backgroundColor: '#f5f5f5',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
   },
-  filterChipActive: {
-    backgroundColor: '#1E3A8A',
-  },
-  filterChipText: {
-    fontSize: 12,
+  filterSelectorLabel: {
+    fontSize: 14,
     fontWeight: '600' as const,
     color: '#666',
   },
-  filterChipTextActive: {
-    color: '#fff',
+  filterSelectorValue: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '700' as const,
+    color: '#1E3A8A',
+  },
+  filterModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  filterModalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 20,
+    width: '100%',
+    maxWidth: 300,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 5,
+  },
+  filterModalTitle: {
+    fontSize: 18,
+    fontWeight: '700' as const,
+    color: '#000',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  filterModalOption: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    marginBottom: 8,
+    backgroundColor: '#f5f5f5',
+  },
+  filterModalOptionActive: {
+    backgroundColor: '#E3F2FD',
+    borderWidth: 2,
+    borderColor: '#1E3A8A',
+  },
+  filterModalOptionText: {
+    fontSize: 15,
+    fontWeight: '600' as const,
+    color: '#666',
+  },
+  filterModalOptionTextActive: {
+    color: '#1E3A8A',
+  },
+  filterModalOptionCount: {
+    fontSize: 14,
+    fontWeight: '700' as const,
+    color: '#999',
+    backgroundColor: '#e0e0e0',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    minWidth: 32,
+    textAlign: 'center',
+  },
+  filterModalOptionCountActive: {
+    color: '#1E3A8A',
+    backgroundColor: '#BBDEFB',
   },
   content: {
     flex: 1,
