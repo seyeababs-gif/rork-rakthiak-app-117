@@ -60,15 +60,16 @@ export const getGridColumns = () => {
 export const getProductCardWidth = () => {
   const columns = getGridColumns();
   const gap = width < BREAKPOINTS.mobile ? 12 : (width < BREAKPOINTS.desktop ? 16 : 20);
-  const containerPadding = width < BREAKPOINTS.mobile ? 16 : (width < BREAKPOINTS.desktop ? 20 : 32);
+  const containerPadding = width < BREAKPOINTS.mobile ? 16 : (width < BREAKPOINTS.desktop ? 20 : 20);
   
   const maxContainerWidth = width < BREAKPOINTS.desktop ? width : 1600;
   const containerWidth = Math.min(width, maxContainerWidth);
   const availableWidth = containerWidth - (containerPadding * 2);
-  const cardWidth = (availableWidth - (gap * (columns - 1))) / columns;
+  const totalGapWidth = gap * (columns - 1);
+  const cardWidth = (availableWidth - totalGapWidth) / columns;
   
-  const maxCardWidth = width < BREAKPOINTS.mobile ? 200 : (width < BREAKPOINTS.desktop ? 280 : 320);
-  const minCardWidth = width < BREAKPOINTS.mobile ? 140 : (width < BREAKPOINTS.desktop ? 180 : 220);
+  const maxCardWidth = 320;
+  const minCardWidth = width < BREAKPOINTS.mobile ? 150 : 180;
   
   return Math.max(Math.min(cardWidth, maxCardWidth), minCardWidth);
 };

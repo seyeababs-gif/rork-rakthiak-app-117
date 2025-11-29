@@ -130,16 +130,15 @@ export default function RegisterScreen() {
     }
   };
 
-  return (
-    <KeyboardAvoidingView
+  const isWebPlatform = Platform.OS === 'web';
+
+  const content = (
+    <ScrollView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 40 }]}
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
     >
-      <ScrollView
-        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 40 }]}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
         <View style={styles.content}>
           <View style={styles.header}>
             <Image
@@ -345,6 +344,18 @@ export default function RegisterScreen() {
           </View>
         </View>
       </ScrollView>
+  );
+
+  if (isWebPlatform) {
+    return content;
+  }
+
+  return (
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      {content}
     </KeyboardAvoidingView>
   );
 }
