@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,10 +6,11 @@ import {
   ScrollView,
   TextInput,
   TouchableOpacity,
-  Image,
+  FlatList,
   Dimensions,
   Platform,
 } from 'react-native';
+import OptimizedImage from '@/components/OptimizedImage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Search, MapPin, Sparkles, Calendar, ArrowRight, Package, Car, X } from 'lucide-react-native';
@@ -137,7 +138,7 @@ export default function HomeScreen() {
     return { time: timeStr, date: dateStr };
   };
 
-  const renderServiceCard = (product: Product) => {
+  const renderServiceCard = useCallback((product: Product) => {
     const departureDateTime = product.serviceDetails?.departureDate 
       ? formatDateTime(product.serviceDetails.departureDate) 
       : null;
@@ -150,7 +151,7 @@ export default function HomeScreen() {
         activeOpacity={0.9}
       >
         <View style={styles.serviceContent}>
-          <Image source={{ uri: product.sellerAvatar }} style={styles.serviceAvatar} />
+          <OptimizedImage uri={product.sellerAvatar} style={styles.serviceAvatar} />
           
           <View style={styles.serviceDetails}>
             <View style={styles.serviceHeader}>
@@ -194,9 +195,9 @@ export default function HomeScreen() {
         </View>
       </TouchableOpacity>
     );
-  };
+  }, [router]);
 
-  const renderProductCard = (product: Product) => {
+  const renderProductCard = useCallback((product: Product) => {
     const isNew = (Date.now() - product.createdAt.getTime()) < 7 * 24 * 60 * 60 * 1000;
     const hasDiscount = product.hasDiscount && product.discountPercent && product.discountPercent > 0;
     
@@ -214,8 +215,8 @@ export default function HomeScreen() {
         activeOpacity={0.9}
       >
         <View style={styles.imageContainer}>
-          <Image 
-            source={{ uri: product.images[0] }} 
+          <OptimizedImage 
+            uri={product.images[0]} 
             style={[styles.productImage, { height: cardWidth * 1.1 }]}
             resizeMode="cover"
           />
@@ -252,7 +253,7 @@ export default function HomeScreen() {
         </View>
       </TouchableOpacity>
     );
-  };
+  }, [router]);
 
   return (
     <View style={styles.container}>

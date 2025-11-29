@@ -95,11 +95,30 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
 
   const loadProducts = async () => {
     try {
+      const cachedProducts = Platform.OS === 'web' 
+        ? localStorage.getItem('cached_products')
+        : await AsyncStorage.getItem('cached_products');
+      
+      if (cachedProducts) {
+        try {
+          const parsed = JSON.parse(cachedProducts);
+          const mappedFromCache: Product[] = parsed.map((p: any) => ({
+            ...p,
+            createdAt: new Date(p.createdAt),
+            approvedAt: p.approvedAt ? new Date(p.approvedAt) : undefined,
+            rejectedAt: p.rejectedAt ? new Date(p.rejectedAt) : undefined,
+          }));
+          setProducts(mappedFromCache);
+        } catch (e) {
+          console.error('Error parsing cached products:', e);
+        }
+      }
+
       const { data, error } = await supabase
         .from('products')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(50);
+        .limit(20);
       
       if (error) {
         console.error('Error loading products:', error.message || error);
@@ -138,6 +157,21 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
           originalPrice: p.original_price ? parseFloat(p.original_price) : undefined,
         }));
         setProducts(mappedProducts);
+
+        const cacheData = JSON.stringify(mappedProducts);
+        if (Platform.OS === 'web') {
+          try {
+            localStorage.setItem('cached_products', cacheData);
+          } catch (e) {
+            console.error('Error caching products:', e);
+          }
+        } else {
+          try {
+            await AsyncStorage.setItem('cached_products', cacheData);
+          } catch (e) {
+            console.error('Error caching products:', e);
+          }
+        }
       }
     } catch (error: any) {
       const errorMsg = error?.message || String(error);

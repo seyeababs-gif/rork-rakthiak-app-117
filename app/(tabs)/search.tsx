@@ -6,11 +6,11 @@ import {
   TextInput,
   TouchableOpacity,
   FlatList,
-  Image,
   Dimensions,
   Keyboard,
   TouchableWithoutFeedback
 } from 'react-native';
+import OptimizedImage from '@/components/OptimizedImage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Search as SearchIcon, X, MapPin, Heart, Sparkles, ArrowRight } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
@@ -71,7 +71,7 @@ export default function SearchScreen() {
           activeOpacity={0.9}
         >
           <View style={styles.serviceContent}>
-            <Image source={{ uri: item.sellerAvatar }} style={styles.serviceAvatar} />
+            <OptimizedImage uri={item.sellerAvatar} style={styles.serviceAvatar} />
             <View style={styles.serviceDetails}>
               <View style={styles.serviceHeader}>
                 <Text style={styles.serviceTitle} numberOfLines={1}>{item.title}</Text>
@@ -132,7 +132,7 @@ export default function SearchScreen() {
         activeOpacity={0.9}
       >
         <View style={styles.imageContainer}>
-          <Image source={{ uri: item.images[0] }} style={styles.productImage} />
+          <OptimizedImage uri={item.images[0]} style={styles.productImage} />
           {hasDiscount && (
             <View style={styles.discountBadge}>
               <Text style={styles.discountBadgeText}>-{item.discountPercent}%</Text>
