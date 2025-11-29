@@ -35,19 +35,15 @@ import { useMarketplace } from '@/contexts/MarketplaceContext';
 import { useToast } from '@/contexts/ToastContext';
 import { Order, OrderStatus, Product, User } from '@/types/marketplace';
 
-import { getDimensions } from '@/constants/responsive';
-
-const getCardWidth = () => {
-  const { width } = getDimensions();
-  if (width > 1200) {
-    return (width - 64 - 32) / 4;
-  } else if (width > 900) {
-    return (width - 48 - 24) / 3;
-  } else if (width > 600) {
-    return (width - 48 - 16) / 2;
-  }
-  return (width - 48) / 2;
-};
+import { 
+  getDimensions,
+  getProductCardWidth,
+  isWeb,
+  getContainerPadding,
+  getGridColumns,
+  getButtonHeight,
+  getButtonFontSize,
+} from '@/constants/responsive';
 
 type TabType = 'orders' | 'products' | 'users';
 
@@ -967,7 +963,7 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: '#fff',
-    paddingHorizontal: 16,
+    paddingHorizontal: getContainerPadding(),
     paddingBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
@@ -983,7 +979,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingHorizontal: isWeb ? 20 : 16,
     borderRadius: 12,
     backgroundColor: '#f5f5f5',
   },
@@ -1001,7 +997,7 @@ const styles = StyleSheet.create({
   statsRow: {
     flexDirection: 'row',
     gap: 8,
-    paddingHorizontal: 16,
+    paddingHorizontal: getContainerPadding(),
     paddingVertical: 8,
     backgroundColor: '#fff',
   },
@@ -1029,7 +1025,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#f0f0f0',
   },
   filtersContent: {
-    paddingHorizontal: 16,
+    paddingHorizontal: getContainerPadding(),
     paddingVertical: 8,
     gap: 8,
   },
@@ -1054,13 +1050,16 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
-    padding: 16,
-    paddingBottom: 32,
+    padding: getContainerPadding(),
+    paddingBottom: 80,
+    alignSelf: 'center',
+    width: '100%',
+    maxWidth: 1600,
   },
   orderCard: {
     backgroundColor: '#fff',
     borderRadius: 16,
-    padding: 16,
+    padding: isWeb ? 20 : 16,
     marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -1183,8 +1182,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    paddingVertical: 12,
+    paddingVertical: isWeb ? 14 : 12,
     borderRadius: 10,
+    minHeight: getButtonHeight(),
   },
   validateButton: {
     backgroundColor: '#00A651',
@@ -1201,7 +1201,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   actionButtonText: {
-    fontSize: 15,
+    fontSize: getButtonFontSize(),
     fontWeight: '700' as const,
     color: '#fff',
   },
@@ -1226,11 +1226,11 @@ const styles = StyleSheet.create({
   productsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 16,
+    gap: getDimensions().width < 600 ? 12 : (getDimensions().width < 1200 ? 16 : 20),
+    justifyContent: 'flex-start',
   },
   productCard: {
-    width: getCardWidth(),
-    maxWidth: 300,
+    width: getProductCardWidth(),
     backgroundColor: '#fff',
     borderRadius: 16,
     overflow: 'hidden',
@@ -1243,7 +1243,7 @@ const styles = StyleSheet.create({
   },
   productImage: {
     width: '100%',
-    height: getCardWidth() * 1.1,
+    height: getProductCardWidth() * 1.1,
     maxHeight: 330,
     backgroundColor: '#f5f5f5',
   },
@@ -1386,12 +1386,15 @@ const styles = StyleSheet.create({
   },
   backButton: {
     backgroundColor: '#00A651',
-    paddingVertical: 14,
-    paddingHorizontal: 32,
+    paddingVertical: isWeb ? 16 : 14,
+    paddingHorizontal: isWeb ? 40 : 32,
     borderRadius: 12,
+    minHeight: getButtonHeight(),
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   backButtonText: {
-    fontSize: 16,
+    fontSize: getButtonFontSize(),
     fontWeight: '700' as const,
     color: '#fff',
   },
@@ -1605,15 +1608,17 @@ const styles = StyleSheet.create({
   },
   modalButton: {
     flex: 1,
-    paddingVertical: 14,
+    paddingVertical: isWeb ? 16 : 14,
     borderRadius: 12,
     alignItems: 'center',
+    minHeight: getButtonHeight(),
+    justifyContent: 'center',
   },
   cancelModalButton: {
     backgroundColor: '#f5f5f5',
   },
   cancelModalButtonText: {
-    fontSize: 16,
+    fontSize: getButtonFontSize(),
     fontWeight: '600' as const,
     color: '#666',
   },
@@ -1621,7 +1626,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#E31B23',
   },
   confirmModalButtonText: {
-    fontSize: 16,
+    fontSize: getButtonFontSize(),
     fontWeight: '700' as const,
     color: '#fff',
   },

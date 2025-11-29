@@ -19,19 +19,14 @@ import { Product } from '@/types/marketplace';
 import { useToast } from '@/contexts/ToastContext';
 import * as ImagePicker from 'expo-image-picker';
 
-import { getDimensions } from '@/constants/responsive';
-
-const getCardWidth = () => {
-  const { width } = getDimensions();
-  if (width > 1200) {
-    return (width - 64 - 32) / 4;
-  } else if (width > 900) {
-    return (width - 48 - 24) / 3;
-  } else if (width > 600) {
-    return (width - 48 - 16) / 2;
-  }
-  return (width - 48) / 2;
-};
+import { 
+  getDimensions,
+  getProductCardWidth,
+  isWeb,
+  getContainerPadding,
+  getButtonHeight,
+  getButtonFontSize,
+} from '@/constants/responsive';
 export default function ProfileScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -532,7 +527,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   header: {
-    paddingHorizontal: 16,
+    paddingHorizontal: getContainerPadding(),
     paddingBottom: 16,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
@@ -610,14 +605,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     backgroundColor: '#FFF9E6',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: isWeb ? 14 : 12,
+    paddingHorizontal: isWeb ? 20 : 16,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#FFD700',
+    minHeight: getButtonHeight(),
   },
   upgradeButtonText: {
-    fontSize: 14,
+    fontSize: getButtonFontSize(),
     fontWeight: '700' as const,
     color: '#B8860B',
   },
@@ -628,14 +624,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     backgroundColor: '#FFF5F5',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: isWeb ? 14 : 12,
+    paddingHorizontal: isWeb ? 20 : 16,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#FF3B30',
+    minHeight: getButtonHeight(),
   },
   logoutButtonText: {
-    fontSize: 14,
+    fontSize: getButtonFontSize(),
     fontWeight: '700' as const,
     color: '#FF3B30',
   },
@@ -652,8 +649,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
-    padding: 16,
-    paddingBottom: 32,
+    padding: getContainerPadding(),
+    paddingBottom: 80,
+    alignSelf: 'center',
+    width: '100%',
+    maxWidth: 1600,
   },
   section: {
     marginBottom: 24,
@@ -676,11 +676,11 @@ const styles = StyleSheet.create({
   productsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 16,
+    gap: getDimensions().width < 600 ? 12 : (getDimensions().width < 1200 ? 16 : 20),
+    justifyContent: 'flex-start',
   },
   productCard: {
-    width: getCardWidth(),
-    maxWidth: 300,
+    width: getProductCardWidth(),
     backgroundColor: '#fff',
     borderRadius: 16,
     overflow: 'hidden',
@@ -740,7 +740,7 @@ const styles = StyleSheet.create({
   },
   productImage: {
     width: '100%',
-    height: getCardWidth() * 1.1,
+    height: getProductCardWidth() * 1.1,
     maxHeight: 330,
     backgroundColor: '#f5f5f5',
   },
@@ -785,12 +785,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     backgroundColor: '#EFF6FF',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: isWeb ? 14 : 12,
+    paddingHorizontal: isWeb ? 20 : 16,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#1E3A8A',
     marginTop: 12,
+    minHeight: getButtonHeight(),
   },
   adminButtonActive: {
     flexDirection: 'row',
@@ -798,18 +799,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     backgroundColor: '#1E3A8A',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: isWeb ? 14 : 12,
+    paddingHorizontal: isWeb ? 20 : 16,
     borderRadius: 12,
     marginTop: 12,
+    minHeight: getButtonHeight(),
   },
   adminButtonText: {
-    fontSize: 14,
+    fontSize: getButtonFontSize(),
     fontWeight: '700' as const,
     color: '#1E3A8A',
   },
   adminButtonTextActive: {
-    fontSize: 14,
+    fontSize: getButtonFontSize(),
     fontWeight: '700' as const,
     color: '#fff',
   },
@@ -841,11 +843,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     backgroundColor: '#FFF9F0',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: isWeb ? 14 : 12,
+    paddingHorizontal: isWeb ? 20 : 16,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#FFA500',
+    minHeight: getButtonHeight(),
   },
   pendingBadgeText: {
     fontSize: 13,
@@ -858,15 +861,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     backgroundColor: '#EFF6FF',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: isWeb ? 14 : 12,
+    paddingHorizontal: isWeb ? 20 : 16,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#1E3A8A',
     marginBottom: 12,
+    minHeight: getButtonHeight(),
   },
   shareShopButtonText: {
-    fontSize: 14,
+    fontSize: getButtonFontSize(),
     fontWeight: '700' as const,
     color: '#1E3A8A',
   },
@@ -905,8 +909,8 @@ const styles = StyleSheet.create({
   },
   loginButton: {
     backgroundColor: '#1E3A8A',
-    paddingVertical: 16,
-    paddingHorizontal: 32,
+    paddingVertical: isWeb ? 18 : 16,
+    paddingHorizontal: isWeb ? 40 : 32,
     borderRadius: 16,
     width: '100%',
     alignItems: 'center',
@@ -915,9 +919,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 6,
+    minHeight: getButtonHeight(),
+    justifyContent: 'center',
   },
   loginButtonText: {
-    fontSize: 16,
+    fontSize: getButtonFontSize(),
     fontWeight: '700' as const,
     color: '#fff',
   },
