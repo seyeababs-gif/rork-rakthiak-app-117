@@ -41,6 +41,21 @@ export default function ProductDetailScreen() {
   const [paymentWaveNumber, setPaymentWaveNumber] = useState('');
 
   const product = products.find(p => p.id === id);
+  const [isTransitioning, setIsTransitioning] = useState(true);
+
+  useEffect(() => {
+    if (product) {
+      const timer = setTimeout(() => {
+        setIsTransitioning(false);
+      }, 300);
+      return () => clearTimeout(timer);
+    } else {
+      const timer = setTimeout(() => {
+        setIsTransitioning(false);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [product]);
 
   useEffect(() => {
     if (Platform.OS === 'web' && product) {
@@ -70,7 +85,7 @@ export default function ProductDetailScreen() {
 
   const isLoading = products.length === 0;
 
-  if (isLoading) {
+  if (isLoading || isTransitioning) {
     return (
       <View style={styles.container}>
         <Stack.Screen options={{ title: 'Chargement...', headerShown: true }} />
@@ -86,12 +101,28 @@ export default function ProductDetailScreen() {
     );
   }
 
-  if (!product) {
+  if (!product && !isTransitioning) {
     return (
       <View style={styles.container}>
         <Stack.Screen options={{ title: 'Produit introuvable', headerShown: true }} />
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>Produit non trouvé</Text>
+        </View>
+      </View>
+    );
+  }
+
+  if (!product) {
+    return (
+      <View style={styles.container}>
+        <Stack.Screen options={{ title: 'Chargement...', headerShown: true }} />
+        <View style={styles.loadingContainer}>
+          <View style={styles.loadingContent}>
+            <View style={styles.spinner}>
+              <View style={styles.spinnerCircle} />
+            </View>
+            <Text style={styles.loadingText}>Chargement du produit...</Text>
+          </View>
         </View>
       </View>
     );

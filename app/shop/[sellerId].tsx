@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo, useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -38,6 +38,38 @@ export default function ShopScreen() {
   }, [seller, getSellerRating]);
 
   const isLoading = allUsers.length === 0 && products.length === 0;
+  const [displayCount, setDisplayCount] = useState<number>(10);
+  const [isTransitioning, setIsTransitioning] = useState(true);
+
+  const displayedProducts = useMemo(() => {
+    return sellerProducts.slice(0, displayCount);
+  }, [sellerProducts, displayCount]);
+
+  const hasMore = displayCount < sellerProducts.length;
+
+  const handleScroll = useCallback((event: any) => {
+    const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
+    const paddingToBottom = 100;
+    const isCloseToBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom;
+    
+    if (isCloseToBottom && hasMore) {
+      setDisplayCount(prev => Math.min(prev + 10, sellerProducts.length));
+    }
+  }, [hasMore, sellerProducts.length]);
+
+  useEffect(() => {
+    if (seller) {
+      const timer = setTimeout(() => {
+        setIsTransitioning(false);
+      }, 300);
+      return () => clearTimeout(timer);
+    } else {
+      const timer = setTimeout(() => {
+        setIsTransitioning(false);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [seller]);
 
   useEffect(() => {
     if (Platform.OS === 'web' && seller) {
@@ -55,7 +87,7 @@ export default function ShopScreen() {
     }
   }, [seller]);
 
-  if (isLoading) {
+  if (isLoading || isTransitioning) {
     return (
       <View style={styles.container}>
         <Stack.Screen options={{ title: 'Chargement...', headerShown: true }} />
@@ -71,12 +103,28 @@ export default function ShopScreen() {
     );
   }
 
-  if (!seller) {
+  if (!seller && !isTransitioning) {
     return (
       <View style={styles.container}>
         <Stack.Screen options={{ title: 'Boutique introuvable', headerShown: true }} />
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>Boutique non trouvée</Text>
+        </View>
+      </View>
+    );
+  }
+
+  if (!seller) {
+    return (
+      <View style={styles.container}>
+        <Stack.Screen options={{ title: 'Chargement...', headerShown: true }} />
+        <View style={styles.loadingContainer}>
+          <View style={styles.loadingContent}>
+            <View style={styles.spinner}>
+              <View style={styles.spinnerCircle} />
+            </View>
+            <Text style={styles.loadingText}>Chargement de la boutique...</Text>
+          </View>
         </View>
       </View>
     );
@@ -209,6 +257,8 @@ export default function ShopScreen() {
         style={styles.content}
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={400}
       >
         <View style={styles.header}>
           <Image source={{ uri: seller.avatar }} style={styles.avatar} />
@@ -273,11 +323,11 @@ export default function ShopScreen() {
         </View>
 
         <View style={styles.productsSection}>
-          <Text style={styles.sectionTitle}>Produits ({sellerProducts.length})</Text>
+          <Text style={styles.sectionTitle}>Produits ({displayedProducts.length} / {sellerProducts.length})</Text>
           
           {sellerProducts.length > 0 ? (
             <View style={styles.productsGrid}>
-              {sellerProducts.map(product => (
+              {displayedProducts.map(product => (
                 <TouchableOpacity
                   key={product.id}
                   style={styles.productCard}
@@ -319,7 +369,15 @@ export default function ShopScreen() {
                 </TouchableOpacity>
               ))}
             </View>
-          ) : (
+          ) : null}
+          
+          {hasMore && (
+            <View style={styles.loadingMore}>
+              <Text style={styles.loadingMoreText}>Chargement...</Text>
+            </View>
+          )}
+          
+          {sellerProducts.length === 0 && (
             <View style={styles.emptyState}>
               <Text style={styles.emptyStateIcon}>📦</Text>
               <Text style={styles.emptyStateText}>Aucun produit disponible</Text>
@@ -604,5 +662,14 @@ const styles = StyleSheet.create({
   shareButton: {
     marginRight: 16,
     padding: 8,
+  },
+  loadingMore: {
+    paddingVertical: 20,
+    alignItems: 'center',
+  },
+  loadingMoreText: {
+    fontSize: 14,
+    color: '#666',
+    fontWeight: '600' as const,
   },
 });

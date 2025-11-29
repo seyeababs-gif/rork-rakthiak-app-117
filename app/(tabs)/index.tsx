@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -59,6 +59,8 @@ export default function HomeScreen() {
   const [availableDates, setAvailableDates] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<'products' | 'services'>('products');
   const [showSearch, setShowSearch] = useState<boolean>(false);
+  const [displayCount, setDisplayCount] = useState<number>(20);
+  const scrollViewRef = useRef<ScrollView>(null);
 
   const filteredProducts = useMemo(() => {
     return products.filter(product => {
@@ -110,6 +112,22 @@ export default function HomeScreen() {
     
     return sorted.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }, [filteredProducts, selectedDate, viewMode]);
+
+  const displayedProducts = useMemo(() => {
+    return sortedProducts.slice(0, displayCount);
+  }, [sortedProducts, displayCount]);
+
+  const hasMore = displayCount < sortedProducts.length;
+
+  const handleScroll = useCallback((event: any) => {
+    const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
+    const paddingToBottom = 100;
+    const isCloseToBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom;
+    
+    if (isCloseToBottom && hasMore) {
+      setDisplayCount(prev => Math.min(prev + 20, sortedProducts.length));
+    }
+  }, [hasMore, sortedProducts.length]);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('fr-FR').format(price) + ' FCFA';
@@ -527,16 +545,19 @@ export default function HomeScreen() {
       )}
 
       <ScrollView
+        ref={scrollViewRef}
         style={styles.productsContainer}
         contentContainerStyle={[styles.productsContent]}
         showsVerticalScrollIndicator={true}
+        onScroll={handleScroll}
+        scrollEventThrottle={400}
       >
         <View style={styles.productsHeader}>
           <Text style={styles.sectionTitle}>
             {viewMode === 'services' ? 'Services disponibles' : (selectedCategory === 'all' ? 'Tous les produits' : categories.find(c => c.id === selectedCategory)?.name)}
           </Text>
           <Text style={styles.productsCount}>
-            {sortedProducts.length} {sortedProducts.length > 1 ? 'annonces' : 'annonce'}
+            {displayedProducts.length} / {sortedProducts.length} {sortedProducts.length > 1 ? 'annonces' : 'annonce'}
           </Text>
         </View>
 
@@ -550,11 +571,17 @@ export default function HomeScreen() {
 
         {viewMode === 'services' ? (
           <View style={styles.servicesList}>
-            {sortedProducts.map(renderServiceCard)}
+            {displayedProducts.map(renderServiceCard)}
           </View>
         ) : (
           <View style={styles.productsGrid}>
-            {sortedProducts.map(renderProductCard)}
+            {displayedProducts.map(renderProductCard)}
+          </View>
+        )}
+
+        {hasMore && (
+          <View style={styles.loadingMore}>
+            <Text style={styles.loadingMoreText}>Chargement...</Text>
           </View>
         )}
 
@@ -1035,5 +1062,14 @@ const styles = StyleSheet.create({
     fontWeight: '800' as const,
     color: '#87CEEB',
     letterSpacing: -0.3,
+  },
+  loadingMore: {
+    paddingVertical: 20,
+    alignItems: 'center',
+  },
+  loadingMoreText: {
+    fontSize: 14,
+    color: '#666',
+    fontWeight: '600' as const,
   },
 });

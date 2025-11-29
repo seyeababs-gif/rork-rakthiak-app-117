@@ -105,7 +105,7 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
       
       const now = Date.now();
       const cacheAge = cachedTimestamp ? now - parseInt(cachedTimestamp, 10) : Infinity;
-      const MAX_CACHE_AGE = 5 * 60 * 1000;
+      const MAX_CACHE_AGE = 10 * 60 * 1000;
       
       if (cachedProducts && cacheAge < MAX_CACHE_AGE) {
         try {
@@ -126,7 +126,7 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
         .from('products')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(50);
+        .limit(100);
       
       if (error) {
         console.error('Error loading products:', error.message || error);

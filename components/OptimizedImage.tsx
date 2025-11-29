@@ -12,8 +12,8 @@ function getThumbnailUrl(url: string): string {
   
   if (url.includes('unsplash.com')) {
     const thumbnailUrl = url.includes('?') 
-      ? `${url}&w=50&q=20&blur=10` 
-      : `${url}?w=50&q=20&blur=10`;
+      ? `${url}&w=20&q=10&blur=20` 
+      : `${url}?w=20&q=10&blur=20`;
     return thumbnailUrl;
   }
   
@@ -25,8 +25,8 @@ function getOptimizedUrl(url: string, width: number = 400): string {
   
   if (url.includes('unsplash.com')) {
     const optimizedUrl = url.includes('?')
-      ? `${url}&w=${width}&q=75&auto=format`
-      : `${url}?w=${width}&q=75&auto=format`;
+      ? `${url}&w=${width}&q=60&auto=format&fm=webp`
+      : `${url}?w=${width}&q=60&auto=format&fm=webp`;
     return optimizedUrl;
   }
   
@@ -47,7 +47,7 @@ export default function OptimizedImage({ uri, style, resizeMode = 'cover' }: Opt
     if (thumbnailLoaded) {
       Animated.timing(thumbnailOpacity, {
         toValue: 1,
-        duration: 150,
+        duration: 100,
         useNativeDriver: true,
       }).start();
     }
@@ -57,7 +57,7 @@ export default function OptimizedImage({ uri, style, resizeMode = 'cover' }: Opt
     if (fullImageLoaded) {
       Animated.timing(fullImageOpacity, {
         toValue: 1,
-        duration: 300,
+        duration: 200,
         useNativeDriver: true,
       }).start();
     }
