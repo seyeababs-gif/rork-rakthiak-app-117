@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  FlatList,
   Image,
   TouchableOpacity,
   Linking,
@@ -257,17 +256,26 @@ export default function CartScreen() {
     <View style={styles.container}>
       <Stack.Screen options={{ title: 'Mon Panier', headerShown: true }} />
       
-      <FlatList
-        data={cartItems}
-        renderItem={renderCartItem}
-        keyExtractor={(item) => item.product.id}
+      <ScrollView
+        style={styles.scrollView}
         contentContainerStyle={[
-          styles.listContent,
+          styles.scrollContent,
           cartItems.length === 0 && styles.emptyListContent,
         ]}
-        ListEmptyComponent={renderEmptyCart}
-        showsVerticalScrollIndicator={false}
-      />
+        showsVerticalScrollIndicator={true}
+      >
+        {cartItems.length === 0 ? (
+          renderEmptyCart()
+        ) : (
+          <View style={styles.cartItemsContainer}>
+            {cartItems.map((item) => (
+              <View key={item.product.id}>
+                {renderCartItem({ item })}
+              </View>
+            ))}
+          </View>
+        )}
+      </ScrollView>
 
       {cartItems.length > 0 && (
         <View style={styles.footer}>
@@ -455,12 +463,19 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#E8F4F8',
   },
-  listContent: {
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
     padding: 16,
     paddingBottom: 100,
+    flexGrow: 1,
   },
   emptyListContent: {
     flex: 1,
+  },
+  cartItemsContainer: {
+    gap: 0,
   },
   cartItem: {
     flexDirection: 'row',
