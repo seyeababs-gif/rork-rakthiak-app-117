@@ -59,7 +59,7 @@ export default function HomeScreen() {
   const [availableDates, setAvailableDates] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<'products' | 'services'>('products');
   const [showSearch, setShowSearch] = useState<boolean>(false);
-  const [displayCount, setDisplayCount] = useState<number>(20);
+  const [displayCount, setDisplayCount] = useState<number>(5);
   const scrollViewRef = useRef<ScrollView>(null);
 
   const filteredProducts = useMemo(() => {
@@ -118,7 +118,7 @@ export default function HomeScreen() {
   }, [sortedProducts, displayCount]);
 
   useEffect(() => {
-    const nextProducts = sortedProducts.slice(displayCount, displayCount + 20);
+    const nextProducts = sortedProducts.slice(displayCount, displayCount + 5);
     nextProducts.forEach(product => {
       if (product.images && product.images[0]) {
         prefetchImage(product.images[0]);
@@ -130,11 +130,11 @@ export default function HomeScreen() {
 
   const handleScroll = useCallback((event: any) => {
     const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
-    const paddingToBottom = 100;
+    const paddingToBottom = 200;
     const isCloseToBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom;
     
     if (isCloseToBottom && hasMore) {
-      setDisplayCount(prev => Math.min(prev + 20, sortedProducts.length));
+      setDisplayCount(prev => Math.min(prev + 5, sortedProducts.length));
     }
   }, [hasMore, sortedProducts.length]);
 
