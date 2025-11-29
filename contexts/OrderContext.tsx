@@ -73,12 +73,24 @@ export const [OrderProvider, useOrders] = createContextHook(() => {
         user_id: user.id,
         user_name: user.name,
         user_phone: user.phone,
-        items: cartItems.map(item => ({
-          product: item.product,
-          quantity: item.quantity,
-          priceAtPurchase: item.product.price,
-        })),
-        total_amount: cartItems.reduce((total, item) => total + item.product.price * item.quantity, 0),
+        items: cartItems.map(item => {
+          const hasDiscount = item.product.hasDiscount && item.product.discountPercent && item.product.discountPercent > 0;
+          const price = hasDiscount && item.product.originalPrice 
+            ? item.product.originalPrice * (1 - (item.product.discountPercent || 0) / 100)
+            : item.product.price;
+          return {
+            product: item.product,
+            quantity: item.quantity,
+            priceAtPurchase: price,
+          };
+        }),
+        total_amount: cartItems.reduce((total, item) => {
+          const hasDiscount = item.product.hasDiscount && item.product.discountPercent && item.product.discountPercent > 0;
+          const price = hasDiscount && item.product.originalPrice 
+            ? item.product.originalPrice * (1 - (item.product.discountPercent || 0) / 100)
+            : item.product.price;
+          return total + price * item.quantity;
+        }, 0),
         status: waveTransactionId ? 'paid' : 'pending_payment',
         payment_method: 'wave',
         wave_transaction_id: waveTransactionId,

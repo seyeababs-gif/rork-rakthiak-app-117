@@ -13,9 +13,10 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { MapPin, Phone, Package, Crown, LogOut, Calendar, Star, MoreVertical, Shield, Clock, CheckCircle, XCircle, ExternalLink, Camera, User } from 'lucide-react-native';
+import { MapPin, Phone, Package, Crown, LogOut, Calendar, Star, MoreVertical, Shield, Clock, CheckCircle, XCircle, ExternalLink, Camera, User, DollarSign, TrendingUp } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useMarketplace } from '@/contexts/MarketplaceContext';
+import { useOrders } from '@/contexts/OrderContext';
 import { Product } from '@/types/marketplace';
 import { useToast } from '@/contexts/ToastContext';
 import * as ImagePicker from 'expo-image-picker';
@@ -44,6 +45,7 @@ export default function ProfileScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { currentUser, userProducts, logout, getSellerRating, deleteProduct, updateUser, requestPremiumUpgrade } = useMarketplace();
+  const { orders } = useOrders();
   const toast = useToast();
   const [isUploadingImage, setIsUploadingImage] = React.useState(false);
 
@@ -411,6 +413,23 @@ export default function ProfileScreen() {
     ? new Date(currentUser.joinedDate).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
     : 'Récemment';
 
+  const sellerOrders = orders.filter(order => {
+    return order.status === 'completed' && order.items.some(item => item.product.sellerId === currentUser.id);
+  });
+
+  const soldProducts = sellerOrders.reduce((total, order) => {
+    return total + order.items.filter(item => item.product.sellerId === currentUser.id).reduce((sum, item) => sum + item.quantity, 0);
+  }, 0);
+
+  const totalRevenue = sellerOrders.reduce((total, order) => {
+    return total + order.items
+      .filter(item => item.product.sellerId === currentUser.id)
+      .reduce((sum, item) => sum + (item.priceAtPurchase * item.quantity), 0);
+  }, 0);
+
+  const commission = totalRevenue * 0.10;
+  const sellerEarnings = totalRevenue - commission;
+
   return (
     <View style={styles.container}>
       <ScrollView
@@ -504,11 +523,37 @@ export default function ProfileScreen() {
             <Text style={styles.statLabel}>Note moyenne</Text>
           </View>
           <View style={styles.statCard}>
-            <Calendar size={24} color="#3B82F6" />
-            <Text style={styles.statValue}>{memberSince.split(' ')[0]}</Text>
-            <Text style={styles.statLabel}>Membre depuis</Text>
+            <TrendingUp size={24} color="#10B981" />
+            <Text style={styles.statValue}>{soldProducts}</Text>
+            <Text style={styles.statLabel}>Vendus</Text>
           </View>
         </View>
+
+        {soldProducts > 0 && (
+          <View style={styles.revenueContainer}>
+            <View style={styles.revenueHeader}>
+              <DollarSign size={20} color="#10B981" />
+              <Text style={styles.revenueTitle}>À recevoir</Text>
+            </View>
+            <View style={styles.revenueDetails}>
+              <View style={styles.revenueRow}>
+                <Text style={styles.revenueLabel}>Ventes totales</Text>
+                <Text style={styles.revenueValue}>{formatPrice(totalRevenue)}</Text>
+              </View>
+              <View style={styles.revenueRow}>
+                <Text style={styles.revenueLabel}>Commission (10%)</Text>
+                <Text style={styles.revenueNegative}>- {formatPrice(commission)}</Text>
+              </View>
+              <View style={[styles.revenueRow, styles.revenueRowTotal]}>
+                <Text style={styles.revenueLabelTotal}>Montant à recevoir</Text>
+                <Text style={styles.revenueTotal}>{formatPrice(sellerEarnings)}</Text>
+              </View>
+            </View>
+            <Text style={styles.revenueNote}>
+              💵 Ce montant sera versé après la livraison confirmée
+            </Text>
+          </View>
+        )}
 
         <View style={styles.commissionInfoBanner}>
           <View style={styles.commissionHeader}>
@@ -998,5 +1043,76 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#475569',
     lineHeight: 16,
+  },
+  revenueContainer: {
+    backgroundColor: '#F0FDF4',
+    borderRadius: 16,
+    padding: 16,
+    marginHorizontal: isWeb ? 20 : 16,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  revenueHeader: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 8,
+    marginBottom: 12,
+  },
+  revenueTitle: {
+    fontSize: 18,
+    fontWeight: '700' as const,
+    color: '#10B981',
+  },
+  revenueDetails: {
+    gap: 8,
+  },
+  revenueRow: {
+    flexDirection: 'row' as const,
+    justifyContent: 'space-between' as const,
+    alignItems: 'center' as const,
+    paddingVertical: 4,
+  },
+  revenueRowTotal: {
+    borderTopWidth: 2,
+    borderTopColor: '#10B981',
+    marginTop: 8,
+    paddingTop: 12,
+  },
+  revenueLabel: {
+    fontSize: 14,
+    color: '#065F46',
+  },
+  revenueValue: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+    color: '#065F46',
+  },
+  revenueNegative: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+    color: '#DC2626',
+  },
+  revenueLabelTotal: {
+    fontSize: 16,
+    fontWeight: '700' as const,
+    color: '#064E3B',
+  },
+  revenueTotal: {
+    fontSize: 22,
+    fontWeight: '800' as const,
+    color: '#10B981',
+  },
+  revenueNote: {
+    fontSize: 12,
+    color: '#065F46',
+    marginTop: 12,
+    fontStyle: 'italic' as const,
+    textAlign: 'center' as const,
   },
 });

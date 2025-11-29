@@ -85,13 +85,7 @@ export default function CartScreen() {
         setIsProcessing(false);
         
         setTimeout(() => {
-          Alert.alert(
-            '✅ Paiement confirmé !',
-            'Votre paiement a été enregistré et est en attente de validation par l\'administrateur. Vous recevrez une notification une fois validée.\n\nVous pouvez suivre votre commande dans "Mes Commandes".',
-            [
-              { text: 'OK', onPress: () => router.push('/orders') }
-            ]
-          );
+          router.push('/orders');
         }, 100);
       } else {
         Alert.alert('Erreur', 'Une erreur est survenue lors de la création de la commande.');
@@ -165,10 +159,7 @@ export default function CartScreen() {
                               clearCart();
                               setDeliveryInfo({ name: '', phone: '', address: '', city: '' });
                               setIsProcessing(false);
-                              Alert.alert(
-                                '✅ Paiement confirmé !',
-                                'Votre paiement a été enregistré et est en attente de validation par l\'administrateur. Vous recevrez une notification une fois validée.\n\nVous pouvez suivre votre commande dans "Mes Commandes".'
-                              );
+                              router.push('/orders');
                             } else {
                               Alert.alert('Erreur', 'Une erreur est survenue lors de la création de la commande.');
                               setIsProcessing(false);
