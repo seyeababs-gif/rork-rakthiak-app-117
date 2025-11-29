@@ -77,20 +77,31 @@ export function getGridColumns() {
 
 export function getProductCardWidth() {
   const { width } = getDimensions();
-  const columns = getGridColumns();
-  const gap = width < BREAKPOINTS.mobile ? 12 : (width < BREAKPOINTS.desktop ? 16 : 20);
-  const containerPadding = width < BREAKPOINTS.mobile ? 16 : (width < BREAKPOINTS.desktop ? 20 : 20);
   
-  const maxContainerWidth = width < BREAKPOINTS.desktop ? width : 1600;
-  const containerWidth = Math.min(width, maxContainerWidth);
-  const availableWidth = containerWidth - (containerPadding * 2);
-  const totalGapWidth = gap * (columns - 1);
-  const cardWidth = (availableWidth - totalGapWidth) / columns;
-  
-  const maxCardWidth = 280;
-  const minCardWidth = width < 400 ? 140 : (width < BREAKPOINTS.mobile ? 150 : 180);
-  
-  return Math.max(Math.min(cardWidth, maxCardWidth), minCardWidth);
+  if (width < 400) {
+    const containerPadding = 16;
+    const gap = 12;
+    const columns = 2;
+    const availableWidth = width - (containerPadding * 2);
+    const totalGapWidth = gap * (columns - 1);
+    return (availableWidth - totalGapWidth) / columns;
+  } else if (width < BREAKPOINTS.mobile) {
+    const containerPadding = 16;
+    const gap = 12;
+    const columns = 2;
+    const availableWidth = width - (containerPadding * 2);
+    const totalGapWidth = gap * (columns - 1);
+    return (availableWidth - totalGapWidth) / columns;
+  } else if (width < BREAKPOINTS.tablet) {
+    return (width - 80) / 3;
+  } else if (width < BREAKPOINTS.desktop) {
+    return (width - 120) / 4;
+  } else if (width < BREAKPOINTS.largeDesktop) {
+    const containerWidth = Math.min(width, 1600);
+    return (containerWidth - 160) / 5;
+  } else {
+    return (1600 - 160) / 6;
+  }
 }
 
 export function getButtonHeight() {
