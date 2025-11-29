@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,7 +9,7 @@ import {
   Dimensions,
   Platform,
 } from 'react-native';
-import OptimizedImage from '@/components/OptimizedImage';
+import OptimizedImage, { prefetchImage } from '@/components/OptimizedImage';
 import ProductSkeleton from '@/components/ProductSkeleton';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -116,6 +116,15 @@ export default function HomeScreen() {
   const displayedProducts = useMemo(() => {
     return sortedProducts.slice(0, displayCount);
   }, [sortedProducts, displayCount]);
+
+  useEffect(() => {
+    const nextProducts = sortedProducts.slice(displayCount, displayCount + 20);
+    nextProducts.forEach(product => {
+      if (product.images && product.images[0]) {
+        prefetchImage(product.images[0]);
+      }
+    });
+  }, [displayCount, sortedProducts]);
 
   const hasMore = displayCount < sortedProducts.length;
 

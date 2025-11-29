@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { View, StyleSheet, Animated, ImageStyle, StyleProp } from 'react-native';
+import { View, StyleSheet, Animated, ImageStyle, StyleProp, Image } from 'react-native';
 
 interface OptimizedImageProps {
   uri: string;
@@ -12,8 +12,8 @@ function getThumbnailUrl(url: string): string {
   
   if (url.includes('unsplash.com')) {
     const thumbnailUrl = url.includes('?') 
-      ? `${url}&w=20&q=10&blur=20` 
-      : `${url}?w=20&q=10&blur=20`;
+      ? `${url}&w=10&q=1&blur=50` 
+      : `${url}?w=10&q=1&blur=50`;
     return thumbnailUrl;
   }
   
@@ -25,12 +25,25 @@ function getOptimizedUrl(url: string, width: number = 400): string {
   
   if (url.includes('unsplash.com')) {
     const optimizedUrl = url.includes('?')
-      ? `${url}&w=${width}&q=60&auto=format&fm=webp`
-      : `${url}?w=${width}&q=60&auto=format&fm=webp`;
+      ? `${url}&w=${width}&q=50&auto=format&fm=webp&fit=crop`
+      : `${url}?w=${width}&q=50&auto=format&fm=webp&fit=crop`;
     return optimizedUrl;
   }
   
   return url;
+}
+
+const imageCache = new Map<string, boolean>();
+
+export function prefetchImage(uri: string) {
+  if (imageCache.has(uri)) return;
+  
+  const optimizedUri = getOptimizedUrl(uri);
+  Image.prefetch(optimizedUri)
+    .then(() => {
+      imageCache.set(uri, true);
+    })
+    .catch(() => {});
 }
 
 export default function OptimizedImage({ uri, style, resizeMode = 'cover' }: OptimizedImageProps) {
@@ -47,7 +60,7 @@ export default function OptimizedImage({ uri, style, resizeMode = 'cover' }: Opt
     if (thumbnailLoaded) {
       Animated.timing(thumbnailOpacity, {
         toValue: 1,
-        duration: 100,
+        duration: 50,
         useNativeDriver: true,
       }).start();
     }
@@ -57,7 +70,7 @@ export default function OptimizedImage({ uri, style, resizeMode = 'cover' }: Opt
     if (fullImageLoaded) {
       Animated.timing(fullImageOpacity, {
         toValue: 1,
-        duration: 200,
+        duration: 150,
         useNativeDriver: true,
       }).start();
     }

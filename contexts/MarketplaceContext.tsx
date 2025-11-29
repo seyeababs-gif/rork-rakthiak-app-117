@@ -105,9 +105,9 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
       
       const now = Date.now();
       const cacheAge = cachedTimestamp ? now - parseInt(cachedTimestamp, 10) : Infinity;
-      const MAX_CACHE_AGE = 30 * 60 * 1000;
+      const MAX_STALE_AGE = 2 * 60 * 60 * 1000;
       
-      if (cachedProducts && cacheAge < MAX_CACHE_AGE) {
+      if (cachedProducts && cacheAge < MAX_STALE_AGE) {
         try {
           const parsed = JSON.parse(cachedProducts);
           const mappedFromCache: Product[] = parsed.map((p: any) => ({
@@ -118,9 +118,7 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
           }));
           setProducts(mappedFromCache);
           
-          if (cacheAge > 5 * 60 * 1000) {
-            loadProductsFromServer();
-          }
+          loadProductsFromServer();
           return;
         } catch (e) {
           console.error('Error parsing cached products:', e);
@@ -131,18 +129,16 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
     } catch (error: any) {
       const errorMsg = error?.message || String(error);
       console.error('Error loading products:', errorMsg);
-      toast.showError('Error loading products: ' + errorMsg);
     }
   };
   
   const loadProductsFromServer = async () => {
     try {
-
       const { data, error } = await supabase
         .from('products')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(200);
+        .limit(300);
       
       if (error) {
         console.error('Error loading products:', error.message || error);
