@@ -4,10 +4,10 @@ export const isWeb = Platform.OS === 'web';
 export const isIOS = Platform.OS === 'ios';
 export const isAndroid = Platform.OS === 'android';
 
-export const getDimensions = () => {
+export function getDimensions() {
   const { width, height } = Dimensions.get('window');
   return { width, height };
-};
+}
 
 export const BREAKPOINTS = {
   mobile: 600,
@@ -16,40 +16,40 @@ export const BREAKPOINTS = {
   largeDesktop: 1600,
 } as const;
 
-export const getDeviceType = () => {
+export function getDeviceType() {
   const { width } = getDimensions();
   if (width < BREAKPOINTS.mobile) return 'mobile';
   if (width < BREAKPOINTS.tablet) return 'tablet';
   if (width < BREAKPOINTS.desktop) return 'desktop';
   return 'largeDesktop';
-};
+}
 
-export const isMobile = () => {
+export function isMobile() {
   const { width } = getDimensions();
   return width < BREAKPOINTS.mobile;
-};
+}
 
-export const isTablet = () => {
+export function isTablet() {
   const { width } = getDimensions();
   return width >= BREAKPOINTS.mobile && width < BREAKPOINTS.tablet;
-};
+}
 
-export const isDesktop = () => {
+export function isDesktop() {
   const { width } = getDimensions();
   return width >= BREAKPOINTS.tablet;
-};
+}
 
-export const isLargeDesktop = () => {
+export function isLargeDesktop() {
   const { width } = getDimensions();
   return width >= BREAKPOINTS.largeDesktop;
-};
+}
 
-export const getResponsiveValue = <T,>(values: {
+export function getResponsiveValue<T>(values: {
   mobile: T;
   tablet?: T;
   desktop?: T;
   largeDesktop?: T;
-}): T => {
+}): T {
   const deviceType = getDeviceType();
   
   switch (deviceType) {
@@ -62,9 +62,9 @@ export const getResponsiveValue = <T,>(values: {
     default:
       return values.mobile;
   }
-};
+}
 
-export const getGridColumns = () => {
+export function getGridColumns() {
   const { width } = getDimensions();
   
   if (width < 400) return 2;
@@ -73,9 +73,9 @@ export const getGridColumns = () => {
   if (width < BREAKPOINTS.desktop) return 4;
   if (width < BREAKPOINTS.largeDesktop) return 5;
   return 6;
-};
+}
 
-export const getProductCardWidth = () => {
+export function getProductCardWidth() {
   const { width } = getDimensions();
   const columns = getGridColumns();
   const gap = width < BREAKPOINTS.mobile ? 12 : (width < BREAKPOINTS.desktop ? 16 : 20);
@@ -91,54 +91,54 @@ export const getProductCardWidth = () => {
   const minCardWidth = width < 400 ? 140 : (width < BREAKPOINTS.mobile ? 150 : 180);
   
   return Math.max(Math.min(cardWidth, maxCardWidth), minCardWidth);
-};
+}
 
-export const getButtonHeight = () => {
+export function getButtonHeight() {
   return getResponsiveValue({
     mobile: 48,
     tablet: 52,
     desktop: 56,
   });
-};
+}
 
-export const getButtonFontSize = () => {
+export function getButtonFontSize() {
   return getResponsiveValue({
     mobile: 16,
     tablet: 17,
     desktop: 18,
   });
-};
+}
 
-export const getInputHeight = () => {
+export function getInputHeight() {
   return getResponsiveValue({
     mobile: 48,
     tablet: 52,
     desktop: 56,
   });
-};
+}
 
-export const getHeaderHeight = () => {
+export function getHeaderHeight() {
   return getResponsiveValue({
     mobile: 'auto' as const,
     tablet: 'auto' as const,
     desktop: 'auto' as const,
   });
-};
+}
 
-export const getContainerPadding = () => {
+export function getContainerPadding() {
   return getResponsiveValue({
     mobile: 16,
     tablet: 20,
     desktop: 32,
     largeDesktop: 40,
   });
-};
+}
 
-export const getMaxContainerWidth = (): number | string => {
+export function getMaxContainerWidth(): number | string {
   return getResponsiveValue<number | string>({
     mobile: '100%',
     tablet: '100%',
     desktop: 1400,
     largeDesktop: 1600,
   });
-};
+}
