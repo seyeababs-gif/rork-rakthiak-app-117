@@ -469,10 +469,9 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 16,
     paddingBottom: 100,
-    flexGrow: 1,
   },
   emptyListContent: {
-    flex: 1,
+    flexGrow: 1,
   },
   cartItemsContainer: {
     gap: 0,

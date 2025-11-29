@@ -23,7 +23,7 @@ const isWeb = Platform.OS === 'web';
 
 function getProductCardWidth() {
   if (width < 600) {
-    const containerPadding = 16;
+    const containerPadding = isWeb ? 20 : 16;
     const gap = 12;
     const columns = 2;
     const availableWidth = width - (containerPadding * 2);
