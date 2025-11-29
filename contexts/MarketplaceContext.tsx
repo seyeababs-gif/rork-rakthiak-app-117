@@ -99,7 +99,15 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
         ? localStorage.getItem('cached_products')
         : await AsyncStorage.getItem('cached_products');
       
-      if (cachedProducts) {
+      const cachedTimestamp = Platform.OS === 'web'
+        ? localStorage.getItem('cached_products_timestamp')
+        : await AsyncStorage.getItem('cached_products_timestamp');
+      
+      const now = Date.now();
+      const cacheAge = cachedTimestamp ? now - parseInt(cachedTimestamp, 10) : Infinity;
+      const MAX_CACHE_AGE = 5 * 60 * 1000;
+      
+      if (cachedProducts && cacheAge < MAX_CACHE_AGE) {
         try {
           const parsed = JSON.parse(cachedProducts);
           const mappedFromCache: Product[] = parsed.map((p: any) => ({
@@ -118,7 +126,7 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
         .from('products')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(20);
+        .limit(50);
       
       if (error) {
         console.error('Error loading products:', error.message || error);
@@ -159,17 +167,34 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
         setProducts(mappedProducts);
 
         const cacheData = JSON.stringify(mappedProducts);
+        const timestamp = Date.now().toString();
+        
         if (Platform.OS === 'web') {
           try {
             localStorage.setItem('cached_products', cacheData);
+            localStorage.setItem('cached_products_timestamp', timestamp);
           } catch (e) {
             console.error('Error caching products:', e);
+            try {
+              localStorage.removeItem('cached_products');
+              localStorage.removeItem('cached_products_timestamp');
+            } catch (clearError) {
+              console.error('Error clearing cache:', clearError);
+            }
           }
         } else {
           try {
-            await AsyncStorage.setItem('cached_products', cacheData);
+            await AsyncStorage.multiSet([
+              ['cached_products', cacheData],
+              ['cached_products_timestamp', timestamp]
+            ]);
           } catch (e) {
             console.error('Error caching products:', e);
+            try {
+              await AsyncStorage.multiRemove(['cached_products', 'cached_products_timestamp']);
+            } catch (clearError) {
+              console.error('Error clearing cache:', clearError);
+            }
           }
         }
       }

@@ -6,11 +6,11 @@ import {
   ScrollView,
   TextInput,
   TouchableOpacity,
-  FlatList,
   Dimensions,
   Platform,
 } from 'react-native';
 import OptimizedImage from '@/components/OptimizedImage';
+import ProductSkeleton from '@/components/ProductSkeleton';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Search, MapPin, Sparkles, Calendar, ArrowRight, Package, Car, X } from 'lucide-react-native';
@@ -540,6 +540,14 @@ export default function HomeScreen() {
           </Text>
         </View>
 
+        {products.length === 0 && (
+          <View style={styles.loadingContainer}>
+            {Array.from({ length: 6 }).map((_, index) => (
+              <ProductSkeleton key={`skeleton-${index}`} />
+            ))}
+          </View>
+        )}
+
         {viewMode === 'services' ? (
           <View style={styles.servicesList}>
             {sortedProducts.map(renderServiceCard)}
@@ -550,7 +558,7 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {sortedProducts.length === 0 && (
+        {sortedProducts.length === 0 && products.length > 0 && (
           <View style={styles.emptyState}>
             <Text style={styles.emptyStateIcon}>🔍</Text>
             <Text style={styles.emptyStateText}>Aucun produit trouvé</Text>
@@ -764,6 +772,13 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: width < 600 ? 12 : (width < 1200 ? 16 : 20),
     justifyContent: 'flex-start',
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: width < 600 ? 12 : (width < 1200 ? 16 : 20),
+    justifyContent: 'flex-start',
+    marginBottom: 20,
   },
   productCard: {
     backgroundColor: '#fff',
