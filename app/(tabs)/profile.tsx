@@ -511,15 +511,9 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.commissionInfoBanner}>
-          <View style={styles.commissionIconContainer}>
-            <Text style={styles.commissionIcon}>ℹ️</Text>
-          </View>
-          <View style={styles.commissionTextContainer}>
-            <Text style={styles.commissionTitle}>Frais de service</Text>
-            <Text style={styles.commissionText}>
-              Nos frais de communication sont de <Text style={styles.commissionHighlight}>10%</Text> pour tous les produits vendus. Ces frais permettent de maintenir la plateforme et garantir la sécurité de vos transactions.
-            </Text>
-          </View>
+          <Text style={styles.commissionText}>
+            ℹ️ Frais de service : <Text style={styles.commissionHighlight}>10%</Text> sur les ventes
+          </Text>
         </View>
 
         <View style={styles.section}>
@@ -954,46 +948,16 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   commissionInfoBanner: {
-    flexDirection: 'row',
-    backgroundColor: '#EFF6FF',
-    borderLeftWidth: 4,
-    borderLeftColor: '#1E3A8A',
-    borderRadius: 12,
-    padding: isWeb ? 20 : 16,
+    backgroundColor: '#F5F5F5',
+    borderRadius: 8,
+    padding: 10,
     marginHorizontal: isWeb ? 20 : 16,
     marginBottom: 24,
-    gap: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  commissionIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#1E3A8A',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  commissionIcon: {
-    fontSize: 24,
-  },
-  commissionTextContainer: {
-    flex: 1,
-    gap: 4,
-  },
-  commissionTitle: {
-    fontSize: 16,
-    fontWeight: '700' as const,
-    color: '#1E3A8A',
-    marginBottom: 4,
   },
   commissionText: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#666',
-    lineHeight: 20,
+    textAlign: 'center',
   },
   commissionHighlight: {
     fontWeight: '700' as const,

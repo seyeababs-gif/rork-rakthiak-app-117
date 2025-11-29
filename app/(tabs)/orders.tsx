@@ -9,23 +9,26 @@ import {
   Modal,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Package, Clock, CheckCircle, XCircle, Truck, ChevronRight, Star, ChevronDown } from 'lucide-react-native';
+import { Package, Clock, CheckCircle, XCircle, Truck, ChevronRight, Star, ChevronDown, MapPin, User, Phone, Trash2, X } from 'lucide-react-native';
 import { useOrders } from '@/contexts/OrderContext';
 import { useMarketplace } from '@/contexts/MarketplaceContext';
 import { useReviews } from '@/contexts/ReviewContext';
 import { OrderStatus, Order } from '@/types/marketplace';
 import { router } from 'expo-router';
 import ReviewModal from '@/components/ReviewModal';
+import { useToast } from '@/contexts/ToastContext';
 
 export default function OrdersScreen() {
   const insets = useSafeAreaInsets();
-  const { getUserOrders } = useOrders();
+  const { getUserOrders, deleteOrder } = useOrders();
   const { currentUser, isAuthenticated } = useMarketplace();
   const { canReviewOrder, addReview } = useReviews();
   const [selectedFilter, setSelectedFilter] = useState<OrderStatus | 'all'>('all');
   const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [reviewModalVisible, setReviewModalVisible] = useState(false);
+  const [detailsModalVisible, setDetailsModalVisible] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const toast = useToast();
 
   const userOrders = currentUser ? getUserOrders(currentUser.id) : [];
 
@@ -248,7 +251,13 @@ export default function OrdersScreen() {
                     <Text style={styles.totalLabel}>Total</Text>
                     <Text style={styles.totalAmount}>{formatPrice(order.totalAmount)}</Text>
                   </View>
-                  <TouchableOpacity style={styles.detailsButton}>
+                  <TouchableOpacity 
+                    style={styles.detailsButton}
+                    onPress={() => {
+                      setSelectedOrder(order);
+                      setDetailsModalVisible(true);
+                    }}
+                  >
                     <Text style={styles.detailsButtonText}>Détails</Text>
                     <ChevronRight size={18} color="#1E3A8A" />
                   </TouchableOpacity>
@@ -275,6 +284,36 @@ export default function OrdersScreen() {
                       <Text style={styles.rejectionReasonText}>{order.rejectionReason}</Text>
                     </View>
                   </View>
+                )}
+
+                {currentUser?.isSuperAdmin && (
+                  <TouchableOpacity
+                    style={styles.deleteOrderButton}
+                    onPress={() => {
+                      toast.showAlert(
+                        'Supprimer la commande',
+                        `Êtes-vous sûr de vouloir supprimer cette commande #${order.id.slice(-8)} ? Cette action est irréversible.`,
+                        [
+                          { text: 'Annuler', style: 'cancel' },
+                          {
+                            text: 'Supprimer',
+                            style: 'destructive',
+                            onPress: async () => {
+                              const result = await deleteOrder(order.id);
+                              if (result.success) {
+                                toast.showSuccess('La commande a été supprimée');
+                              } else {
+                                toast.showError(result.error || 'Erreur lors de la suppression');
+                              }
+                            },
+                          },
+                        ]
+                      );
+                    }}
+                  >
+                    <Trash2 size={18} color="#E31B23" />
+                    <Text style={styles.deleteOrderButtonText}>Supprimer</Text>
+                  </TouchableOpacity>
                 )}
               </View>
             );
@@ -364,6 +403,117 @@ export default function OrdersScreen() {
             ))}
           </View>
         </TouchableOpacity>
+      </Modal>
+
+      <Modal
+        visible={detailsModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => {
+          setDetailsModalVisible(false);
+          setSelectedOrder(null);
+        }}
+      >
+        <View style={styles.detailsModalOverlay}>
+          <View style={styles.detailsModalContent}>
+            <View style={styles.detailsModalHeader}>
+              <View>
+                <Text style={styles.detailsModalTitle}>Détails de la commande</Text>
+                {selectedOrder && (
+                  <Text style={styles.detailsModalSubtitle}>#{selectedOrder.id.slice(-8).toUpperCase()}</Text>
+                )}
+              </View>
+              <TouchableOpacity 
+                style={styles.detailsModalCloseButton}
+                onPress={() => {
+                  setDetailsModalVisible(false);
+                  setSelectedOrder(null);
+                }}
+              >
+                <X size={24} color="#666" />
+              </TouchableOpacity>
+            </View>
+
+            {selectedOrder && (
+              <ScrollView 
+                style={styles.detailsModalScroll}
+                showsVerticalScrollIndicator={true}
+              >
+                <View style={styles.detailsSection}>
+                  <Text style={styles.detailsSectionTitle}>Informations de livraison</Text>
+                  <View style={styles.detailsInfoRow}>
+                    <User size={16} color="#666" />
+                    <Text style={styles.detailsInfoText}>{selectedOrder.deliveryName || selectedOrder.userName}</Text>
+                  </View>
+                  <View style={styles.detailsInfoRow}>
+                    <Phone size={16} color="#666" />
+                    <Text style={styles.detailsInfoText}>{selectedOrder.deliveryPhone || selectedOrder.userPhone}</Text>
+                  </View>
+                  {selectedOrder.deliveryAddress && (
+                    <View style={styles.detailsInfoRow}>
+                      <MapPin size={16} color="#666" />
+                      <Text style={styles.detailsInfoText}>{selectedOrder.deliveryAddress}</Text>
+                    </View>
+                  )}
+                  {selectedOrder.deliveryCity && (
+                    <View style={styles.detailsInfoRow}>
+                      <MapPin size={16} color="#666" />
+                      <Text style={styles.detailsInfoText}>{selectedOrder.deliveryCity}</Text>
+                    </View>
+                  )}
+                </View>
+
+                <View style={styles.detailsSection}>
+                  <Text style={styles.detailsSectionTitle}>Produits</Text>
+                  {selectedOrder.items.map((item, index) => (
+                    <View key={index} style={styles.detailsProductCard}>
+                      <Image 
+                        source={{ uri: item.product.images[0] }} 
+                        style={styles.detailsProductImage} 
+                      />
+                      <View style={styles.detailsProductInfo}>
+                        <Text style={styles.detailsProductTitle}>{item.product.title}</Text>
+                        <Text style={styles.detailsProductQuantity}>Quantité : {item.quantity}</Text>
+                        <Text style={styles.detailsProductPrice}>
+                          {formatPrice(item.priceAtPurchase)} × {item.quantity} = {formatPrice(item.priceAtPurchase * item.quantity)}
+                        </Text>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+
+                <View style={styles.detailsSection}>
+                  <View style={styles.detailsTotalRow}>
+                    <Text style={styles.detailsTotalLabel}>Total</Text>
+                    <Text style={styles.detailsTotalAmount}>{formatPrice(selectedOrder.totalAmount)}</Text>
+                  </View>
+                </View>
+
+                {selectedOrder.waveTransactionId && (
+                  <View style={styles.detailsSection}>
+                    <Text style={styles.detailsSectionTitle}>Paiement</Text>
+                    <View style={styles.detailsInfoRow}>
+                      <CheckCircle size={16} color="#00A651" />
+                      <Text style={styles.detailsInfoText}>Référence: {selectedOrder.waveTransactionId}</Text>
+                    </View>
+                  </View>
+                )}
+
+                {selectedOrder.rejectionReason && (
+                  <View style={[styles.detailsSection, styles.detailsRejectionSection]}>
+                    <View style={styles.detailsInfoRow}>
+                      <XCircle size={16} color="#E31B23" />
+                      <Text style={[styles.detailsInfoText, { color: '#E31B23', fontWeight: '600' }]}>
+                        Raison du rejet
+                      </Text>
+                    </View>
+                    <Text style={styles.detailsRejectionText}>{selectedOrder.rejectionReason}</Text>
+                  </View>
+                )}
+              </ScrollView>
+            )}
+          </View>
+        </View>
       </Modal>
     </View>
   );
@@ -737,5 +887,145 @@ const styles = StyleSheet.create({
   },
   stepLabelActive: {
     color: '#1E3A8A',
+  },
+  deleteOrderButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 12,
+    paddingVertical: 12,
+    borderRadius: 10,
+    backgroundColor: '#FFF5F5',
+    borderWidth: 1,
+    borderColor: '#E31B23',
+  },
+  deleteOrderButtonText: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+    color: '#E31B23',
+  },
+  detailsModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  detailsModalContent: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '85%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 5,
+  },
+  detailsModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  detailsModalTitle: {
+    fontSize: 20,
+    fontWeight: '700' as const,
+    color: '#000',
+    marginBottom: 4,
+  },
+  detailsModalSubtitle: {
+    fontSize: 14,
+    color: '#666',
+  },
+  detailsModalCloseButton: {
+    padding: 4,
+  },
+  detailsModalScroll: {
+    maxHeight: '100%',
+  },
+  detailsSection: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  detailsSectionTitle: {
+    fontSize: 16,
+    fontWeight: '700' as const,
+    color: '#000',
+    marginBottom: 12,
+  },
+  detailsInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  detailsInfoText: {
+    fontSize: 14,
+    color: '#666',
+    flex: 1,
+  },
+  detailsProductCard: {
+    flexDirection: 'row',
+    gap: 12,
+    padding: 12,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 12,
+    marginBottom: 8,
+  },
+  detailsProductImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    backgroundColor: '#e0e0e0',
+  },
+  detailsProductInfo: {
+    flex: 1,
+    gap: 4,
+  },
+  detailsProductTitle: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+    color: '#000',
+  },
+  detailsProductQuantity: {
+    fontSize: 13,
+    color: '#666',
+  },
+  detailsProductPrice: {
+    fontSize: 14,
+    fontWeight: '700' as const,
+    color: '#1E3A8A',
+  },
+  detailsTotalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  detailsTotalLabel: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    color: '#666',
+  },
+  detailsTotalAmount: {
+    fontSize: 24,
+    fontWeight: '700' as const,
+    color: '#000',
+  },
+  detailsRejectionSection: {
+    backgroundColor: '#FFF5F5',
+    borderLeftWidth: 4,
+    borderLeftColor: '#E31B23',
+  },
+  detailsRejectionText: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 8,
+    marginLeft: 24,
   },
 });
