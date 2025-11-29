@@ -1054,6 +1054,7 @@ const styles = StyleSheet.create({
   contentContainer: {
     padding: getContainerPadding(),
     paddingBottom: 100,
+    flexGrow: 1,
     alignSelf: 'center',
     width: '100%',
     maxWidth: 1600,
