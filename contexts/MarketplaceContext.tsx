@@ -137,7 +137,8 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
       const { data, error } = await supabase
         .from('products')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(50);
       
       if (error) {
         console.error('Error loading products:', error.message || error);

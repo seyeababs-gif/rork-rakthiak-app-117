@@ -440,6 +440,11 @@ export default function AdminScreen() {
 
     const statusInfo = getProductStatusInfo();
     const StatusIcon = statusInfo.icon;
+    
+    const hasDiscount = product.hasDiscount && product.discountPercent && product.discountPercent > 0;
+    const displayPrice = hasDiscount && product.originalPrice 
+      ? product.originalPrice * (1 - (product.discountPercent || 0) / 100)
+      : product.price;
 
     return (
       <View key={product.id} style={styles.productCard}>
@@ -454,7 +459,17 @@ export default function AdminScreen() {
           <Text style={styles.productTitle} numberOfLines={2}>
             {product.title}
           </Text>
-          <Text style={styles.productPrice}>{formatPrice(product.price)}</Text>
+          {hasDiscount && product.originalPrice ? (
+            <View style={styles.priceContainer}>
+              <Text style={styles.productPriceDiscount}>{formatPrice(displayPrice)}</Text>
+              <Text style={styles.productPriceOriginal}>{formatPrice(product.originalPrice)}</Text>
+              <View style={styles.discountBadge}>
+                <Text style={styles.discountBadgeText}>-{product.discountPercent}%</Text>
+              </View>
+            </View>
+          ) : (
+            <Text style={styles.productPrice}>{formatPrice(product.price)}</Text>
+          )}
           <Text style={styles.productSeller} numberOfLines={1}>
             Par {product.sellerName}
           </Text>
@@ -1716,6 +1731,34 @@ const styles = StyleSheet.create({
   },
   userActionButtonTextRemoveAdmin: {
     color: '#E31B23',
+  },
+  priceContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flexWrap: 'wrap',
+  },
+  productPriceDiscount: {
+    fontSize: 16,
+    fontWeight: '700' as const,
+    color: '#E31B23',
+  },
+  productPriceOriginal: {
+    fontSize: 14,
+    fontWeight: '500' as const,
+    color: '#999',
+    textDecorationLine: 'line-through' as const,
+  },
+  discountBadge: {
+    backgroundColor: '#E31B23',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  discountBadgeText: {
+    fontSize: 10,
+    fontWeight: '700' as const,
+    color: '#fff',
   },
   modalOverlay: {
     flex: 1,
