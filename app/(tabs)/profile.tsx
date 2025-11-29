@@ -6,7 +6,8 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
-
+  Dimensions,
+  Platform,
   Share,
   Linking,
   ActivityIndicator,
@@ -19,14 +20,26 @@ import { Product } from '@/types/marketplace';
 import { useToast } from '@/contexts/ToastContext';
 import * as ImagePicker from 'expo-image-picker';
 
-import { 
-  getDimensions,
-  getProductCardWidth,
-  isWeb,
-  getContainerPadding,
-  getButtonHeight,
-  getButtonFontSize,
-} from '@/constants/responsive';
+const { width } = Dimensions.get('window');
+const isWeb = Platform.OS === 'web';
+
+function getProductCardWidth() {
+  if (width < 600) {
+    const containerPadding = 16;
+    const gap = 12;
+    const columns = 2;
+    const availableWidth = width - (containerPadding * 2);
+    const totalGapWidth = gap * (columns - 1);
+    return (availableWidth - totalGapWidth) / columns;
+  } else if (width < 900) {
+    return (width - 80) / 3;
+  } else if (width < 1200) {
+    return (width - 120) / 4;
+  } else {
+    return (1600 - 160) / 5;
+  }
+}
+
 export default function ProfileScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -351,15 +364,19 @@ export default function ProfileScreen() {
   const renderProductCard = (product: Product) => {
     const statusInfo = getProductStatusInfo(product.status);
     const StatusIcon = statusInfo.icon;
+    const cardWidth = getProductCardWidth();
 
     return (
-      <View key={product.id} style={styles.productCard}>
+      <View key={product.id} style={[styles.productCard, { width: cardWidth }]}>
         <TouchableOpacity
           onPress={() => router.push(`/product/${product.id}` as any)}
           activeOpacity={0.7}
           style={styles.productCardContent}
         >
-          <Image source={{ uri: product.images[0] }} style={styles.productImage} />
+          <Image 
+            source={{ uri: product.images[0] }} 
+            style={[styles.productImage, { height: cardWidth * 1.1 }]}
+          />
           <View style={[styles.productStatusBadge, { backgroundColor: statusInfo.color + '20' }]}>
             <StatusIcon size={12} color={statusInfo.color} />
             <Text style={[styles.productStatusText, { color: statusInfo.color }]}>
@@ -396,83 +413,83 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
-        <View style={styles.profileHeader}>
-          <View style={styles.avatarContainer}>
-            <Image source={{ uri: currentUser.avatar }} style={styles.avatar} />
-            <TouchableOpacity 
-              style={styles.changePictureButton} 
-              onPress={handleChangeProfilePicture}
-              activeOpacity={0.7}
-              disabled={isUploadingImage}
-            >
-              {isUploadingImage ? (
-                <ActivityIndicator size="small" color="#fff" />
-              ) : (
-                <Camera size={16} color="#fff" />
-              )}
-            </TouchableOpacity>
-          </View>
-          <View style={styles.profileInfo}>
-            <View style={styles.userNameRow}>
-              <Text style={styles.userName}>{currentUser.name}</Text>
-              {currentUser.type === 'premium' && (
-                <View style={styles.premiumBadge}>
-                  <Crown size={12} color="#FFD700" fill="#FFD700" />
-                  <Text style={styles.premiumText}>Premium</Text>
-                </View>
-              )}
-            </View>
-            <View style={styles.infoRow}>
-              <MapPin size={14} color="#666" />
-              <Text style={styles.infoText}>{currentUser.location}</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Phone size={14} color="#666" />
-              <Text style={styles.infoText}>{currentUser.phone}</Text>
-            </View>
-          </View>
-        </View>
-        <TouchableOpacity style={styles.shareShopButton} onPress={handleShareShop}>
-          <ExternalLink size={16} color="#1E3A8A" />
-          <Text style={styles.shareShopButtonText}>Partager ma boutique</Text>
-        </TouchableOpacity>
-        <View style={styles.buttonRow}>
-          {currentUser.type === 'standard' && !currentUser.premiumPaymentPending && (
-            <TouchableOpacity style={styles.upgradeButton} onPress={handleUpgrade}>
-              <Crown size={16} color="#FFD700" />
-              <Text style={styles.upgradeButtonText}>Passer à Premium</Text>
-            </TouchableOpacity>
-          )}
-          {currentUser.premiumPaymentPending && (
-            <View style={styles.pendingBadge}>
-              <Clock size={16} color="#FFA500" />
-              <Text style={styles.pendingBadgeText}>En attente de validation</Text>
-            </View>
-          )}
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-            <LogOut size={16} color="#FF3B30" />
-            <Text style={styles.logoutButtonText}>Déconnexion</Text>
-          </TouchableOpacity>
-        </View>
-        {currentUser.isSuperAdmin && (
-          <TouchableOpacity 
-            style={currentUser.isAdmin ? styles.adminButtonActive : styles.adminButton} 
-            onPress={toggleAdminMode}
-          >
-            <Shield size={16} color={currentUser.isAdmin ? "#fff" : "#1E3A8A"} />
-            <Text style={currentUser.isAdmin ? styles.adminButtonTextActive : styles.adminButtonText}>
-              {currentUser.isAdmin ? 'Mode Admin Activé' : 'Activer Mode Admin'}
-            </Text>
-          </TouchableOpacity>
-        )}
-      </View>
-
       <ScrollView
-        style={styles.content}
-        contentContainerStyle={styles.contentContainer}
-        showsVerticalScrollIndicator={false}
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={true}
       >
+        <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+          <View style={styles.profileHeader}>
+            <View style={styles.avatarContainer}>
+              <Image source={{ uri: currentUser.avatar }} style={styles.avatar} />
+              <TouchableOpacity 
+                style={styles.changePictureButton} 
+                onPress={handleChangeProfilePicture}
+                activeOpacity={0.7}
+                disabled={isUploadingImage}
+              >
+                {isUploadingImage ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Camera size={16} color="#fff" />
+                )}
+              </TouchableOpacity>
+            </View>
+            <View style={styles.profileInfo}>
+              <View style={styles.userNameRow}>
+                <Text style={styles.userName}>{currentUser.name}</Text>
+                {currentUser.type === 'premium' && (
+                  <View style={styles.premiumBadge}>
+                    <Crown size={12} color="#FFD700" fill="#FFD700" />
+                    <Text style={styles.premiumText}>Premium</Text>
+                  </View>
+                )}
+              </View>
+              <View style={styles.infoRow}>
+                <MapPin size={14} color="#666" />
+                <Text style={styles.infoText}>{currentUser.location}</Text>
+              </View>
+              <View style={styles.infoRow}>
+                <Phone size={14} color="#666" />
+                <Text style={styles.infoText}>{currentUser.phone}</Text>
+              </View>
+            </View>
+          </View>
+          <TouchableOpacity style={styles.shareShopButton} onPress={handleShareShop}>
+            <ExternalLink size={16} color="#1E3A8A" />
+            <Text style={styles.shareShopButtonText}>Partager ma boutique</Text>
+          </TouchableOpacity>
+          <View style={styles.buttonRow}>
+            {currentUser.type === 'standard' && !currentUser.premiumPaymentPending && (
+              <TouchableOpacity style={styles.upgradeButton} onPress={handleUpgrade}>
+                <Crown size={16} color="#FFD700" />
+                <Text style={styles.upgradeButtonText}>Passer à Premium</Text>
+              </TouchableOpacity>
+            )}
+            {currentUser.premiumPaymentPending && (
+              <View style={styles.pendingBadge}>
+                <Clock size={16} color="#FFA500" />
+                <Text style={styles.pendingBadgeText}>En attente de validation</Text>
+              </View>
+            )}
+            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+              <LogOut size={16} color="#FF3B30" />
+              <Text style={styles.logoutButtonText}>Déconnexion</Text>
+            </TouchableOpacity>
+          </View>
+          {currentUser.isSuperAdmin && (
+            <TouchableOpacity 
+              style={currentUser.isAdmin ? styles.adminButtonActive : styles.adminButton} 
+              onPress={toggleAdminMode}
+            >
+              <Shield size={16} color={currentUser.isAdmin ? "#fff" : "#1E3A8A"} />
+              <Text style={currentUser.isAdmin ? styles.adminButtonTextActive : styles.adminButtonText}>
+                {currentUser.isAdmin ? 'Mode Admin Activé' : 'Activer Mode Admin'}
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
         <View style={styles.statsContainer}>
           <View style={styles.statCard}>
             <Package size={24} color="#1E3A8A" />
@@ -526,8 +543,14 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 100,
+  },
   header: {
-    paddingHorizontal: getContainerPadding(),
+    paddingHorizontal: isWeb ? 20 : 16,
     paddingBottom: 12,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
@@ -610,10 +633,10 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#FFD700',
-    minHeight: getButtonHeight(),
+    minHeight: isWeb ? 52 : 48,
   },
   upgradeButtonText: {
-    fontSize: getButtonFontSize(),
+    fontSize: isWeb ? 16 : 15,
     fontWeight: '700' as const,
     color: '#B8860B',
   },
@@ -629,10 +652,10 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#FF3B30',
-    minHeight: getButtonHeight(),
+    minHeight: isWeb ? 52 : 48,
   },
   logoutButtonText: {
-    fontSize: getButtonFontSize(),
+    fontSize: isWeb ? 16 : 15,
     fontWeight: '700' as const,
     color: '#FF3B30',
   },
@@ -645,17 +668,38 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
   },
-  content: {
-    flex: 1,
+  statsContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 16,
+    paddingHorizontal: isWeb ? 20 : 16,
+    marginBottom: 24,
   },
-  contentContainer: {
-    padding: getContainerPadding(),
-    paddingBottom: 100,
-    alignSelf: 'center',
-    width: '100%',
-    maxWidth: 1600,
+  statCard: {
+    flex: 1,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 16,
+    alignItems: 'center',
+    gap: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  statValue: {
+    fontSize: 24,
+    fontWeight: '700' as const,
+    color: '#000',
+  },
+  statLabel: {
+    fontSize: 12,
+    color: '#666',
+    textAlign: 'center',
   },
   section: {
+    paddingHorizontal: isWeb ? 20 : 16,
     marginBottom: 24,
   },
   sectionHeader: {
@@ -676,11 +720,10 @@ const styles = StyleSheet.create({
   productsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: getDimensions().width < 600 ? 12 : (getDimensions().width < 1200 ? 16 : 20),
+    gap: width < 600 ? 12 : (width < 1200 ? 16 : 20),
     justifyContent: 'flex-start',
   },
   productCard: {
-    width: getProductCardWidth(),
     backgroundColor: '#fff',
     borderRadius: 16,
     overflow: 'hidden',
@@ -710,38 +753,8 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  statsContainer: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 24,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    alignItems: 'center',
-    gap: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  statValue: {
-    fontSize: 24,
-    fontWeight: '700' as const,
-    color: '#000',
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#666',
-    textAlign: 'center',
-  },
   productImage: {
     width: '100%',
-    height: getProductCardWidth() * 1.1,
-    maxHeight: 330,
     backgroundColor: '#f5f5f5',
   },
   productInfo: {
@@ -791,7 +804,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#1E3A8A',
     marginTop: 12,
-    minHeight: getButtonHeight(),
+    minHeight: isWeb ? 52 : 48,
   },
   adminButtonActive: {
     flexDirection: 'row',
@@ -803,15 +816,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: isWeb ? 20 : 16,
     borderRadius: 12,
     marginTop: 12,
-    minHeight: getButtonHeight(),
+    minHeight: isWeb ? 52 : 48,
   },
   adminButtonText: {
-    fontSize: getButtonFontSize(),
+    fontSize: isWeb ? 16 : 15,
     fontWeight: '700' as const,
     color: '#1E3A8A',
   },
   adminButtonTextActive: {
-    fontSize: getButtonFontSize(),
+    fontSize: isWeb ? 16 : 15,
     fontWeight: '700' as const,
     color: '#fff',
   },
@@ -848,7 +861,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#FFA500',
-    minHeight: getButtonHeight(),
+    minHeight: isWeb ? 52 : 48,
   },
   pendingBadgeText: {
     fontSize: 13,
@@ -866,11 +879,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#1E3A8A',
-    marginBottom: 12,
-    minHeight: getButtonHeight(),
+    marginTop: 12,
+    minHeight: isWeb ? 52 : 48,
   },
   shareShopButtonText: {
-    fontSize: getButtonFontSize(),
+    fontSize: isWeb ? 16 : 15,
     fontWeight: '700' as const,
     color: '#1E3A8A',
   },
@@ -919,11 +932,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 6,
-    minHeight: getButtonHeight(),
+    minHeight: isWeb ? 56 : 52,
     justifyContent: 'center',
   },
   loginButtonText: {
-    fontSize: getButtonFontSize(),
+    fontSize: isWeb ? 18 : 16,
     fontWeight: '700' as const,
     color: '#fff',
   },

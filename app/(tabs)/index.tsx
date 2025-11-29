@@ -7,6 +7,8 @@ import {
   TextInput,
   TouchableOpacity,
   Image,
+  Dimensions,
+  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -15,11 +17,29 @@ import { useRouter } from 'expo-router';
 import { useMarketplace } from '@/contexts/MarketplaceContext';
 import { categories, getSubCategoriesForCategory } from '@/constants/categories';
 import { Product } from '@/types/marketplace';
-import { 
-  isWeb, 
-  getProductCardWidth,
-  getDimensions
-} from '@/constants/responsive';
+
+const { width } = Dimensions.get('window');
+const isWeb = Platform.OS === 'web';
+
+function getProductCardWidth() {
+  if (width < 600) {
+    const containerPadding = 16;
+    const gap = 12;
+    const columns = 2;
+    const availableWidth = width - (containerPadding * 2);
+    const totalGapWidth = gap * (columns - 1);
+    return (availableWidth - totalGapWidth) / columns;
+  } else if (width < 900) {
+    return (width - 80) / 3;
+  } else if (width < 1200) {
+    return (width - 120) / 4;
+  } else if (width < 1600) {
+    const containerWidth = Math.min(width, 1600);
+    return (containerWidth - 160) / 5;
+  } else {
+    return (1600 - 160) / 6;
+  }
+}
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -87,7 +107,6 @@ export default function HomeScreen() {
       });
     }
     
-    // Sort by recent
     return sorted.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }, [filteredProducts, selectedDate, viewMode]);
 
@@ -138,7 +157,6 @@ export default function HomeScreen() {
               <Text style={styles.serviceTitle} numberOfLines={1}>
                 {product.title}
               </Text>
-
             </View>
             
             <View style={styles.serviceRoute}>
@@ -186,19 +204,20 @@ export default function HomeScreen() {
       ? product.originalPrice * (1 - (product.discountPercent || 0) / 100)
       : product.price;
 
+    const cardWidth = getProductCardWidth();
+
     return (
       <TouchableOpacity
         key={product.id}
-        style={styles.productCard}
+        style={[styles.productCard, { width: cardWidth }]}
         onPress={() => router.push(`/product/${product.id}` as any)}
         activeOpacity={0.9}
       >
         <View style={styles.imageContainer}>
           <Image 
             source={{ uri: product.images[0] }} 
-            style={styles.productImage}
+            style={[styles.productImage, { height: cardWidth * 1.1 }]}
             resizeMode="cover"
-            fadeDuration={300}
           />
           {hasDiscount && (
             <View style={styles.discountBadge}>
@@ -211,7 +230,6 @@ export default function HomeScreen() {
               <Text style={styles.newBadgeText}>Nouveau</Text>
             </View>
           )}
-
         </View>
         <View style={styles.productInfo}>
           <Text style={styles.productTitle} numberOfLines={2}>
@@ -242,10 +260,7 @@ export default function HomeScreen() {
         colors={['#0D2D5E', '#1E3A8A', '#2563EB', '#87CEEB']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={[
-          styles.header, 
-          { paddingTop: insets.top + (isWeb ? 12 : 20), paddingBottom: isWeb ? 12 : 20 }
-        ]}
+        style={[styles.header, { paddingTop: insets.top + (isWeb ? 12 : 20) }]}
       >
         <View style={styles.headerContent}>
           <View style={styles.headerLeft}>
@@ -512,8 +527,8 @@ export default function HomeScreen() {
 
       <ScrollView
         style={styles.productsContainer}
-        contentContainerStyle={[styles.productsContent, isWeb && styles.webProductsContent]}
-        showsVerticalScrollIndicator={isWeb ? true : false}
+        contentContainerStyle={[styles.productsContent]}
+        showsVerticalScrollIndicator={true}
       >
         <View style={styles.productsHeader}>
           <Text style={styles.sectionTitle}>
@@ -529,7 +544,7 @@ export default function HomeScreen() {
             {sortedProducts.map(renderServiceCard)}
           </View>
         ) : (
-          <View style={[styles.productsGrid, isWeb && styles.webProductsGrid]}>
+          <View style={styles.productsGrid}>
             {sortedProducts.map(renderProductCard)}
           </View>
         )}
@@ -642,7 +657,6 @@ const styles = StyleSheet.create({
   viewModeTextActive: {
     color: '#0D2D5E',
   },
-
   categoriesContainer: {
     maxHeight: 90,
     backgroundColor: '#fff',
@@ -721,15 +735,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   productsContent: {
-    paddingHorizontal: 16,
+    paddingHorizontal: isWeb ? 20 : 16,
     paddingTop: 16,
     paddingBottom: 100,
-  },
-  webProductsContent: {
-    paddingHorizontal: 20,
     alignSelf: 'center',
     width: '100%',
-    maxWidth: 1600,
+    maxWidth: isWeb ? 1600 : undefined,
   },
   productsHeader: {
     flexDirection: 'row',
@@ -750,15 +761,10 @@ const styles = StyleSheet.create({
   productsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: getDimensions().width < 600 ? 12 : 16,
-    justifyContent: 'flex-start',
-  },
-  webProductsGrid: {
-    gap: 20,
+    gap: width < 600 ? 12 : (width < 1200 ? 16 : 20),
     justifyContent: 'flex-start',
   },
   productCard: {
-    width: getProductCardWidth(),
     backgroundColor: '#fff',
     borderRadius: 16,
     overflow: 'hidden',
@@ -773,17 +779,13 @@ const styles = StyleSheet.create({
   imageContainer: {
     position: 'relative',
     width: '100%',
-    height: getProductCardWidth() * 1.1,
-    maxHeight: 330,
     backgroundColor: '#f5f5f5',
   },
   productImage: {
     width: '100%',
-    height: '100%',
     backgroundColor: '#f5f5f5',
     resizeMode: 'cover' as const,
   },
-
   newBadge: {
     position: 'absolute',
     top: 10,
@@ -1007,11 +1009,6 @@ const styles = StyleSheet.create({
     color: '#87CEEB',
     fontWeight: '700' as const,
   },
-  metaText: {
-    fontSize: 12,
-    color: '#87CEEB',
-    fontWeight: '600' as const,
-  },
   sellerName: {
     fontSize: 12,
     color: '#888',
@@ -1023,5 +1020,4 @@ const styles = StyleSheet.create({
     color: '#87CEEB',
     letterSpacing: -0.3,
   },
-
 });
