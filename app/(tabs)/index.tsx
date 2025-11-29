@@ -17,7 +17,8 @@ import { categories, getSubCategoriesForCategory } from '@/constants/categories'
 import { Product } from '@/types/marketplace';
 import { 
   isWeb, 
-  getProductCardWidth
+  getProductCardWidth,
+  getDimensions
 } from '@/constants/responsive';
 
 export default function HomeScreen() {
@@ -749,17 +750,15 @@ const styles = StyleSheet.create({
   productsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    gap: getDimensions().width < 600 ? 12 : 16,
     justifyContent: 'flex-start',
   },
   webProductsGrid: {
-    gap: 16,
+    gap: 20,
     justifyContent: 'flex-start',
   },
   productCard: {
     width: getProductCardWidth(),
-    minWidth: 140,
-    maxWidth: 320,
     backgroundColor: '#fff',
     borderRadius: 16,
     overflow: 'hidden',
@@ -775,6 +774,7 @@ const styles = StyleSheet.create({
     position: 'relative',
     width: '100%',
     height: getProductCardWidth() * 1.1,
+    maxHeight: 330,
     backgroundColor: '#f5f5f5',
   },
   productImage: {

@@ -6,7 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
-  Dimensions,
+
   Modal,
   TextInput,
   KeyboardAvoidingView,
@@ -35,8 +35,19 @@ import { useMarketplace } from '@/contexts/MarketplaceContext';
 import { useToast } from '@/contexts/ToastContext';
 import { Order, OrderStatus, Product, User } from '@/types/marketplace';
 
-const { width } = Dimensions.get('window');
-const CARD_WIDTH = (width - 48) / 2;
+import { getDimensions } from '@/constants/responsive';
+
+const getCardWidth = () => {
+  const { width } = getDimensions();
+  if (width > 1200) {
+    return (width - 64 - 32) / 4;
+  } else if (width > 900) {
+    return (width - 48 - 24) / 3;
+  } else if (width > 600) {
+    return (width - 48 - 16) / 2;
+  }
+  return (width - 48) / 2;
+};
 
 type TabType = 'orders' | 'products' | 'users';
 
@@ -1218,7 +1229,8 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   productCard: {
-    width: CARD_WIDTH,
+    width: getCardWidth(),
+    maxWidth: 300,
     backgroundColor: '#fff',
     borderRadius: 16,
     overflow: 'hidden',
@@ -1231,7 +1243,8 @@ const styles = StyleSheet.create({
   },
   productImage: {
     width: '100%',
-    height: CARD_WIDTH,
+    height: getCardWidth() * 1.1,
+    maxHeight: 330,
     backgroundColor: '#f5f5f5',
   },
   productStatusBadge: {

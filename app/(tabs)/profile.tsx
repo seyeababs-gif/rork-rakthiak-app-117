@@ -6,7 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
-  Dimensions,
+
   Share,
   Linking,
   ActivityIndicator,
@@ -19,11 +19,19 @@ import { Product } from '@/types/marketplace';
 import { useToast } from '@/contexts/ToastContext';
 import * as ImagePicker from 'expo-image-picker';
 
-const { width } = Dimensions.get('window');
-const CARD_WIDTH = (width - 48) / 2;
-// --- FIX RESPONSIVE DESKTOP ---
-const MAX_CARD_WIDTH = 260; 
-const RESPONSIVE_CARD_WIDTH = Math.min(CARD_WIDTH, MAX_CARD_WIDTH);
+import { getDimensions } from '@/constants/responsive';
+
+const getCardWidth = () => {
+  const { width } = getDimensions();
+  if (width > 1200) {
+    return (width - 64 - 32) / 4;
+  } else if (width > 900) {
+    return (width - 48 - 24) / 3;
+  } else if (width > 600) {
+    return (width - 48 - 16) / 2;
+  }
+  return (width - 48) / 2;
+};
 export default function ProfileScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -671,7 +679,8 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   productCard: {
-    width: RESPONSIVE_CARD_WIDTH,
+    width: getCardWidth(),
+    maxWidth: 300,
     backgroundColor: '#fff',
     borderRadius: 16,
     overflow: 'hidden',
@@ -731,7 +740,8 @@ const styles = StyleSheet.create({
   },
   productImage: {
     width: '100%',
-    height: RESPONSIVE_CARD_WIDTH,
+    height: getCardWidth() * 1.1,
+    maxHeight: 330,
     backgroundColor: '#f5f5f5',
   },
   productInfo: {

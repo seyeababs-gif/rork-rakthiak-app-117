@@ -137,7 +137,7 @@ export default function RegisterScreen() {
       style={styles.scrollViewContainer}
       contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 40 }]}
       keyboardShouldPersistTaps="handled"
-      showsVerticalScrollIndicator={false}
+      showsVerticalScrollIndicator={isWebPlatform}
     >
         <View style={styles.content}>
           <View style={styles.header}>
@@ -373,6 +373,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
+    paddingBottom: 60,
   },
   content: {
     flex: 1,

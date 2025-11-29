@@ -1,13 +1,13 @@
 import { Dimensions, Platform } from 'react-native';
 
-const { width, height } = Dimensions.get('window');
-
 export const isWeb = Platform.OS === 'web';
 export const isIOS = Platform.OS === 'ios';
 export const isAndroid = Platform.OS === 'android';
 
-export const SCREEN_WIDTH = width;
-export const SCREEN_HEIGHT = height;
+export const getDimensions = () => {
+  const { width, height } = Dimensions.get('window');
+  return { width, height };
+};
 
 export const BREAKPOINTS = {
   mobile: 600,
@@ -17,16 +17,32 @@ export const BREAKPOINTS = {
 } as const;
 
 export const getDeviceType = () => {
+  const { width } = getDimensions();
   if (width < BREAKPOINTS.mobile) return 'mobile';
   if (width < BREAKPOINTS.tablet) return 'tablet';
   if (width < BREAKPOINTS.desktop) return 'desktop';
   return 'largeDesktop';
 };
 
-export const isMobile = () => width < BREAKPOINTS.mobile;
-export const isTablet = () => width >= BREAKPOINTS.mobile && width < BREAKPOINTS.tablet;
-export const isDesktop = () => width >= BREAKPOINTS.tablet;
-export const isLargeDesktop = () => width >= BREAKPOINTS.largeDesktop;
+export const isMobile = () => {
+  const { width } = getDimensions();
+  return width < BREAKPOINTS.mobile;
+};
+
+export const isTablet = () => {
+  const { width } = getDimensions();
+  return width >= BREAKPOINTS.mobile && width < BREAKPOINTS.tablet;
+};
+
+export const isDesktop = () => {
+  const { width } = getDimensions();
+  return width >= BREAKPOINTS.tablet;
+};
+
+export const isLargeDesktop = () => {
+  const { width } = getDimensions();
+  return width >= BREAKPOINTS.largeDesktop;
+};
 
 export const getResponsiveValue = <T,>(values: {
   mobile: T;
@@ -49,6 +65,8 @@ export const getResponsiveValue = <T,>(values: {
 };
 
 export const getGridColumns = () => {
+  const { width } = getDimensions();
+  
   if (width < 400) return 2;
   if (width < BREAKPOINTS.mobile) return 2;
   if (width < BREAKPOINTS.tablet) return 3;
@@ -58,6 +76,7 @@ export const getGridColumns = () => {
 };
 
 export const getProductCardWidth = () => {
+  const { width } = getDimensions();
   const columns = getGridColumns();
   const gap = width < BREAKPOINTS.mobile ? 12 : (width < BREAKPOINTS.desktop ? 16 : 20);
   const containerPadding = width < BREAKPOINTS.mobile ? 16 : (width < BREAKPOINTS.desktop ? 20 : 20);
@@ -68,7 +87,7 @@ export const getProductCardWidth = () => {
   const totalGapWidth = gap * (columns - 1);
   const cardWidth = (availableWidth - totalGapWidth) / columns;
   
-  const maxCardWidth = 320;
+  const maxCardWidth = 280;
   const minCardWidth = width < 400 ? 140 : (width < BREAKPOINTS.mobile ? 150 : 180);
   
   return Math.max(Math.min(cardWidth, maxCardWidth), minCardWidth);

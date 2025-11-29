@@ -92,10 +92,10 @@ export default function LoginScreen() {
 
   const content = (
     <ScrollView
-      style={styles.container}
-      contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 60 }]}
+      style={styles.scrollViewContainer}
+      contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 40 }]}
       keyboardShouldPersistTaps="handled"
-      showsVerticalScrollIndicator={false}
+      showsVerticalScrollIndicator={isWebPlatform}
     >
         <View style={styles.content}>
           <View style={styles.header}>
@@ -239,8 +239,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#EFF6FF',
   },
+  scrollViewContainer: {
+    flex: 1,
+    backgroundColor: '#EFF6FF',
+  },
   scrollContent: {
     flexGrow: 1,
+    paddingBottom: 60,
   },
   content: {
     flex: 1,
