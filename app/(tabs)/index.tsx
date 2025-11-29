@@ -216,7 +216,7 @@ export default function HomeScreen() {
         <View style={styles.imageContainer}>
           <Image 
             source={{ uri: product.images[0] }} 
-            style={[styles.productImage, { height: Math.min(cardWidth * 0.85, 140) }]}
+            style={[styles.productImage, { height: cardWidth * 1.1 }]}
             resizeMode="cover"
           />
           {hasDiscount && (
@@ -785,7 +785,6 @@ const styles = StyleSheet.create({
     width: '100%',
     backgroundColor: '#f5f5f5',
     resizeMode: 'cover' as const,
-    maxHeight: 180,
   },
   newBadge: {
     position: 'absolute',

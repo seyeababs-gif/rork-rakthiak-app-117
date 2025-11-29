@@ -375,7 +375,7 @@ export default function ProfileScreen() {
         >
           <Image 
             source={{ uri: product.images[0] }} 
-            style={[styles.productImage, { height: Math.min(cardWidth * 0.85, 140) }]}
+            style={[styles.productImage, { height: cardWidth * 1.1 }]}
           />
           <View style={[styles.productStatusBadge, { backgroundColor: statusInfo.color + '20' }]}>
             <StatusIcon size={12} color={statusInfo.color} />
@@ -548,6 +548,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 100,
+    flexGrow: 1,
   },
   header: {
     paddingHorizontal: isWeb ? 20 : 16,
@@ -756,7 +757,6 @@ const styles = StyleSheet.create({
   productImage: {
     width: '100%',
     backgroundColor: '#f5f5f5',
-    maxHeight: 140,
   },
   productInfo: {
     padding: 12,
