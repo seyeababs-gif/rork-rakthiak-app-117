@@ -5,11 +5,12 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  FlatList,
+  ScrollView,
   Image,
   Dimensions,
   Keyboard,
-  TouchableWithoutFeedback
+  TouchableWithoutFeedback,
+  Platform
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Search as SearchIcon, X, MapPin, Heart, Sparkles, ArrowRight } from 'lucide-react-native';
@@ -18,9 +19,27 @@ import { useMarketplace } from '@/contexts/MarketplaceContext';
 import { Product } from '@/types/marketplace';
 
 const { width } = Dimensions.get('window');
-const CARD_WIDTH = (width - 48) / 2;
-const MAX_CARD_WIDTH = 260; 
-const RESPONSIVE_CARD_WIDTH = Math.min(CARD_WIDTH, MAX_CARD_WIDTH);
+const isWeb = Platform.OS === 'web';
+
+function getProductCardWidth() {
+  if (width < 600) {
+    const containerPadding = 16;
+    const gap = 12;
+    const columns = 2;
+    const availableWidth = width - (containerPadding * 2);
+    const totalGapWidth = gap * (columns - 1);
+    return (availableWidth - totalGapWidth) / columns;
+  } else if (width < 900) {
+    return (width - 80) / 3;
+  } else if (width < 1200) {
+    return (width - 120) / 4;
+  } else if (width < 1600) {
+    const containerWidth = Math.min(width, 1600);
+    return (containerWidth - 160) / 5;
+  } else {
+    return (1600 - 160) / 6;
+  }
+}
 
 export default function SearchScreen() {
   const router = useRouter();
@@ -56,7 +75,7 @@ export default function SearchScreen() {
     };
   };
 
-  const renderItem = ({ item }: { item: Product }) => {
+  const renderItem = (item: Product) => {
     const favorite = isFavorite(item.id);
 
     if (item.listingType === 'service') {
@@ -66,6 +85,7 @@ export default function SearchScreen() {
 
       return (
         <TouchableOpacity
+          key={item.id}
           style={styles.serviceCard}
           onPress={() => router.push(`/product/${item.id}` as any)}
           activeOpacity={0.9}
@@ -125,14 +145,17 @@ export default function SearchScreen() {
       ? item.originalPrice * (1 - (item.discountPercent || 0) / 100)
       : item.price;
 
+    const cardWidth = getProductCardWidth();
+
     return (
       <TouchableOpacity
-        style={styles.productCard}
+        key={item.id}
+        style={[styles.productCard, { width: cardWidth }]}
         onPress={() => router.push(`/product/${item.id}` as any)}
         activeOpacity={0.9}
       >
         <View style={styles.imageContainer}>
-          <Image source={{ uri: item.images[0] }} style={styles.productImage} />
+          <Image source={{ uri: item.images[0] }} style={[styles.productImage, { height: cardWidth * 1.1 }]} />
           {hasDiscount && (
             <View style={styles.discountBadge}>
               <Text style={styles.discountBadgeText}>-{item.discountPercent}%</Text>
@@ -206,15 +229,11 @@ export default function SearchScreen() {
           </View>
         </View>
 
-        <FlatList
-          data={filteredItems}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.id}
+        <ScrollView
           contentContainerStyle={styles.listContent}
-          numColumns={2}
-          columnWrapperStyle={styles.columnWrapper}
-          showsVerticalScrollIndicator={false}
-          ListEmptyComponent={() => (
+          showsVerticalScrollIndicator={true}
+        >
+          {filteredItems.length === 0 ? (
             <View style={styles.emptyState}>
               {query.trim().length === 0 ? (
                 <>
@@ -234,8 +253,12 @@ export default function SearchScreen() {
                 </>
               )}
             </View>
+          ) : (
+            <View style={styles.productsGrid}>
+              {filteredItems.map(renderItem)}
+            </View>
           )}
-        />
+        </ScrollView>
       </View>
     </TouchableWithoutFeedback>
   );
@@ -281,16 +304,21 @@ const styles = StyleSheet.create({
     padding: 0,
   },
   listContent: {
-    padding: 16,
-    paddingBottom: 32,
+    paddingHorizontal: isWeb ? 20 : 16,
+    paddingTop: 16,
+    paddingBottom: 100,
+    alignSelf: 'center',
+    width: '100%',
+    maxWidth: isWeb ? 1600 : undefined,
   },
-  columnWrapper: {
-    gap: 16,
+  productsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: width < 600 ? 12 : (width < 1200 ? 16 : 20),
     justifyContent: 'flex-start',
   },
   // Product Card Styles
   productCard: {
-    width: RESPONSIVE_CARD_WIDTH,
     backgroundColor: '#fff',
     borderRadius: 20,
     overflow: 'hidden',
@@ -306,13 +334,12 @@ const styles = StyleSheet.create({
   imageContainer: {
     position: 'relative',
     width: '100%',
-    height: RESPONSIVE_CARD_WIDTH * 1.1,
     backgroundColor: '#f5f5f5',
   },
   productImage: {
     width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
+    backgroundColor: '#f5f5f5',
+    resizeMode: 'cover' as const,
   },
   favoriteButton: {
     position: 'absolute',
