@@ -233,6 +233,46 @@ export const [OrderProvider, useOrders] = createContextHook(() => {
     return orders.find(order => order.id === orderId);
   }, [orders]);
 
+  const deleteOrder = useCallback(async (orderId: string) => {
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .delete()
+        .eq('id', orderId);
+
+      if (error) {
+        console.error('Error deleting order:', error);
+        return { success: false, error: error.message };
+      }
+
+      setOrders(orders.filter(order => order.id !== orderId));
+      return { success: true };
+    } catch (error: any) {
+      console.error('Error deleting order:', error);
+      return { success: false, error: error.message || String(error) };
+    }
+  }, [orders]);
+
+  const deleteAllUserOrders = useCallback(async (userId: string) => {
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .delete()
+        .eq('user_id', userId);
+
+      if (error) {
+        console.error('Error deleting user orders:', error);
+        return { success: false, error: error.message };
+      }
+
+      setOrders(orders.filter(order => order.userId !== userId));
+      return { success: true };
+    } catch (error: any) {
+      console.error('Error deleting user orders:', error);
+      return { success: false, error: error.message || String(error) };
+    }
+  }, [orders]);
+
   return useMemo(() => ({
     orders,
     isLoading,
@@ -241,5 +281,7 @@ export const [OrderProvider, useOrders] = createContextHook(() => {
     getUserOrders,
     getPendingOrders,
     getOrderById,
-  }), [orders, isLoading, createOrder, updateOrderStatus, getUserOrders, getPendingOrders, getOrderById]);
+    deleteOrder,
+    deleteAllUserOrders,
+  }), [orders, isLoading, createOrder, updateOrderStatus, getUserOrders, getPendingOrders, getOrderById, deleteOrder, deleteAllUserOrders]);
 });

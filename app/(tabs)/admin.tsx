@@ -49,7 +49,7 @@ type TabType = 'orders' | 'products' | 'users';
 
 export default function AdminScreen() {
   const insets = useSafeAreaInsets();
-  const { orders, updateOrderStatus } = useOrders();
+  const { orders, updateOrderStatus, deleteOrder, deleteAllUserOrders } = useOrders();
   const toast = useToast();
   const { 
     currentUser, 
@@ -187,6 +187,50 @@ export default function AdminScreen() {
           onPress: async () => {
             await updateOrderStatus(orderId, 'completed');
             toast.showSuccess('La commande a été marquée comme livrée');
+          },
+        },
+      ]
+    );
+  };
+
+  const handleDeleteOrder = (orderId: string) => {
+    toast.showAlert(
+      'Supprimer la commande',
+      'Êtes-vous sûr de vouloir supprimer cette commande ? Cette action est irréversible.',
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Supprimer',
+          style: 'destructive',
+          onPress: async () => {
+            const result = await deleteOrder(orderId);
+            if (result.success) {
+              toast.showSuccess('La commande a été supprimée');
+            } else {
+              toast.showError(result.error || 'Erreur lors de la suppression');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleDeleteAllUserOrders = (userId: string, userName: string) => {
+    toast.showAlert(
+      'Supprimer toutes les commandes',
+      `Êtes-vous sûr de vouloir supprimer TOUTES les commandes de ${userName} ? Cette action est irréversible.`,
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Supprimer tout',
+          style: 'destructive',
+          onPress: async () => {
+            const result = await deleteAllUserOrders(userId);
+            if (result.success) {
+              toast.showSuccess(`Toutes les commandes de ${userName} ont été supprimées`);
+            } else {
+              toast.showError(result.error || 'Erreur lors de la suppression');
+            }
           },
         },
       ]
@@ -366,6 +410,16 @@ export default function AdminScreen() {
             <Text style={styles.rejectionReasonLabel}>Raison du rejet:</Text>
             <Text style={styles.rejectionReasonText}>{order.rejectionReason}</Text>
           </View>
+        )}
+
+        {currentUser?.isSuperAdmin && (
+          <TouchableOpacity
+            style={styles.deleteOrderButton}
+            onPress={() => handleDeleteOrder(order.id)}
+          >
+            <Trash2 size={18} color="#E31B23" />
+            <Text style={styles.deleteOrderButtonText}>Supprimer cette commande</Text>
+          </TouchableOpacity>
         )}
       </View>
     );
@@ -779,12 +833,22 @@ export default function AdminScreen() {
                 </Text>
               </TouchableOpacity>
               {!isCurrentUser && !user.isSuperAdmin && (
-                <TouchableOpacity
-                  style={[styles.userActionButton, styles.userActionButtonDelete]}
-                  onPress={() => handleDeleteUser(user.id, user.name)}
-                >
-                  <Trash2 size={14} color="#E31B23" />
-                </TouchableOpacity>
+                <>
+                  {isSuperAdmin && (
+                    <TouchableOpacity
+                      style={[styles.userActionButton, styles.userActionButtonDelete]}
+                      onPress={() => handleDeleteAllUserOrders(user.id, user.name)}
+                    >
+                      <Package size={14} color="#E31B23" />
+                    </TouchableOpacity>
+                  )}
+                  <TouchableOpacity
+                    style={[styles.userActionButton, styles.userActionButtonDelete]}
+                    onPress={() => handleDeleteUser(user.id, user.name)}
+                  >
+                    <Trash2 size={14} color="#E31B23" />
+                  </TouchableOpacity>
+                </>
               )}
             </>
           )}
@@ -1721,5 +1785,22 @@ const styles = StyleSheet.create({
     fontSize: getButtonFontSize(),
     fontWeight: '700' as const,
     color: '#fff',
+  },
+  deleteOrderButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 12,
+    paddingVertical: isWeb ? 14 : 12,
+    borderRadius: 10,
+    backgroundColor: '#FFF5F5',
+    borderWidth: 1,
+    borderColor: '#E31B23',
+  },
+  deleteOrderButtonText: {
+    fontSize: getButtonFontSize(),
+    fontWeight: '600' as const,
+    color: '#E31B23',
   },
 });
