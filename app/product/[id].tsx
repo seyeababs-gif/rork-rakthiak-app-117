@@ -108,23 +108,74 @@ export default function ProductDetailScreen() {
       return;
     }
 
-    const message = encodeURIComponent(
-      `Bonjour, je suis intéressé par votre produit:\n\n` +
-      `${product.title}\n` +
-      `Prix: ${formatPrice(product.price)}\n` +
-      `Localisation: ${product.location}\n\n` +
-      `Pouvez-vous me donner plus d'informations ?`
-    );
-    
-    const whatsappUrl = `https://wa.me/${product.sellerPhone.replace(/[^0-9]/g, '')}?text=${message}`;
-    
-    Linking.canOpenURL(whatsappUrl)
-      .then((supported) => {
-        if (supported) {
-          return Linking.openURL(whatsappUrl);
-        }
-      })
-      .catch((err) => console.error('Error opening WhatsApp:', err));
+    if (Platform.OS === 'web') {
+      if (confirm(
+        '⚠️ PROTECTION ACHETEUR - IMPORTANT\n\n' +
+        '🛡️ Pour votre sécurité, effectuez TOUJOURS vos paiements via l\'application !\n\n' +
+        'En payant dans l\'application vous bénéficiez de :\n' +
+        '✅ Blocage sécurisé de la transaction\n' +
+        '✅ Remboursement garanti si le produit n\'est pas livré\n' +
+        '✅ Remboursement garanti si le produit ne correspond pas\n' +
+        '✅ Protection contre les arnaques\n\n' +
+        '⛔ NE PAYEZ JAMAIS directement au vendeur en dehors de l\'application !\n\n' +
+        'Voulez-vous contacter le vendeur ? (N\'oubliez pas de payer via l\'application)'
+      )) {
+        const message = encodeURIComponent(
+          `Bonjour, je suis intéressé par votre produit:\n\n` +
+          `${product.title}\n` +
+          `Prix: ${formatPrice(product.price)}\n` +
+          `Localisation: ${product.location}\n\n` +
+          `Pouvez-vous me donner plus d'informations ?`
+        );
+        
+        const whatsappUrl = `https://wa.me/${product.sellerPhone.replace(/[^0-9]/g, '')}?text=${message}`;
+        
+        Linking.canOpenURL(whatsappUrl)
+          .then((supported) => {
+            if (supported) {
+              return Linking.openURL(whatsappUrl);
+            }
+          })
+          .catch((err) => console.error('Error opening WhatsApp:', err));
+      }
+    } else {
+      Alert.alert(
+        '⚠️ PROTECTION ACHETEUR',
+        '🛡️ Pour votre sécurité, effectuez TOUJOURS vos paiements via l\'application !\n\n' +
+        'En payant dans l\'application vous bénéficiez de :\n' +
+        '✅ Blocage sécurisé de la transaction\n' +
+        '✅ Remboursement garanti si le produit n\'est pas livré\n' +
+        '✅ Remboursement garanti si le produit ne correspond pas\n' +
+        '✅ Protection contre les arnaques\n\n' +
+        '⛔ NE PAYEZ JAMAIS directement au vendeur en dehors de l\'application !',
+        [
+          { text: 'Annuler', style: 'cancel' },
+          {
+            text: 'J\'ai compris, contacter',
+            style: 'default',
+            onPress: () => {
+              const message = encodeURIComponent(
+                `Bonjour, je suis intéressé par votre produit:\n\n` +
+                `${product.title}\n` +
+                `Prix: ${formatPrice(product.price)}\n` +
+                `Localisation: ${product.location}\n\n` +
+                `Pouvez-vous me donner plus d'informations ?`
+              );
+              
+              const whatsappUrl = `https://wa.me/${product.sellerPhone.replace(/[^0-9]/g, '')}?text=${message}`;
+              
+              Linking.canOpenURL(whatsappUrl)
+                .then((supported) => {
+                  if (supported) {
+                    return Linking.openURL(whatsappUrl);
+                  }
+                })
+                .catch((err) => console.error('Error opening WhatsApp:', err));
+            },
+          },
+        ]
+      );
+    }
   };
 
   const handleContactWave = () => {
