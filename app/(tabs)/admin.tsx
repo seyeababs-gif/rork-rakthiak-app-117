@@ -80,6 +80,7 @@ export default function AdminScreen() {
   const [rejectionReason, setRejectionReason] = useState('');
 
   const isAdmin = currentUser?.isAdmin === true;
+  const isSuperAdmin = currentUser?.isSuperAdmin === true;
 
   if (!isAuthenticated || !isAdmin) {
     return (

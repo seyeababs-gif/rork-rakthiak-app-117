@@ -60,6 +60,7 @@ export default function HomeScreen() {
   const [viewMode, setViewMode] = useState<'products' | 'services'>('products');
   const [showSearch, setShowSearch] = useState<boolean>(false);
   const [displayCount, setDisplayCount] = useState<number>(5);
+  const [isInitialRender, setIsInitialRender] = useState<boolean>(true);
   const scrollViewRef = useRef<ScrollView>(null);
 
   const filteredProducts = useMemo(() => {
@@ -118,6 +119,10 @@ export default function HomeScreen() {
   }, [sortedProducts, displayCount]);
 
   useEffect(() => {
+    if (isInitialRender) {
+      setIsInitialRender(false);
+      return;
+    }
     const nextProducts = sortedProducts.slice(displayCount, displayCount + 5);
     nextProducts.forEach(product => {
       if (product.images && product.images[0]) {
@@ -130,7 +135,7 @@ export default function HomeScreen() {
 
   const handleScroll = useCallback((event: any) => {
     const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
-    const paddingToBottom = 200;
+    const paddingToBottom = 150;
     const isCloseToBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom;
     
     if (isCloseToBottom && hasMore) {
