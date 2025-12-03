@@ -39,7 +39,7 @@ export default function ShopScreen() {
     return seller ? getSellerRating(seller.id) : { average: 0, count: 0 };
   }, [seller, getSellerRating]);
 
-  const [displayCount, setDisplayCount] = useState<number>(5);
+  const [displayCount, setDisplayCount] = useState<number>(6);
   const [isInitialLoad, setIsInitialLoad] = useState<boolean>(true);
 
   const displayedProducts = useMemo(() => {
@@ -54,7 +54,7 @@ export default function ShopScreen() {
     const isCloseToBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom;
     
     if (isCloseToBottom && hasMore) {
-      setDisplayCount(prev => Math.min(prev + 5, sellerProducts.length));
+      setDisplayCount(prev => Math.min(prev + 3, sellerProducts.length));
     }
   }, [hasMore, sellerProducts.length]);
 
