@@ -9,9 +9,10 @@ interface FetchProductsParams {
   subCategory?: SubCategory;
   search?: string;
   status?: ProductStatus | 'all';
+  skipCache?: boolean;
 }
 
-const DEFAULT_PAGE_SIZE = 20;
+const DEFAULT_PAGE_SIZE = 5;
 
 export async function fetchProducts(params: FetchProductsParams = {}): Promise<Product[]> {
   const {
@@ -21,13 +22,19 @@ export async function fetchProducts(params: FetchProductsParams = {}): Promise<P
     subCategory,
     search = '',
     status = 'approved',
+    skipCache = false,
   } = params;
 
   const cacheKey = `products_${page}_${category}_${subCategory || 'all'}_${search}_${status}`;
   
-  const cached = await cache.get<Product[]>(cacheKey);
-  if (cached) {
-    return cached;
+  if (!skipCache) {
+    const cached = await cache.get<Product[]>(cacheKey);
+    if (cached) {
+      setTimeout(() => {
+        fetchProducts({ ...params, skipCache: true }).catch(err => console.log('Background refresh error:', err));
+      }, 0);
+      return cached;
+    }
   }
 
   try {
