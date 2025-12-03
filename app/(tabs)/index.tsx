@@ -59,7 +59,7 @@ export default function HomeScreen() {
   const [availableDates, setAvailableDates] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<'products' | 'services'>('products');
   const [showSearch, setShowSearch] = useState<boolean>(false);
-  const [displayCount, setDisplayCount] = useState<number>(6);
+  const [displayCount, setDisplayCount] = useState<number>(8);
   const [isInitialRender, setIsInitialRender] = useState<boolean>(true);
   const scrollViewRef = useRef<ScrollView>(null);
 
@@ -123,10 +123,12 @@ export default function HomeScreen() {
       setIsInitialRender(false);
       return;
     }
-    const nextProducts = sortedProducts.slice(displayCount, displayCount + 3);
-    nextProducts.forEach(product => {
+    const nextProducts = sortedProducts.slice(displayCount, displayCount + 6);
+    nextProducts.forEach((product, idx) => {
       if (product.images && product.images[0]) {
-        prefetchImage(product.images[0]);
+        setTimeout(() => {
+          prefetchImage(product.images[0], 400);
+        }, idx * 50);
       }
     });
   }, [displayCount, sortedProducts]);
@@ -139,7 +141,7 @@ export default function HomeScreen() {
     const isCloseToBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom;
     
     if (isCloseToBottom && hasMore) {
-      setDisplayCount(prev => Math.min(prev + 3, sortedProducts.length));
+      setDisplayCount(prev => Math.min(prev + 6, sortedProducts.length));
     }
   }, [hasMore, sortedProducts.length]);
 

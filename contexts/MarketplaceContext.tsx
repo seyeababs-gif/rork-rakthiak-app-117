@@ -65,8 +65,9 @@ const fetchProducts = async (): Promise<Product[]> => {
   try {
     const { data, error } = await supabase
       .from('products')
-      .select('*')
-      .order('created_at', { ascending: false });
+      .select('id,title,description,price,images,category,sub_category,location,seller_id,seller_name,seller_avatar,seller_phone,created_at,condition,status,listing_type,service_details,has_discount,discount_percent,original_price')
+      .order('created_at', { ascending: false })
+      .limit(100);
     
     if (error) {
       console.error('Error loading products:', error.message || error);
@@ -196,8 +197,9 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
   const { data: products = [] } = useQuery({
     queryKey: ['products'],
     queryFn: fetchProducts,
-    staleTime: 2 * 60 * 1000,
+    staleTime: 3 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   const { data: favorites = [] } = useQuery({

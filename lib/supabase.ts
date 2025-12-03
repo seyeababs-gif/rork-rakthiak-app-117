@@ -114,16 +114,17 @@ export function getOptimizedImageUrl(url: string, width: number = 400): string {
   if (!url) return url;
   
   if (url.includes('unsplash.com')) {
+    const optimizedWidth = Math.min(width, 600);
     const optimizedUrl = url.includes('?')
-      ? `${url}&w=${Math.min(width, 800)}&q=75&auto=format&fm=webp&fit=crop`
-      : `${url}?w=${Math.min(width, 800)}&q=75&auto=format&fm=webp&fit=crop`;
+      ? `${url}&w=${optimizedWidth}&q=60&auto=format&fm=webp&fit=crop`
+      : `${url}?w=${optimizedWidth}&q=60&auto=format&fm=webp&fit=crop`;
     return optimizedUrl;
   }
   
   if (url.includes(supabaseUrl) && url.includes('/storage/v1/object/public/')) {
     const optimizedUrl = url.includes('?')
-      ? `${url}&width=${width}&quality=75`
-      : `${url}?width=${width}&quality=75`;
+      ? `${url}&width=${width}&quality=60&format=webp`
+      : `${url}?width=${width}&quality=60&format=webp`;
     return optimizedUrl;
   }
   
@@ -135,15 +136,15 @@ export function getThumbnailUrl(url: string): string {
   
   if (url.includes('unsplash.com')) {
     const thumbnailUrl = url.includes('?')
-      ? `${url}&w=20&q=10&blur=30`
-      : `${url}?w=20&q=10&blur=30`;
+      ? `${url}&w=50&q=30&blur=20&fm=webp`
+      : `${url}?w=50&q=30&blur=20&fm=webp`;
     return thumbnailUrl;
   }
   
   if (url.includes(supabaseUrl) && url.includes('/storage/v1/object/public/')) {
     const thumbnailUrl = url.includes('?')
-      ? `${url}&width=20&quality=10`
-      : `${url}?width=20&quality=10`;
+      ? `${url}&width=50&quality=30&format=webp`
+      : `${url}?width=50&quality=30&format=webp`;
     return thumbnailUrl;
   }
   
