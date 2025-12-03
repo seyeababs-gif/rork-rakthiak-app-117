@@ -66,7 +66,7 @@ export default function AdminScreen() {
     rejectPremiumUpgrade,
     toggleAdminStatus,
   } = useMarketplace();
-  const [selectedFilter, setSelectedFilter] = useState<OrderStatus | 'all' | 'pending'>('all');
+  const [selectedFilter, setSelectedFilter] = useState<OrderStatus | 'all' | 'pending'>('pending');
   const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [selectedTab, setSelectedTab] = useState<TabType>('products');
 
@@ -306,11 +306,13 @@ export default function AdminScreen() {
     router.push(`/product/${productId}` as any);
   };
 
-  const filteredOrders = orders.filter(order => {
-    if (selectedFilter === 'all') return true;
-    if (selectedFilter === 'pending') return order.status === 'pending_payment' || order.status === 'paid';
-    return order.status === selectedFilter;
-  });
+  const filteredOrders = React.useMemo(() => {
+    return orders.filter(order => {
+      if (selectedFilter === 'all') return true;
+      if (selectedFilter === 'pending') return order.status === 'pending_payment' || order.status === 'paid';
+      return order.status === selectedFilter;
+    });
+  }, [orders, selectedFilter]);
 
   const getFilterCount = (filter: OrderStatus | 'all' | 'pending') => {
     if (filter === 'all') return orders.length;

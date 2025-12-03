@@ -1,12 +1,14 @@
 import createContextHook from '@nkzw/create-context-hook';
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import { Product, Category, User, UserType, Review, ProductStatus, SubCategory, ListingType } from '@/types/marketplace';
 import { supabase } from '@/lib/supabase';
 import { useNotifications } from '@/contexts/NotificationContext';
 import { useToast } from '@/contexts/ToastContext';
+import { fetchProducts, fetchProductById, prefetchNextPage, invalidateProductCache } from '@/lib/supabaseQueries';
+import { cache } from '@/lib/cache';
 
 const fetchCurrentUser = async (): Promise<User | null> => {
   try {
@@ -61,57 +63,7 @@ const fetchCurrentUser = async (): Promise<User | null> => {
   }
 };
 
-const fetchProducts = async (): Promise<Product[]> => {
-  try {
-    const { data, error } = await supabase
-      .from('products')
-      .select('*')
-      .order('created_at', { ascending: false });
-    
-    if (error) {
-      console.error('Error loading products:', error.message || error);
-      throw new Error(error.message || 'Failed to load products');
-    }
 
-    if (!data) return [];
-    
-    const mappedProducts: Product[] = data.map((p: any) => ({
-      id: p.id,
-      title: p.title,
-      description: p.description,
-      price: parseFloat(p.price),
-      images: p.images,
-      category: p.category as Category,
-      subCategory: p.sub_category as SubCategory | undefined,
-      location: p.location,
-      sellerId: p.seller_id,
-      sellerName: p.seller_name,
-      sellerAvatar: p.seller_avatar,
-      sellerPhone: p.seller_phone,
-      createdAt: new Date(p.created_at),
-      condition: p.condition,
-      status: p.status as ProductStatus,
-      rejectionReason: p.rejection_reason,
-      approvedAt: p.approved_at ? new Date(p.approved_at) : undefined,
-      rejectedAt: p.rejected_at ? new Date(p.rejected_at) : undefined,
-      approvedBy: p.approved_by,
-      averageRating: p.average_rating,
-      reviewCount: p.review_count,
-      listingType: p.listing_type as ListingType,
-      serviceDetails: p.service_details,
-      stockQuantity: p.stock_quantity,
-      isOutOfStock: p.is_out_of_stock,
-      hasDiscount: p.has_discount,
-      discountPercent: p.discount_percent,
-      originalPrice: p.original_price ? parseFloat(p.original_price) : undefined,
-    }));
-    return mappedProducts;
-  } catch (error: any) {
-    const errorMsg = error?.message || String(error);
-    console.error('Error loading products from server:', errorMsg);
-    return [];
-  }
-};
 
 const fetchFavorites = async (userId: string): Promise<string[]> => {
   try {
@@ -193,12 +145,45 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
     gcTime: 30 * 60 * 1000,
   });
 
-  const { data: products = [] } = useQuery({
-    queryKey: ['products'],
-    queryFn: fetchProducts,
-    staleTime: 2 * 60 * 1000,
+  const productsQuery = useInfiniteQuery({
+    queryKey: ['products', selectedCategory, selectedSubCategory, searchQuery],
+    queryFn: ({ pageParam = 0 }) => {
+      const status = (currentUser?.isAdmin || currentUser?.isSuperAdmin) ? 'all' : 'approved';
+      return fetchProducts({
+        page: pageParam,
+        pageSize: 20,
+        category: selectedCategory,
+        subCategory: selectedSubCategory,
+        search: searchQuery,
+        status: status as any,
+      });
+    },
+    getNextPageParam: (lastPage, allPages) => {
+      if (lastPage.length < 20) return undefined;
+      return allPages.length;
+    },
+    staleTime: 3 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
+    initialPageParam: 0,
   });
+
+  const products = useMemo(() => {
+    return productsQuery.data?.pages.flat() ?? [];
+  }, [productsQuery.data]);
+
+  useEffect(() => {
+    if (productsQuery.hasNextPage && !productsQuery.isFetchingNextPage) {
+      const timer = setTimeout(() => {
+        prefetchNextPage({
+          page: productsQuery.data?.pages.length || 0,
+          category: selectedCategory,
+          subCategory: selectedSubCategory,
+          search: searchQuery,
+        });
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [productsQuery.hasNextPage, productsQuery.isFetchingNextPage, productsQuery.data?.pages.length, selectedCategory, selectedSubCategory, searchQuery]);
 
   const { data: favorites = [] } = useQuery({
     queryKey: ['favorites', currentUser?.id],
@@ -341,7 +326,8 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
 
       return newProduct;
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      await invalidateProductCache();
       queryClient.invalidateQueries({ queryKey: ['products'] });
     },
   });
@@ -388,7 +374,8 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
 
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      await invalidateProductCache();
       queryClient.invalidateQueries({ queryKey: ['products'] });
     },
   });
@@ -412,7 +399,8 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
 
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      await invalidateProductCache();
       queryClient.invalidateQueries({ queryKey: ['products'] });
       queryClient.invalidateQueries({ queryKey: ['favorites'] });
     },
@@ -797,7 +785,8 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
         data: { productId: product.id },
       });
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      await invalidateProductCache();
       queryClient.invalidateQueries({ queryKey: ['products'] });
     },
   });
@@ -857,7 +846,8 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
         data: { productId: product.id, reason: reason },
       });
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      await invalidateProductCache();
       queryClient.invalidateQueries({ queryKey: ['products'] });
     },
   });
