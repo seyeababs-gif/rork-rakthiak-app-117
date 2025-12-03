@@ -141,8 +141,8 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
   const { data: currentUser = null } = useQuery({
     queryKey: ['currentUser'],
     queryFn: fetchCurrentUser,
-    staleTime: 60 * 60 * 1000,
-    gcTime: 24 * 60 * 60 * 1000,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   });
 
   const productsQuery = useInfiniteQuery({
@@ -151,7 +151,7 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
       const status = (currentUser?.isAdmin || currentUser?.isSuperAdmin) ? 'all' : 'approved';
       return fetchProducts({
         page: pageParam,
-        pageSize: 4,
+        pageSize: 20,
         category: selectedCategory,
         subCategory: selectedSubCategory,
         search: searchQuery,
@@ -159,11 +159,11 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
       });
     },
     getNextPageParam: (lastPage, allPages) => {
-      if (lastPage.length < 4) return undefined;
+      if (lastPage.length < 20) return undefined;
       return allPages.length;
     },
-    staleTime: 0,
-    gcTime: 60 * 60 * 1000,
+    staleTime: 3 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
     initialPageParam: 0,
   });
 
@@ -172,27 +172,31 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
   }, [productsQuery.data]);
 
   useEffect(() => {
-    if (productsQuery.hasNextPage && !productsQuery.isFetchingNextPage && productsQuery.fetchNextPage) {
+    if (productsQuery.hasNextPage && !productsQuery.isFetchingNextPage) {
       const timer = setTimeout(() => {
-        productsQuery.fetchNextPage?.();
-      }, 100);
+        prefetchNextPage({
+          page: productsQuery.data?.pages.length || 0,
+          category: selectedCategory,
+          subCategory: selectedSubCategory,
+          search: searchQuery,
+        });
+      }, 1000);
       return () => clearTimeout(timer);
     }
-  }, [productsQuery.hasNextPage, productsQuery.isFetchingNextPage, productsQuery.fetchNextPage, productsQuery.data?.pages.length]);
+  }, [productsQuery.hasNextPage, productsQuery.isFetchingNextPage, productsQuery.data?.pages.length, selectedCategory, selectedSubCategory, searchQuery]);
 
   const { data: favorites = [] } = useQuery({
     queryKey: ['favorites', currentUser?.id],
     queryFn: () => currentUser ? fetchFavorites(currentUser.id) : Promise.resolve([]),
     enabled: !!currentUser,
-    staleTime: 30 * 60 * 1000,
-    gcTime: 60 * 60 * 1000,
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: allUsers = [] } = useQuery({
     queryKey: ['allUsers'],
     queryFn: fetchAllUsers,
-    staleTime: 30 * 60 * 1000,
-    gcTime: 60 * 60 * 1000,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   });
 
   const isAuthenticated = !!currentUser;

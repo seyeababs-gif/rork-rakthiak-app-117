@@ -2,7 +2,7 @@ import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const CACHE_PREFIX = 'rk_cache_';
-const CACHE_EXPIRY = 24 * 60 * 60 * 1000;
+const CACHE_EXPIRY = 5 * 60 * 1000;
 
 interface CacheEntry<T> {
   data: T;
@@ -10,7 +10,7 @@ interface CacheEntry<T> {
   version: string;
 }
 
-const CACHE_VERSION = '1.1';
+const CACHE_VERSION = '1.0';
 
 class CacheManager {
   private memoryCache: Map<string, CacheEntry<any>> = new Map();

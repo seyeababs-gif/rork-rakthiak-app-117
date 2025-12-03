@@ -5,7 +5,7 @@ import { CartItem, Product } from '@/types/marketplace';
 
 const CART_STORAGE_KEY = '@marketplace_cart';
 
-export const [CartProvider, useCart] = createContextHook(() => {
+export const [CartContext, useCart] = createContextHook(() => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
