@@ -96,7 +96,7 @@ RETURNS TABLE (
   pending_products BIGINT,
   average_rating NUMERIC,
   total_reviews BIGINT
-) AS $
+) AS $$
 BEGIN
   RETURN QUERY
   SELECT 
@@ -110,7 +110,7 @@ BEGIN
   WHERE p.seller_id = seller_id_param
   GROUP BY p.seller_id;
 END;
-$ LANGUAGE plpgsql STABLE;
+$$ LANGUAGE plpgsql STABLE;
 
 -- Fonction pour récupérer les commandes avec filtres optimisés
 CREATE OR REPLACE FUNCTION get_orders_filtered(
@@ -141,7 +141,7 @@ RETURNS TABLE (
   delivery_address TEXT,
   delivery_city TEXT,
   updated_at TIMESTAMPTZ
-) AS $
+) AS $$
 BEGIN
   RETURN QUERY
   SELECT 
@@ -173,7 +173,7 @@ BEGIN
     AND (p_status = 'all' OR o.status = p_status)
   ORDER BY o.created_at DESC;
 END;
-$ LANGUAGE plpgsql STABLE;
+$$ LANGUAGE plpgsql STABLE;
 
 -- Fonction pour compter les notifications non lues rapidement
 CREATE OR REPLACE FUNCTION count_unread_notifications(user_id_param TEXT)
