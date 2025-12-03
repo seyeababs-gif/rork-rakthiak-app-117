@@ -151,7 +151,7 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
       const status = (currentUser?.isAdmin || currentUser?.isSuperAdmin) ? 'all' : 'approved';
       return fetchProducts({
         page: pageParam,
-        pageSize: 5,
+        pageSize: 4,
         category: selectedCategory,
         subCategory: selectedSubCategory,
         search: searchQuery,
@@ -159,7 +159,7 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
       });
     },
     getNextPageParam: (lastPage, allPages) => {
-      if (lastPage.length < 5) return undefined;
+      if (lastPage.length < 4) return undefined;
       return allPages.length;
     },
     staleTime: 0,
@@ -174,16 +174,11 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
   useEffect(() => {
     if (productsQuery.hasNextPage && !productsQuery.isFetchingNextPage) {
       const timer = setTimeout(() => {
-        prefetchNextPage({
-          page: productsQuery.data?.pages.length || 0,
-          category: selectedCategory,
-          subCategory: selectedSubCategory,
-          search: searchQuery,
-        });
-      }, 1000);
+        productsQuery.fetchNextPage();
+      }, 100);
       return () => clearTimeout(timer);
     }
-  }, [productsQuery.hasNextPage, productsQuery.isFetchingNextPage, productsQuery.data?.pages.length, selectedCategory, selectedSubCategory, searchQuery]);
+  }, [productsQuery.hasNextPage, productsQuery.isFetchingNextPage, productsQuery.data?.pages.length]);
 
   const { data: favorites = [] } = useQuery({
     queryKey: ['favorites', currentUser?.id],

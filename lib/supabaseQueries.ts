@@ -12,7 +12,7 @@ interface FetchProductsParams {
   skipCache?: boolean;
 }
 
-const DEFAULT_PAGE_SIZE = 5;
+const DEFAULT_PAGE_SIZE = 4;
 
 export async function fetchProducts(params: FetchProductsParams = {}): Promise<Product[]> {
   const {
