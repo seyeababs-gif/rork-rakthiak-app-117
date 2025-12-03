@@ -172,13 +172,13 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
   }, [productsQuery.data]);
 
   useEffect(() => {
-    if (productsQuery.hasNextPage && !productsQuery.isFetchingNextPage) {
+    if (productsQuery.hasNextPage && !productsQuery.isFetchingNextPage && productsQuery.fetchNextPage) {
       const timer = setTimeout(() => {
-        productsQuery.fetchNextPage();
+        productsQuery.fetchNextPage?.();
       }, 100);
       return () => clearTimeout(timer);
     }
-  }, [productsQuery.hasNextPage, productsQuery.isFetchingNextPage, productsQuery.data?.pages.length]);
+  }, [productsQuery.hasNextPage, productsQuery.isFetchingNextPage, productsQuery.fetchNextPage, productsQuery.data?.pages.length]);
 
   const { data: favorites = [] } = useQuery({
     queryKey: ['favorites', currentUser?.id],
