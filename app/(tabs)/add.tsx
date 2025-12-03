@@ -17,6 +17,7 @@ import { X, Camera, Image as ImageIcon, Package, Briefcase, Calendar as Calendar
 import { useRouter } from 'expo-router';
 import { useMarketplace } from '@/contexts/MarketplaceContext';
 import { useToast } from '@/contexts/ToastContext';
+import { compressImage } from '@/lib/supabase';
 import { categories, getSubCategoriesForCategory } from '@/constants/categories';
 import { Category, ListingType } from '@/types/marketplace';
 
@@ -86,18 +87,20 @@ export default function AddProductScreen() {
       mediaTypes: ['images'] as any,
       allowsEditing: true,
       aspect: [4, 3],
-      quality: 0.5,
-      base64: true,
+      quality: 0.8,
     });
 
     if (!result.canceled && result.assets[0]) {
       const asset = result.assets[0];
       let imageUri = asset.uri;
 
-      // Handle Web: Convert blob URL to base64
-      if (Platform.OS === 'web') {
-        try {
-          const response = await fetch(asset.uri);
+      try {
+        console.log('Compression de l\'image...');
+        imageUri = await compressImage(asset.uri, 800);
+        console.log('Image compressée avec succès');
+
+        if (Platform.OS === 'web') {
+          const response = await fetch(imageUri);
           const blob = await response.blob();
           const base64 = await new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -106,18 +109,24 @@ export default function AddProductScreen() {
             reader.readAsDataURL(blob);
           });
           imageUri = base64 as string;
-        } catch (e) {
-          console.error('Error converting blob to base64:', e);
-          toast.showError('Erreur lors du traitement de l\'image');
-          return;
+        } else {
+          const response = await fetch(imageUri);
+          const blob = await response.blob();
+          const base64 = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          });
+          imageUri = base64 as string;
         }
-      } else if (asset.base64) {
-        // Native: use base64 if available
-        const mimeType = asset.mimeType || 'image/jpeg';
-        imageUri = `data:${mimeType};base64,${asset.base64}`;
-      }
 
-      setImages([...images, imageUri]);
+        setImages([...images, imageUri]);
+      } catch (e) {
+        console.error('Error processing image:', e);
+        toast.showError('Erreur lors du traitement de l\'image');
+        return;
+      }
     }
   };
 
@@ -147,20 +156,34 @@ export default function AddProductScreen() {
     const result = await ImagePicker.launchCameraAsync({
       allowsEditing: true,
       aspect: [4, 3],
-      quality: 0.5,
-      base64: true,
+      quality: 0.8,
     });
 
     if (!result.canceled && result.assets[0]) {
       const asset = result.assets[0];
       let imageUri = asset.uri;
 
-      if (asset.base64) {
-        const mimeType = asset.mimeType || 'image/jpeg';
-        imageUri = `data:${mimeType};base64,${asset.base64}`;
-      }
+      try {
+        console.log('Compression de l\'image...');
+        imageUri = await compressImage(asset.uri, 800);
+        console.log('Image compressée avec succès');
 
-      setImages([...images, imageUri]);
+        const response = await fetch(imageUri);
+        const blob = await response.blob();
+        const base64 = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+        imageUri = base64 as string;
+
+        setImages([...images, imageUri]);
+      } catch (e) {
+        console.error('Error processing image:', e);
+        toast.showError('Erreur lors du traitement de l\'image');
+        return;
+      }
     }
   };
 

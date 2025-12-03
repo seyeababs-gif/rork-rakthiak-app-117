@@ -1,44 +1,20 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { View, StyleSheet, Animated, ImageStyle, StyleProp, Image } from 'react-native';
+import { getThumbnailUrl, getOptimizedImageUrl } from '@/lib/supabase';
 
 interface OptimizedImageProps {
   uri: string;
   style?: StyleProp<ImageStyle>;
   resizeMode?: 'cover' | 'contain' | 'stretch' | 'center';
-}
-
-function getThumbnailUrl(url: string): string {
-  if (!url) return url;
-  
-  if (url.includes('unsplash.com')) {
-    const thumbnailUrl = url.includes('?') 
-      ? `${url}&w=20&q=10&blur=30` 
-      : `${url}?w=20&q=10&blur=30`;
-    return thumbnailUrl;
-  }
-  
-  return url;
-}
-
-function getOptimizedUrl(url: string, width: number = 400): string {
-  if (!url) return url;
-  
-  if (url.includes('unsplash.com')) {
-    const optimizedUrl = url.includes('?')
-      ? `${url}&w=${Math.min(width, 800)}&q=75&auto=format&fm=webp&fit=crop`
-      : `${url}?w=${Math.min(width, 800)}&q=75&auto=format&fm=webp&fit=crop`;
-    return optimizedUrl;
-  }
-  
-  return url;
+  width?: number;
 }
 
 const imageCache = new Map<string, boolean>();
 
-export function prefetchImage(uri: string) {
+export function prefetchImage(uri: string, width: number = 400) {
   if (imageCache.has(uri)) return;
   
-  const optimizedUri = getOptimizedUrl(uri);
+  const optimizedUri = getOptimizedImageUrl(uri, width);
   Image.prefetch(optimizedUri)
     .then(() => {
       imageCache.set(uri, true);
@@ -46,7 +22,7 @@ export function prefetchImage(uri: string) {
     .catch(() => {});
 }
 
-export default function OptimizedImage({ uri, style, resizeMode = 'cover' }: OptimizedImageProps) {
+export default function OptimizedImage({ uri, style, resizeMode = 'cover', width = 400 }: OptimizedImageProps) {
   const [thumbnailLoaded, setThumbnailLoaded] = useState<boolean>(false);
   const [fullImageLoaded, setFullImageLoaded] = useState<boolean>(false);
   const [error, setError] = useState<boolean>(false);
@@ -54,7 +30,7 @@ export default function OptimizedImage({ uri, style, resizeMode = 'cover' }: Opt
   const fullImageOpacity = useState(new Animated.Value(0))[0];
 
   const thumbnailUri = useMemo(() => getThumbnailUrl(uri), [uri]);
-  const optimizedUri = useMemo(() => getOptimizedUrl(uri), [uri]);
+  const optimizedUri = useMemo(() => getOptimizedImageUrl(uri, width), [uri, width]);
 
   useEffect(() => {
     if (thumbnailLoaded) {
