@@ -66,8 +66,9 @@ const fetchProducts = async (): Promise<Product[]> => {
     const { data, error } = await supabase
       .from('products')
       .select('id,title,description,price,images,category,sub_category,location,seller_id,seller_name,seller_avatar,seller_phone,created_at,condition,status,listing_type,service_details,has_discount,discount_percent,original_price')
+      .eq('status', 'approved')
       .order('created_at', { ascending: false })
-      .limit(100);
+      .limit(50);
     
     if (error) {
       console.error('Error loading products:', error.message || error);
