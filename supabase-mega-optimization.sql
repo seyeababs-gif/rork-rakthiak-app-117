@@ -15,9 +15,8 @@ ON orders USING BRIN (created_at);
 -- Index composé pour la page d'accueil (query la plus importante)
 DROP INDEX IF EXISTS idx_products_homepage;
 CREATE INDEX idx_products_homepage 
-ON products(status, created_at DESC, category)
-WHERE status = 'approved'
-INCLUDE (title, price, images, location, has_discount, discount_percent, original_price);
+ON products(status, created_at DESC, category, title, price, has_discount, discount_percent)
+WHERE status = 'approved';
 
 -- Index pour les services avec détails
 CREATE INDEX IF NOT EXISTS idx_products_services_optimized 
@@ -43,13 +42,11 @@ WHERE has_discount = true AND status = 'approved';
 -- Index pour favoris user
 DROP INDEX IF EXISTS idx_favorites_user_product;
 CREATE INDEX idx_favorites_user_product 
-ON favorites(user_id, product_id)
-INCLUDE (created_at);
+ON favorites(user_id, product_id, created_at);
 
 -- Index pour commandes utilisateur
 CREATE INDEX IF NOT EXISTS idx_orders_user_optimized 
-ON orders(user_id, status, created_at DESC)
-INCLUDE (total_amount, payment_method);
+ON orders(user_id, status, created_at DESC, total_amount, payment_method);
 
 -- ======================================
 -- PARTIE 2: Vues Matérialisées
