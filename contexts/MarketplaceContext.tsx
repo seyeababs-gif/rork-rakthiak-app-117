@@ -1,285 +1,252 @@
 import createContextHook from '@nkzw/create-context-hook';
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Product, Category, User, UserType, Review, ProductStatus, SubCategory, ListingType } from '@/types/marketplace';
 import { supabase } from '@/lib/supabase';
 import { useNotifications } from '@/contexts/NotificationContext';
 import { useToast } from '@/contexts/ToastContext';
 
+const fetchCurrentUser = async (): Promise<User | null> => {
+  try {
+    let storedUserId: string | null = null;
+    if (Platform.OS === 'web') {
+      storedUserId = localStorage.getItem('currentUserId');
+    } else {
+      storedUserId = await AsyncStorage.getItem('currentUserId');
+    }
+    if (!storedUserId) return null;
+    
+    const { data: userData, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', storedUserId)
+      .single();
+    
+    if (error || !userData) {
+      if (Platform.OS === 'web') {
+        localStorage.removeItem('currentUserId');
+      } else {
+        await AsyncStorage.removeItem('currentUserId');
+      }
+      return null;
+    }
+
+    const user: User = {
+      id: userData.id,
+      name: userData.name,
+      avatar: userData.avatar,
+      phone: userData.phone,
+      password: userData.password,
+      location: userData.location,
+      type: userData.type as UserType,
+      isAdmin: userData.is_admin,
+      isSuperAdmin: userData.is_super_admin,
+      email: userData.email,
+      bio: userData.bio,
+      rating: userData.rating,
+      reviewCount: userData.review_count,
+      joinedDate: userData.joined_date ? new Date(userData.joined_date) : undefined,
+      premiumPaymentPending: userData.premium_payment_pending,
+      premiumRequestDate: userData.premium_request_date ? new Date(userData.premium_request_date) : undefined,
+      deliveryAddress: userData.delivery_address,
+      deliveryCity: userData.delivery_city,
+      deliveryPhone: userData.delivery_phone,
+    };
+    return user;
+  } catch (error) {
+    console.error('Error loading user:', error);
+    return null;
+  }
+};
+
+const fetchProducts = async (): Promise<Product[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('Error loading products:', error.message || error);
+      throw new Error(error.message || 'Failed to load products');
+    }
+
+    if (!data) return [];
+    
+    const mappedProducts: Product[] = data.map((p: any) => ({
+      id: p.id,
+      title: p.title,
+      description: p.description,
+      price: parseFloat(p.price),
+      images: p.images,
+      category: p.category as Category,
+      subCategory: p.sub_category as SubCategory | undefined,
+      location: p.location,
+      sellerId: p.seller_id,
+      sellerName: p.seller_name,
+      sellerAvatar: p.seller_avatar,
+      sellerPhone: p.seller_phone,
+      createdAt: new Date(p.created_at),
+      condition: p.condition,
+      status: p.status as ProductStatus,
+      rejectionReason: p.rejection_reason,
+      approvedAt: p.approved_at ? new Date(p.approved_at) : undefined,
+      rejectedAt: p.rejected_at ? new Date(p.rejected_at) : undefined,
+      approvedBy: p.approved_by,
+      averageRating: p.average_rating,
+      reviewCount: p.review_count,
+      listingType: p.listing_type as ListingType,
+      serviceDetails: p.service_details,
+      stockQuantity: p.stock_quantity,
+      isOutOfStock: p.is_out_of_stock,
+      hasDiscount: p.has_discount,
+      discountPercent: p.discount_percent,
+      originalPrice: p.original_price ? parseFloat(p.original_price) : undefined,
+    }));
+    return mappedProducts;
+  } catch (error: any) {
+    const errorMsg = error?.message || String(error);
+    console.error('Error loading products from server:', errorMsg);
+    return [];
+  }
+};
+
+const fetchFavorites = async (userId: string): Promise<string[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('favorites')
+      .select('product_id')
+      .eq('user_id', userId);
+    
+    if (error) {
+      console.error('Error loading favorites:', error);
+      return [];
+    }
+    
+    if (!data) return [];
+    return data.map((f: any) => f.product_id);
+  } catch (error) {
+    console.error('Error loading favorites:', error);
+    return [];
+  }
+};
+
+const fetchAllUsers = async (): Promise<User[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .order('created_at', { ascending: false});
+    
+    if (error) {
+      console.error('Error loading users:', error.message || error);
+      throw new Error(error.message || 'Failed to load users');
+    }
+    
+    if (!data) return [];
+    
+    const users: User[] = data.map((u: any) => ({
+      id: u.id,
+      name: u.name,
+      avatar: u.avatar,
+      phone: u.phone,
+      password: u.password,
+      location: u.location,
+      type: u.type as UserType,
+      isAdmin: u.is_admin,
+      isSuperAdmin: u.is_super_admin,
+      email: u.email,
+      bio: u.bio,
+      rating: u.rating,
+      reviewCount: u.review_count,
+      joinedDate: u.joined_date ? new Date(u.joined_date) : undefined,
+      premiumPaymentPending: u.premium_payment_pending,
+      premiumRequestDate: u.premium_request_date ? new Date(u.premium_request_date) : undefined,
+      deliveryAddress: u.delivery_address,
+      deliveryCity: u.delivery_city,
+      deliveryPhone: u.delivery_phone,
+    }));
+    return users;
+  } catch (error: any) {
+    const errorMsg = error?.message || String(error);
+    console.error('Error loading users:', errorMsg);
+    return [];
+  }
+};
+
 export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
   const notifications = useNotifications();
   const toast = useToast();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [favorites, setFavorites] = useState<string[]>([]);
+  const queryClient = useQueryClient();
+  
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<Category>('all');
   const [selectedSubCategory, setSelectedSubCategory] = useState<SubCategory | undefined>(undefined);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [reviews, setReviews] = useState<Review[]>([]);
 
-  useEffect(() => {
-    loadUser();
-    loadProducts();
-  }, []);
-  
-  useEffect(() => {
-    if (currentUser) {
-      loadFavorites();
-    } else {
-      setFavorites([]);
-    }
-  }, [currentUser]);
+  const { data: currentUser = null } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: fetchCurrentUser,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+  });
 
-  const loadUser = async () => {
-    try {
-      let storedUserId: string | null = null;
-      if (Platform.OS === 'web') {
-        storedUserId = localStorage.getItem('currentUserId');
-      } else {
-        storedUserId = await AsyncStorage.getItem('currentUserId');
-      }
-      if (storedUserId) {
-        const { data: userData, error } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', storedUserId)
-          .single();
-        
-        if (error || !userData) {
-          console.error('Error loading user from Supabase:', error);
-          if (Platform.OS === 'web') {
-            localStorage.removeItem('currentUserId');
-          } else {
-            await AsyncStorage.removeItem('currentUserId');
-          }
-          setCurrentUser(null);
-          setIsAuthenticated(false);
-          return;
-        }
+  const { data: products = [] } = useQuery({
+    queryKey: ['products'],
+    queryFn: fetchProducts,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
 
-        const user: User = {
-          id: userData.id,
-          name: userData.name,
-          avatar: userData.avatar,
-          phone: userData.phone,
-          password: userData.password,
-          location: userData.location,
-          type: userData.type as UserType,
-          isAdmin: userData.is_admin,
-          isSuperAdmin: userData.is_super_admin,
-          email: userData.email,
-          bio: userData.bio,
-          rating: userData.rating,
-          reviewCount: userData.review_count,
-          joinedDate: userData.joined_date ? new Date(userData.joined_date) : undefined,
-          premiumPaymentPending: userData.premium_payment_pending,
-          premiumRequestDate: userData.premium_request_date ? new Date(userData.premium_request_date) : undefined,
-          deliveryAddress: userData.delivery_address,
-          deliveryCity: userData.delivery_city,
-          deliveryPhone: userData.delivery_phone,
-        };
-        setCurrentUser(user);
-        setIsAuthenticated(true);
-      } else {
-        setCurrentUser(null);
-        setIsAuthenticated(false);
-      }
-    } catch (error) {
-      console.error('Error loading user:', error);
-      setCurrentUser(null);
-      setIsAuthenticated(false);
-    }
-  };
+  const { data: favorites = [] } = useQuery({
+    queryKey: ['favorites', currentUser?.id],
+    queryFn: () => currentUser ? fetchFavorites(currentUser.id) : Promise.resolve([]),
+    enabled: !!currentUser,
+    staleTime: 5 * 60 * 1000,
+  });
 
-  const loadProducts = async () => {
-    try {
-      const cachedProducts = Platform.OS === 'web' 
-        ? localStorage.getItem('cached_products')
-        : await AsyncStorage.getItem('cached_products');
-      
-      const cachedTimestamp = Platform.OS === 'web'
-        ? localStorage.getItem('cached_products_timestamp')
-        : await AsyncStorage.getItem('cached_products_timestamp');
-      
-      const now = Date.now();
-      const cacheAge = cachedTimestamp ? now - parseInt(cachedTimestamp, 10) : Infinity;
-      const MAX_STALE_AGE = 2 * 60 * 60 * 1000;
-      
-      if (cachedProducts && cacheAge < MAX_STALE_AGE) {
-        try {
-          const parsed = JSON.parse(cachedProducts);
-          const mappedFromCache: Product[] = parsed.map((p: any) => ({
-            ...p,
-            createdAt: new Date(p.createdAt),
-            approvedAt: p.approvedAt ? new Date(p.approvedAt) : undefined,
-            rejectedAt: p.rejectedAt ? new Date(p.rejectedAt) : undefined,
-          }));
-          setProducts(mappedFromCache);
-          
-          loadProductsFromServer();
-          return;
-        } catch (e) {
-          console.error('Error parsing cached products:', e);
-        }
-      }
-      
-      await loadProductsFromServer();
-    } catch (error: any) {
-      const errorMsg = error?.message || String(error);
-      console.error('Error loading products:', errorMsg);
-    }
-  };
-  
-  const loadProductsFromServer = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(50);
-      
-      if (error) {
-        console.error('Error loading products:', error.message || error);
-        throw new Error(error.message || 'Failed to load products');
-      }
+  const { data: allUsers = [] } = useQuery({
+    queryKey: ['allUsers'],
+    queryFn: fetchAllUsers,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+  });
 
-      if (data) {
-        const mappedProducts: Product[] = data.map((p: any) => ({
-          id: p.id,
-          title: p.title,
-          description: p.description,
-          price: parseFloat(p.price),
-          images: p.images,
-          category: p.category as Category,
-          subCategory: p.sub_category as SubCategory | undefined,
-          location: p.location,
-          sellerId: p.seller_id,
-          sellerName: p.seller_name,
-          sellerAvatar: p.seller_avatar,
-          sellerPhone: p.seller_phone,
-          createdAt: new Date(p.created_at),
-          condition: p.condition,
-          status: p.status as ProductStatus,
-          rejectionReason: p.rejection_reason,
-          approvedAt: p.approved_at ? new Date(p.approved_at) : undefined,
-          rejectedAt: p.rejected_at ? new Date(p.rejected_at) : undefined,
-          approvedBy: p.approved_by,
-          averageRating: p.average_rating,
-          reviewCount: p.review_count,
-          listingType: p.listing_type as ListingType,
-          serviceDetails: p.service_details,
-          stockQuantity: p.stock_quantity,
-          isOutOfStock: p.is_out_of_stock,
-          hasDiscount: p.has_discount,
-          discountPercent: p.discount_percent,
-          originalPrice: p.original_price ? parseFloat(p.original_price) : undefined,
-        }));
-        setProducts(mappedProducts);
+  const isAuthenticated = !!currentUser;
 
-        const cacheData = JSON.stringify(mappedProducts);
-        const timestamp = Date.now().toString();
-        
-        if (Platform.OS === 'web') {
-          try {
-            localStorage.setItem('cached_products', cacheData);
-            localStorage.setItem('cached_products_timestamp', timestamp);
-          } catch (e) {
-            console.error('Error caching products:', e);
-            try {
-              localStorage.removeItem('cached_products');
-              localStorage.removeItem('cached_products_timestamp');
-            } catch (clearError) {
-              console.error('Error clearing cache:', clearError);
-            }
-          }
-        } else {
-          try {
-            await AsyncStorage.multiSet([
-              ['cached_products', cacheData],
-              ['cached_products_timestamp', timestamp]
-            ]);
-          } catch (e) {
-            console.error('Error caching products:', e);
-            try {
-              await AsyncStorage.multiRemove(['cached_products', 'cached_products_timestamp']);
-            } catch (clearError) {
-              console.error('Error clearing cache:', clearError);
-            }
-          }
-        }
-      }
-    } catch (error: any) {
-      const errorMsg = error?.message || String(error);
-      console.error('Error loading products from server:', errorMsg);
-    }
-  };
-
-  const loadFavorites = async () => {
-    if (!currentUser) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from('favorites')
-        .select('product_id')
-        .eq('user_id', currentUser.id);
-      
-      if (error) {
-        console.error('Error loading favorites:', error);
-        return;
-      }
-      
-      if (data) {
-        setFavorites(data.map((f: any) => f.product_id));
-      }
-    } catch (error) {
-      console.error('Error loading favorites:', error);
-    }
-  };
-
-
-
-  const toggleFavorite = useCallback(async (productId: string) => {
-    if (!isAuthenticated || !currentUser) {
-      return;
-    }
-    
-    try {
-      const isFav = favorites.includes(productId);
-      
+  const toggleFavoriteMutation = useMutation({
+    mutationFn: async ({ productId, isFav, userId }: { productId: string; isFav: boolean; userId: string }) => {
       if (isFav) {
         const { error } = await supabase
           .from('favorites')
           .delete()
-          .eq('user_id', currentUser.id)
+          .eq('user_id', userId)
           .eq('product_id', productId);
-        
-        if (error) {
-          console.error('Error removing favorite:', error);
-          return;
-        }
-        
-        setFavorites(favorites.filter(id => id !== productId));
+        if (error) throw error;
+        return { action: 'removed' as const };
       } else {
         const { error } = await supabase
           .from('favorites')
-          .insert([{
-            user_id: currentUser.id,
-            product_id: productId,
-          }]);
-        
-        if (error) {
-          console.error('Error adding favorite:', error);
-          return;
-        }
-        
-        setFavorites([...favorites, productId]);
+          .insert([{ user_id: userId, product_id: productId }]);
+        if (error) throw error;
+        return { action: 'added' as const };
       }
-    } catch (error) {
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['favorites', variables.userId] });
+    },
+    onError: (error) => {
       console.error('Error toggling favorite:', error);
-    }
-  }, [favorites, isAuthenticated, currentUser]);
+    },
+  });
+
+  const toggleFavorite = useCallback((productId: string) => {
+    if (!isAuthenticated || !currentUser) return;
+    const isFav = favorites.includes(productId);
+    toggleFavoriteMutation.mutate({ productId, isFav, userId: currentUser.id });
+  }, [favorites, isAuthenticated, currentUser, toggleFavoriteMutation]);
 
   const isFavorite = useCallback((productId: string) => favorites.includes(productId), [favorites]);
 
@@ -305,10 +272,8 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
     return products.filter(product => product.sellerId === currentUser.id);
   }, [products, currentUser]);
 
-  const addProduct = useCallback(async (product: Omit<Product, 'id' | 'createdAt' | 'sellerId' | 'sellerName' | 'sellerAvatar' | 'status'>) => {
-    if (!currentUser) return { success: false, error: 'User not logged in' };
-    
-    try {
+  const addProductMutation = useMutation({
+    mutationFn: async ({ product, user }: { product: Omit<Product, 'id' | 'createdAt' | 'sellerId' | 'sellerName' | 'sellerAvatar' | 'status'>, user: User }) => {
       const newProductData = {
         id: `product-${Date.now()}`,
         title: product.title,
@@ -318,10 +283,10 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
         category: product.category,
         sub_category: product.subCategory,
         location: product.location,
-        seller_id: currentUser.id,
-        seller_name: currentUser.name,
-        seller_avatar: currentUser.avatar,
-        seller_phone: currentUser.phone,
+        seller_id: user.id,
+        seller_name: user.name,
+        seller_avatar: user.avatar,
+        seller_phone: user.phone,
         condition: product.condition,
         status: 'pending',
         listing_type: product.listingType || 'product',
@@ -339,62 +304,62 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
         .select()
         .single();
 
-      if (error) {
-        console.error('Error adding product:', error);
-        return { success: false, error: error.message };
-      }
+      if (error) throw new Error(error.message);
+      if (!data) throw new Error('No data returned');
 
-      if (data) {
-        const newProduct: Product = {
-          id: data.id,
-          title: data.title,
-          description: data.description,
-          price: parseFloat(data.price),
-          images: data.images,
-          category: data.category as Category,
-          subCategory: data.sub_category as SubCategory | undefined,
-          location: data.location,
-          sellerId: data.seller_id,
-          sellerName: data.seller_name,
-          sellerAvatar: data.seller_avatar,
-          sellerPhone: data.seller_phone,
-          createdAt: new Date(data.created_at),
-          condition: data.condition,
-          status: data.status as ProductStatus,
-          listingType: data.listing_type as ListingType,
-          serviceDetails: data.service_details,
-          stockQuantity: data.stock_quantity,
-          isOutOfStock: data.is_out_of_stock,
-          hasDiscount: data.has_discount,
-          discountPercent: data.discount_percent,
-          originalPrice: data.original_price ? parseFloat(data.original_price) : undefined,
-        };
-        setProducts([newProduct, ...products]);
+      const newProduct: Product = {
+        id: data.id,
+        title: data.title,
+        description: data.description,
+        price: parseFloat(data.price),
+        images: data.images,
+        category: data.category as Category,
+        subCategory: data.sub_category as SubCategory | undefined,
+        location: data.location,
+        sellerId: data.seller_id,
+        sellerName: data.seller_name,
+        sellerAvatar: data.seller_avatar,
+        sellerPhone: data.seller_phone,
+        createdAt: new Date(data.created_at),
+        condition: data.condition,
+        status: data.status as ProductStatus,
+        listingType: data.listing_type as ListingType,
+        serviceDetails: data.service_details,
+        stockQuantity: data.stock_quantity,
+        isOutOfStock: data.is_out_of_stock,
+        hasDiscount: data.has_discount,
+        discountPercent: data.discount_percent,
+        originalPrice: data.original_price ? parseFloat(data.original_price) : undefined,
+      };
 
-        await notifications.sendNotificationToAdmins({
-          type: 'product_published',
-          title: 'Nouvelle annonce publiée',
-          message: `${currentUser.name} a publié une nouvelle annonce: ${product.title}`,
-          data: { productId: data.id, sellerId: currentUser.id },
-        });
+      await notifications.sendNotificationToAdmins({
+        type: 'product_published',
+        title: 'Nouvelle annonce publiée',
+        message: `${user.name} a publié une nouvelle annonce: ${product.title}`,
+        data: { productId: data.id, sellerId: user.id },
+      });
 
-        return { success: true, product: newProduct };
-      }
-      return { success: false, error: 'No data returned' };
+      return newProduct;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+    },
+  });
+
+  const addProduct = useCallback(async (product: Omit<Product, 'id' | 'createdAt' | 'sellerId' | 'sellerName' | 'sellerAvatar' | 'status'>) => {
+    if (!currentUser) return { success: false, error: 'User not logged in' };
+    
+    try {
+      const result = await addProductMutation.mutateAsync({ product, user: currentUser });
+      return { success: true, product: result };
     } catch (error: any) {
       console.error('Error adding product:', error);
       return { success: false, error: error.message || String(error) };
     }
-  }, [currentUser, products, notifications]);
+  }, [currentUser, addProductMutation]);
 
-  const updateProduct = useCallback(async (productId: string, updates: Partial<Product>) => {
-    try {
-      const product = products.find(p => p.id === productId);
-      if (!product) {
-        console.error('Product not found');
-        return;
-      }
-
+  const updateProductMutation = useMutation({
+    mutationFn: async ({ productId, updates, user }: { productId: string; updates: Partial<Product>; user: User }) => {
       const updateData: any = {};
       if (updates.title !== undefined) updateData.title = updates.title;
       if (updates.description !== undefined) updateData.description = updates.description;
@@ -405,28 +370,12 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
       if (updates.location !== undefined) updateData.location = updates.location;
       if (updates.condition !== undefined) updateData.condition = updates.condition;
       
-      if (currentUser?.type === 'premium') {
+      if (user?.type === 'premium') {
         if (updates.stockQuantity !== undefined) updateData.stock_quantity = updates.stockQuantity;
         if (updates.isOutOfStock !== undefined) updateData.is_out_of_stock = updates.isOutOfStock;
         if (updates.hasDiscount !== undefined) updateData.has_discount = updates.hasDiscount;
         if (updates.discountPercent !== undefined) updateData.discount_percent = updates.discountPercent;
         if (updates.originalPrice !== undefined) updateData.original_price = updates.originalPrice;
-      } else {
-        if (product.stockQuantity !== undefined && updates.stockQuantity !== undefined) {
-          updateData.stock_quantity = updates.stockQuantity;
-        }
-        if (product.isOutOfStock !== undefined && updates.isOutOfStock !== undefined) {
-          updateData.is_out_of_stock = updates.isOutOfStock;
-        }
-        if (product.hasDiscount && updates.hasDiscount !== undefined) {
-          updateData.has_discount = updates.hasDiscount;
-        }
-        if (product.hasDiscount && updates.discountPercent !== undefined) {
-          updateData.discount_percent = updates.discountPercent;
-        }
-        if (product.hasDiscount && updates.originalPrice !== undefined) {
-          updateData.original_price = updates.originalPrice;
-        }
       }
       
       if (updates.serviceDetails !== undefined) updateData.service_details = updates.serviceDetails;
@@ -437,52 +386,45 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
         .update(updateData)
         .eq('id', productId);
 
-      if (error) {
-        console.error('Error updating product:', error);
-        return;
-      }
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+    },
+  });
 
-      const finalUpdates: Partial<Product> = {};
-      if (updateData.title !== undefined) finalUpdates.title = updateData.title;
-      if (updateData.description !== undefined) finalUpdates.description = updateData.description;
-      if (updateData.price !== undefined) finalUpdates.price = updateData.price;
-      if (updateData.images !== undefined) finalUpdates.images = updateData.images;
-      if (updateData.category !== undefined) finalUpdates.category = updateData.category as Category;
-      if (updateData.sub_category !== undefined) finalUpdates.subCategory = updateData.sub_category;
-      if (updateData.location !== undefined) finalUpdates.location = updateData.location;
-      if (updateData.condition !== undefined) finalUpdates.condition = updateData.condition;
-      if (updateData.stock_quantity !== undefined) finalUpdates.stockQuantity = updateData.stock_quantity;
-      if (updateData.is_out_of_stock !== undefined) finalUpdates.isOutOfStock = updateData.is_out_of_stock;
-      if (updateData.has_discount !== undefined) finalUpdates.hasDiscount = updateData.has_discount;
-      if (updateData.discount_percent !== undefined) finalUpdates.discountPercent = updateData.discount_percent;
-      if (updateData.original_price !== undefined) finalUpdates.originalPrice = updateData.original_price;
-      if (updateData.service_details !== undefined) finalUpdates.serviceDetails = updateData.service_details;
-      if (updateData.listing_type !== undefined) finalUpdates.listingType = updateData.listing_type as ListingType;
-
-      setProducts(products.map(p => p.id === productId ? { ...p, ...finalUpdates } : p));
+  const updateProduct = useCallback(async (productId: string, updates: Partial<Product>) => {
+    if (!currentUser) return;
+    
+    try {
+      await updateProductMutation.mutateAsync({ productId, updates, user: currentUser });
     } catch (error) {
       console.error('Error updating product:', error);
     }
-  }, [products, currentUser]);
+  }, [currentUser, updateProductMutation]);
 
-  const deleteProduct = useCallback(async (productId: string) => {
-    try {
+  const deleteProductMutation = useMutation({
+    mutationFn: async (productId: string) => {
       const { error } = await supabase
         .from('products')
         .delete()
         .eq('id', productId);
 
-      if (error) {
-        console.error('Error deleting product:', error);
-        return;
-      }
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['favorites'] });
+    },
+  });
 
-      setProducts(products.filter(p => p.id !== productId));
-      setFavorites(favorites.filter(id => id !== productId));
+  const deleteProduct = useCallback(async (productId: string) => {
+    try {
+      await deleteProductMutation.mutateAsync(productId);
     } catch (error) {
       console.error('Error deleting product:', error);
     }
-  }, [products, favorites]);
+  }, [deleteProductMutation]);
 
   const canAddProduct = useCallback(() => {
     if (!currentUser) {
@@ -503,127 +445,80 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
     return currentUser.type === 'premium' ? Infinity : 2;
   }, [currentUser]);
 
-  const upgradeToPremium = useCallback(async () => {
-    if (!currentUser) return;
-    
-    try {
-      await supabase
+  const updateUserMutation = useMutation({
+    mutationFn: async ({ userId, updates }: { userId: string; updates: any }) => {
+      const { error } = await supabase
         .from('users')
-        .update({ type: 'premium' })
-        .eq('id', currentUser.id);
+        .update(updates)
+        .eq('id', userId);
       
-      const updatedUser = { ...currentUser, type: 'premium' as UserType };
-      setCurrentUser(updatedUser);
-    } catch (error) {
-      console.error('Error upgrading to premium:', error);
-    }
-  }, [currentUser]);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      queryClient.invalidateQueries({ queryKey: ['allUsers'] });
+    },
+  });
 
   const requestPremiumUpgrade = useCallback(async () => {
     if (!currentUser) return { success: false, error: 'Non connecté' };
     try {
-      const { error } = await supabase
-        .from('users')
-        .update({
+      await updateUserMutation.mutateAsync({
+        userId: currentUser.id,
+        updates: {
           premium_payment_pending: true,
           premium_request_date: new Date().toISOString(),
-        })
-        .eq('id', currentUser.id);
-      
-      if (error) {
-        console.error('Error requesting premium upgrade:', error);
-        return { success: false, error: 'Erreur lors de la demande' };
-      }
-      
-      const updatedCurrentUser = { 
-        ...currentUser, 
-        premiumPaymentPending: true, 
-        premiumRequestDate: new Date() 
-      };
-      setCurrentUser(updatedCurrentUser);
-      await loadAllUsers();
+        },
+      });
       
       return { success: true };
     } catch (error) {
       console.error('Error requesting premium upgrade:', error);
       return { success: false, error: 'Erreur lors de la demande' };
     }
-  }, [currentUser]);
+  }, [currentUser, updateUserMutation]);
 
   const approvePremiumUpgrade = useCallback(async (userId: string) => {
     if (!currentUser?.isAdmin) return { success: false, error: 'Non autorisé' };
     
     try {
-      const { error } = await supabase
-        .from('users')
-        .update({
+      await updateUserMutation.mutateAsync({
+        userId,
+        updates: {
           type: 'premium',
           premium_payment_pending: false,
           premium_request_date: null,
-        })
-        .eq('id', userId);
-      
-      if (error) {
-        console.error('Error approving premium upgrade:', error);
-        return { success: false, error: 'Erreur lors de l\'approbation' };
-      }
-      
-      await loadAllUsers();
-      
-      if (currentUser.id === userId) {
-        const updatedCurrentUser = { 
-          ...currentUser, 
-          type: 'premium' as UserType, 
-          premiumPaymentPending: false, 
-          premiumRequestDate: undefined 
-        };
-        setCurrentUser(updatedCurrentUser);
-      }
+        },
+      });
       
       return { success: true };
     } catch (error) {
       console.error('Error approving premium upgrade:', error);
       return { success: false, error: 'Erreur lors de l\'approbation' };
     }
-  }, [currentUser]);
+  }, [currentUser, updateUserMutation]);
 
   const rejectPremiumUpgrade = useCallback(async (userId: string) => {
     if (!currentUser?.isAdmin) return { success: false, error: 'Non autorisé' };
     
     try {
-      const { error } = await supabase
-        .from('users')
-        .update({
+      await updateUserMutation.mutateAsync({
+        userId,
+        updates: {
           premium_payment_pending: false,
           premium_request_date: null,
-        })
-        .eq('id', userId);
-      
-      if (error) {
-        console.error('Error rejecting premium upgrade:', error);
-        return { success: false, error: 'Erreur lors du rejet' };
-      }
-      
-      await loadAllUsers();
-      
-      if (currentUser.id === userId) {
-        const updatedCurrentUser = { 
-          ...currentUser, 
-          premiumPaymentPending: false, 
-          premiumRequestDate: undefined 
-        };
-        setCurrentUser(updatedCurrentUser);
-      }
+        },
+      });
       
       return { success: true };
     } catch (error) {
       console.error('Error rejecting premium upgrade:', error);
       return { success: false, error: 'Erreur lors du rejet' };
     }
-  }, [currentUser]);
+  }, [currentUser, updateUserMutation]);
 
-  const register = useCallback(async (userData: { name: string; phone: string; password: string; location: string; deliveryAddress: string; deliveryCity: string; deliveryPhone: string }) => {
-    try {
+  const registerMutation = useMutation({
+    mutationFn: async (userData: { name: string; phone: string; password: string; location: string; deliveryAddress: string; deliveryCity: string; deliveryPhone: string }) => {
       const { data: existingUser } = await supabase
         .from('users')
         .select('id')
@@ -631,7 +526,7 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
         .single();
       
       if (existingUser) {
-        return { success: false, error: 'Ce numéro est déjà enregistré' };
+        throw new Error('Ce numéro est déjà enregistré');
       }
 
       const userId = `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -655,8 +550,7 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
         .insert([newUserData]);
 
       if (insertError) {
-        console.error('User insert error:', insertError);
-        return { success: false, error: 'Erreur lors de l\'enregistrement des données' };
+        throw new Error('Erreur lors de l\'enregistrement des données');
       }
 
       const newUser: User = {
@@ -678,20 +572,27 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
       } else {
         await AsyncStorage.setItem('currentUserId', userId);
       }
-      setCurrentUser(newUser);
-      setIsAuthenticated(true);
       
+      return newUser;
+    },
+    onSuccess: (newUser) => {
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
       toast.showSuccess('Inscription réussie ! Bienvenue sur Marketplace');
-      
-      return { success: true, user: newUser };
-    } catch (error) {
-      console.error('Registration error:', error);
-      return { success: false, error: 'Erreur lors de l\'inscription' };
-    }
-  }, []);
+    },
+  });
 
-  const login = useCallback(async (phone: string, password: string) => {
+  const register = useCallback(async (userData: { name: string; phone: string; password: string; location: string; deliveryAddress: string; deliveryCity: string; deliveryPhone: string }) => {
     try {
+      const user = await registerMutation.mutateAsync(userData);
+      return { success: true, user };
+    } catch (error: any) {
+      console.error('Registration error:', error);
+      return { success: false, error: error.message || 'Erreur lors de l\'inscription' };
+    }
+  }, [registerMutation]);
+
+  const loginMutation = useMutation({
+    mutationFn: async ({ phone, password }: { phone: string; password: string }) => {
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('*')
@@ -699,11 +600,11 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
         .single();
       
       if (userError || !userData) {
-        return { success: false, error: 'Aucun compte trouvé avec ce numéro' };
+        throw new Error('Aucun compte trouvé avec ce numéro');
       }
 
       if (userData.password !== password) {
-        return { success: false, error: 'Mot de passe incorrect' };
+        throw new Error('Mot de passe incorrect');
       }
 
       const user: User = {
@@ -733,17 +634,24 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
       } else {
         await AsyncStorage.setItem('currentUserId', userData.id);
       }
-      setCurrentUser(user);
-      setIsAuthenticated(true);
       
+      return user;
+    },
+    onSuccess: (user) => {
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
       toast.showSuccess(`Bienvenue ${user.name} !`);
-      
+    },
+  });
+
+  const login = useCallback(async (phone: string, password: string) => {
+    try {
+      const user = await loginMutation.mutateAsync({ phone, password });
       return { success: true, user };
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login error:', error);
-      return { success: false, error: 'Erreur lors de la connexion' };
+      return { success: false, error: error.message || 'Erreur lors de la connexion' };
     }
-  }, []);
+  }, [loginMutation]);
 
   const logout = useCallback(async () => {
     try {
@@ -752,12 +660,11 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
       } else {
         await AsyncStorage.removeItem('currentUserId');
       }
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
     } catch (error) {
       console.error('Error logging out:', error);
     }
-    setCurrentUser(null);
-    setIsAuthenticated(false);
-  }, []);
+  }, [queryClient]);
 
   const updateUser = useCallback(async (updates: Partial<User>) => {
     if (!currentUser) return { success: false, error: 'User not logged in' };
@@ -774,24 +681,13 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
       if (updates.deliveryPhone !== undefined) updateData.delivery_phone = updates.deliveryPhone;
       if (updates.isAdmin !== undefined) updateData.is_admin = updates.isAdmin;
       
-      const { error } = await supabase
-        .from('users')
-        .update(updateData)
-        .eq('id', currentUser.id);
-      
-      if (error) {
-        console.error('Error updating user:', error);
-        return { success: false, error: error.message };
-      }
-      
-      const updatedUser = { ...currentUser, ...updates };
-      setCurrentUser(updatedUser);
+      await updateUserMutation.mutateAsync({ userId: currentUser.id, updates: updateData });
       return { success: true };
     } catch (error: any) {
       console.error('Error updating user:', error);
       return { success: false, error: error.message || String(error) };
     }
-  }, [currentUser]);
+  }, [currentUser, updateUserMutation]);
 
   const getProductReviews = useCallback((productId: string) => {
     return reviews.filter(review => review.productId === productId);
@@ -830,133 +726,36 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
     return products.find(p => p.id === productId);
   }, [products]);
 
-  const [allUsers, setAllUsers] = useState<User[]>([]);
-
-  useEffect(() => {
-    loadAllUsers();
-  }, []);
-
-  const loadAllUsers = async () => {
-    try {
-      const cachedUsers = Platform.OS === 'web' 
-        ? localStorage.getItem('cached_users')
-        : await AsyncStorage.getItem('cached_users');
-      
-      const cachedTimestamp = Platform.OS === 'web'
-        ? localStorage.getItem('cached_users_timestamp')
-        : await AsyncStorage.getItem('cached_users_timestamp');
-      
-      const now = Date.now();
-      const cacheAge = cachedTimestamp ? now - parseInt(cachedTimestamp, 10) : Infinity;
-      const MAX_CACHE_AGE = 30 * 60 * 1000;
-      
-      if (cachedUsers && cacheAge < MAX_CACHE_AGE) {
-        try {
-          const parsed = JSON.parse(cachedUsers);
-          const mappedFromCache: User[] = parsed.map((u: any) => ({
-            ...u,
-            joinedDate: u.joinedDate ? new Date(u.joinedDate) : undefined,
-            premiumRequestDate: u.premiumRequestDate ? new Date(u.premiumRequestDate) : undefined,
-          }));
-          setAllUsers(mappedFromCache);
-          
-          if (cacheAge < 5 * 60 * 1000) {
-            return;
-          }
-        } catch (e) {
-          console.error('Error parsing cached users:', e);
-        }
-      }
-      
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) {
-        console.error('Error loading users:', error.message || error);
-        throw new Error(error.message || 'Failed to load users');
-      }
-      
-      if (data) {
-        const users: User[] = data.map((u: any) => ({
-          id: u.id,
-          name: u.name,
-          avatar: u.avatar,
-          phone: u.phone,
-          password: u.password,
-          location: u.location,
-          type: u.type as UserType,
-          isAdmin: u.is_admin,
-          isSuperAdmin: u.is_super_admin,
-          email: u.email,
-          bio: u.bio,
-          rating: u.rating,
-          reviewCount: u.review_count,
-          joinedDate: u.joined_date ? new Date(u.joined_date) : undefined,
-          premiumPaymentPending: u.premium_payment_pending,
-          premiumRequestDate: u.premium_request_date ? new Date(u.premium_request_date) : undefined,
-          deliveryAddress: u.delivery_address,
-          deliveryCity: u.delivery_city,
-          deliveryPhone: u.delivery_phone,
-        }));
-        setAllUsers(users);
-        
-        const cacheData = JSON.stringify(users);
-        const timestamp = Date.now().toString();
-        
-        if (Platform.OS === 'web') {
-          try {
-            localStorage.setItem('cached_users', cacheData);
-            localStorage.setItem('cached_users_timestamp', timestamp);
-          } catch (e) {
-            console.error('Error caching users:', e);
-          }
-        } else {
-          try {
-            await AsyncStorage.multiSet([
-              ['cached_users', cacheData],
-              ['cached_users_timestamp', timestamp]
-            ]);
-          } catch (e) {
-            console.error('Error caching users:', e);
-          }
-        }
-      }
-    } catch (error: any) {
-      const errorMsg = error?.message || String(error);
-      console.error('Error loading users:', errorMsg);
-      toast.showError('Error loading users: ' + errorMsg);
-    }
-  };
-
   const changeUserType = useCallback(async (userId: string, newType: UserType) => {
     if (!currentUser?.isAdmin) return { success: false, error: 'Non autorisé' };
     
     try {
-      const { error } = await supabase
-        .from('users')
-        .update({ type: newType })
-        .eq('id', userId);
-      
-      if (error) {
-        console.error('Error changing user type:', error);
-        return { success: false, error: 'Erreur lors du changement de type' };
-      }
-      
-      await loadAllUsers();
-      
-      if (currentUser.id === userId) {
-        const updatedCurrentUser = { ...currentUser, type: newType };
-        setCurrentUser(updatedCurrentUser);
-      }
+      await updateUserMutation.mutateAsync({
+        userId,
+        updates: { type: newType },
+      });
       
       return { success: true };
     } catch (error) {
       console.error('Error changing user type:', error);
       return { success: false, error: 'Erreur lors du changement de type' };
     }
-  }, [currentUser]);
+  }, [currentUser, updateUserMutation]);
+
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const { error } = await supabase
+        .from('users')
+        .delete()
+        .eq('id', userId);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['allUsers'] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+    },
+  });
 
   const deleteUser = useCallback(async (userId: string) => {
     if (!currentUser?.isAdmin && !currentUser?.isSuperAdmin) return { success: false, error: 'Non autorisé' };
@@ -966,29 +765,42 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
     if (targetUser?.isSuperAdmin) return { success: false, error: 'Le super administrateur ne peut pas être supprimé' };
     
     try {
-      const { error } = await supabase
-        .from('users')
-        .delete()
-        .eq('id', userId);
-      
-      if (error) {
-        console.error('Error deleting user:', error);
-        return { success: false, error: 'Erreur lors de la suppression' };
-      }
-      
-      await loadAllUsers();
-      await loadProducts();
-      
+      await deleteUserMutation.mutateAsync(userId);
       return { success: true };
     } catch (error) {
       console.error('Error deleting user:', error);
       return { success: false, error: 'Erreur lors de la suppression' };
     }
-  }, [currentUser, allUsers]);
+  }, [currentUser, allUsers, deleteUserMutation]);
 
   const pendingProducts = useMemo(() => {
     return products.filter(product => product.status === 'pending');
   }, [products]);
+
+  const approveProductMutation = useMutation({
+    mutationFn: async ({ productId, userId, product }: { productId: string; userId: string; product: Product }) => {
+      const { error } = await supabase
+        .from('products')
+        .update({
+          status: 'approved',
+          approved_at: new Date().toISOString(),
+          approved_by: userId,
+        })
+        .eq('id', productId);
+
+      if (error) throw error;
+
+      await notifications.sendNotification(product.sellerId, {
+        type: 'product_approved',
+        title: 'Annonce approuvée',
+        message: `Votre annonce "${product.title}" a été approuvée et est maintenant visible pour tous les utilisateurs.`,
+        data: { productId: product.id },
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+    },
+  });
 
   const approveProduct = useCallback(async (productId: string) => {
     if (!currentUser?.isAdmin) return;
@@ -997,36 +809,11 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
       const product = products.find(p => p.id === productId);
       if (!product) return;
 
-      const { error } = await supabase
-        .from('products')
-        .update({
-          status: 'approved',
-          approved_at: new Date().toISOString(),
-          approved_by: currentUser.id,
-        })
-        .eq('id', productId);
-
-      if (error) {
-        console.error('Error approving product:', error);
-        return;
-      }
-
-      setProducts(products.map(p => 
-        p.id === productId 
-          ? { ...p, status: 'approved' as ProductStatus, approvedAt: new Date(), approvedBy: currentUser.id } 
-          : p
-      ));
-
-      await notifications.sendNotification(product.sellerId, {
-        type: 'product_approved',
-        title: 'Annonce approuvée',
-        message: `Votre annonce "${product.title}" a été approuvée et est maintenant visible pour tous les utilisateurs.`,
-        data: { productId: product.id },
-      });
+      await approveProductMutation.mutateAsync({ productId, userId: currentUser.id, product });
     } catch (error) {
       console.error('Error approving product:', error);
     }
-  }, [products, currentUser, notifications]);
+  }, [products, currentUser, approveProductMutation]);
 
   const toggleAdminStatus = useCallback(async (userId: string) => {
     if (!currentUser?.isSuperAdmin) return { success: false, error: 'Seul le super administrateur peut gérer les admins' };
@@ -1038,32 +825,20 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
     
     try {
       const newAdminStatus = !targetUser.isAdmin;
-      const { error } = await supabase
-        .from('users')
-        .update({ is_admin: newAdminStatus })
-        .eq('id', userId);
-      
-      if (error) {
-        console.error('Error toggling admin status:', error);
-        return { success: false, error: 'Erreur lors du changement de statut' };
-      }
-      
-      await loadAllUsers();
+      await updateUserMutation.mutateAsync({
+        userId,
+        updates: { is_admin: newAdminStatus },
+      });
       
       return { success: true };
     } catch (error) {
       console.error('Error toggling admin status:', error);
       return { success: false, error: 'Erreur lors du changement de statut' };
     }
-  }, [currentUser, allUsers]);
+  }, [currentUser, allUsers, updateUserMutation]);
 
-  const rejectProduct = useCallback(async (productId: string, reason?: string) => {
-    if (!currentUser?.isAdmin) return;
-    
-    try {
-      const product = products.find(p => p.id === productId);
-      if (!product) return;
-
+  const rejectProductMutation = useMutation({
+    mutationFn: async ({ productId, reason, product }: { productId: string; reason?: string; product: Product }) => {
       const { error } = await supabase
         .from('products')
         .update({
@@ -1073,16 +848,7 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
         })
         .eq('id', productId);
 
-      if (error) {
-        console.error('Error rejecting product:', error);
-        return;
-      }
-
-      setProducts(products.map(p => 
-        p.id === productId 
-          ? { ...p, status: 'rejected' as ProductStatus, rejectedAt: new Date(), rejectionReason: reason } 
-          : p
-      ));
+      if (error) throw error;
 
       await notifications.sendNotification(product.sellerId, {
         type: 'product_rejected',
@@ -1090,10 +856,24 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
         message: `Votre annonce "${product.title}" a été rejetée. Raison: ${reason || 'Non spécifié'}`,
         data: { productId: product.id, reason: reason },
       });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+    },
+  });
+
+  const rejectProduct = useCallback(async (productId: string, reason?: string) => {
+    if (!currentUser?.isAdmin) return;
+    
+    try {
+      const product = products.find(p => p.id === productId);
+      if (!product) return;
+
+      await rejectProductMutation.mutateAsync({ productId, reason, product });
     } catch (error) {
       console.error('Error rejecting product:', error);
     }
-  }, [products, currentUser, notifications]);
+  }, [products, currentUser, rejectProductMutation]);
 
   return useMemo(() => ({
     products,
@@ -1110,7 +890,7 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
     getProduct,
     canAddProduct,
     getMaxImages,
-    upgradeToPremium,
+    upgradeToPremium: () => {},
     requestPremiumUpgrade,
     approvePremiumUpgrade,
     rejectPremiumUpgrade,
@@ -1152,7 +932,6 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
     getProduct,
     canAddProduct,
     getMaxImages,
-    upgradeToPremium,
     requestPremiumUpgrade,
     approvePremiumUpgrade,
     rejectPremiumUpgrade,
