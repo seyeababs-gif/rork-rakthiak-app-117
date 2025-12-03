@@ -95,9 +95,8 @@ RETURNS TABLE (
   approved_products BIGINT,
   pending_products BIGINT,
   average_rating NUMERIC,
-  total_reviews BIGINT,
-  total_sales BIGINT
-) AS $$
+  total_reviews BIGINT
+) AS $
 BEGIN
   RETURN QUERY
   SELECT 
@@ -105,15 +104,13 @@ BEGIN
     COUNT(DISTINCT CASE WHEN p.status = 'approved' THEN p.id END) as approved_products,
     COUNT(DISTINCT CASE WHEN p.status = 'pending' THEN p.id END) as pending_products,
     COALESCE(AVG(r.rating), 0) as average_rating,
-    COUNT(DISTINCT r.id) as total_reviews,
-    COUNT(DISTINCT o.id) as total_sales
+    COUNT(DISTINCT r.id) as total_reviews
   FROM products p
   LEFT JOIN reviews r ON p.id = r.product_id
-  LEFT JOIN orders o ON p.id = o.product_id AND o.status = 'delivered'
   WHERE p.seller_id = seller_id_param
   GROUP BY p.seller_id;
 END;
-$$ LANGUAGE plpgsql STABLE;
+$ LANGUAGE plpgsql STABLE;
 
 -- Fonction pour récupérer les commandes avec filtres optimisés
 CREATE OR REPLACE FUNCTION get_orders_filtered(
@@ -126,24 +123,25 @@ RETURNS TABLE (
   user_id TEXT,
   user_name TEXT,
   user_phone TEXT,
-  user_avatar TEXT,
-  product_id TEXT,
-  product_title TEXT,
-  product_image TEXT,
-  quantity INT,
-  total_price NUMERIC,
+  items JSONB,
+  total_amount NUMERIC,
   status TEXT,
+  payment_method TEXT,
+  wave_transaction_id TEXT,
   created_at TIMESTAMPTZ,
+  paid_at TIMESTAMPTZ,
+  validated_at TIMESTAMPTZ,
+  rejected_at TIMESTAMPTZ,
+  rejection_reason TEXT,
+  shipped_at TIMESTAMPTZ,
+  completed_at TIMESTAMPTZ,
+  has_review BOOLEAN,
+  delivery_name TEXT,
+  delivery_phone TEXT,
   delivery_address TEXT,
   delivery_city TEXT,
-  delivery_phone TEXT,
-  payment_proof TEXT,
-  payment_method TEXT,
-  seller_id TEXT,
-  seller_name TEXT,
-  tracking_number TEXT,
-  delivered_at TIMESTAMPTZ
-) AS $$
+  updated_at TIMESTAMPTZ
+) AS $
 BEGIN
   RETURN QUERY
   SELECT 
@@ -151,30 +149,31 @@ BEGIN
     o.user_id,
     o.user_name,
     o.user_phone,
-    o.user_avatar,
-    o.product_id,
-    o.product_title,
-    o.product_image,
-    o.quantity,
-    o.total_price,
+    o.items,
+    o.total_amount,
     o.status,
+    o.payment_method,
+    o.wave_transaction_id,
     o.created_at,
+    o.paid_at,
+    o.validated_at,
+    o.rejected_at,
+    o.rejection_reason,
+    o.shipped_at,
+    o.completed_at,
+    o.has_review,
+    o.delivery_name,
+    o.delivery_phone,
     o.delivery_address,
     o.delivery_city,
-    o.delivery_phone,
-    o.payment_proof,
-    o.payment_method,
-    o.seller_id,
-    o.seller_name,
-    o.tracking_number,
-    o.delivered_at
+    o.updated_at
   FROM orders o
   WHERE 
-    (p_is_admin = TRUE OR o.user_id = p_user_id OR o.seller_id = p_user_id)
+    (p_is_admin = TRUE OR o.user_id = p_user_id)
     AND (p_status = 'all' OR o.status = p_status)
   ORDER BY o.created_at DESC;
 END;
-$$ LANGUAGE plpgsql STABLE;
+$ LANGUAGE plpgsql STABLE;
 
 -- Fonction pour compter les notifications non lues rapidement
 CREATE OR REPLACE FUNCTION count_unread_notifications(user_id_param TEXT)
@@ -235,8 +234,6 @@ CREATE INDEX IF NOT EXISTS idx_products_status_category ON products(status, cate
 CREATE INDEX IF NOT EXISTS idx_products_status_created ON products(status, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_products_seller_status ON products(seller_id, status);
 CREATE INDEX IF NOT EXISTS idx_orders_user_status ON orders(user_id, status);
-CREATE INDEX IF NOT EXISTS idx_orders_seller_status ON orders(seller_id, status);
-CREATE INDEX IF NOT EXISTS idx_notifications_user_unread ON notifications(user_id, is_read) WHERE is_read = FALSE;
 
 -- Activer la mise en cache pour les requêtes stables
 ALTER FUNCTION get_products_paginated SET search_path = public;
