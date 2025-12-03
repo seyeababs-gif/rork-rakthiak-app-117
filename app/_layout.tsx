@@ -4,7 +4,7 @@ import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { MarketplaceProvider, useMarketplace } from "@/contexts/MarketplaceContext";
-import { CartContext } from "@/contexts/CartContext";
+import { CartProvider } from "@/contexts/CartContext";
 import { OrderProvider } from "@/contexts/OrderContext";
 import { ReviewProvider } from "@/contexts/ReviewContext";
 import { NotificationProvider, useNotifications } from "@/contexts/NotificationContext";
@@ -68,7 +68,7 @@ export default function RootLayout() {
       <ToastProvider>
         <NotificationProvider>
           <MarketplaceProvider>
-            <CartContext>
+            <CartProvider>
               <OrderProvider>
                 <ReviewProvider>
                   <GestureHandlerRootView style={{ flex: 1 }}>
@@ -81,7 +81,7 @@ export default function RootLayout() {
                   </GestureHandlerRootView>
                 </ReviewProvider>
               </OrderProvider>
-            </CartContext>
+            </CartProvider>
           </MarketplaceProvider>
         </NotificationProvider>
       </ToastProvider>
