@@ -1,4 +1,10 @@
-import { supabase } from '../lib/supabase';
+import { createClient } from '@supabase/supabase-js';
+import { Buffer } from 'buffer';
+
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://yhdexpkqtfxmhcpcydcm.supabase.co';
+const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InloZGV4cGtxdGZ4bWhjcGN5ZGNtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM2ODU3ODEsImV4cCI6MjA3OTI2MTc4MX0.GGUwjQmKOHeK0UgmF4eDndfGnnpRcnUFDOc535ZaA_g';
+
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 async function migrateBase64ImagesToStorage() {
   console.log('🚀 Début de la migration des images Base64 vers Supabase Storage...');
