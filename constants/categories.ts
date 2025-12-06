@@ -26,6 +26,7 @@ export const subCategories: SubCategoryInfo[] = [
   { id: 'accessoires_mode', name: 'Accessoires', icon: '👜', parentCategory: 'fashion' },
   { id: 'chaussures', name: 'Chaussures', icon: '👞', parentCategory: 'fashion' },
   { id: 'sacs', name: 'Sacs', icon: '🎒', parentCategory: 'fashion' },
+  { id: 'autres_fashion', name: 'Autres', icon: '✨', parentCategory: 'fashion' },
 
   // Santé & Beauté
   { id: 'maquillage', name: 'Maquillage', icon: '💄', parentCategory: 'sante_beaute' },
@@ -34,12 +35,14 @@ export const subCategories: SubCategoryInfo[] = [
   { id: 'soins_cheveux', name: 'Soins Cheveux', icon: '💇‍♀️', parentCategory: 'sante_beaute' },
   { id: 'parfums', name: 'Parfums', icon: '👃', parentCategory: 'sante_beaute' },
   { id: 'hygiene', name: 'Hygiène', icon: '🧼', parentCategory: 'sante_beaute' },
+  { id: 'autres_sante_beaute', name: 'Autres', icon: '✨', parentCategory: 'sante_beaute' },
 
   // Téléphone & Tablette
   { id: 'smartphones', name: 'Smartphones', icon: '📱', parentCategory: 'telephone_tablette' },
   { id: 'tablettes', name: 'Tablettes', icon: '📲', parentCategory: 'telephone_tablette' },
   { id: 'accessoires_telephonie', name: 'Accessoires', icon: '🔌', parentCategory: 'telephone_tablette' },
   { id: 'smartwatches', name: 'Montres Connectées', icon: '⌚', parentCategory: 'telephone_tablette' },
+  { id: 'autres_telephone_tablette', name: 'Autres', icon: '✨', parentCategory: 'telephone_tablette' },
 
   // Informatique
   { id: 'ordinateurs_portables', name: 'PC Portables', icon: '💻', parentCategory: 'informatique' },
@@ -47,23 +50,27 @@ export const subCategories: SubCategoryInfo[] = [
   { id: 'imprimantes_scanners', name: 'Imprimantes', icon: '🖨️', parentCategory: 'informatique' },
   { id: 'stockage', name: 'Stockage', icon: '💾', parentCategory: 'informatique' },
   { id: 'accessoires_informatique', name: 'Accessoires', icon: '⌨️', parentCategory: 'informatique' },
+  { id: 'autres_informatique', name: 'Autres', icon: '✨', parentCategory: 'informatique' },
 
   // TV & Audio
   { id: 'televiseurs', name: 'Téléviseurs', icon: '📺', parentCategory: 'tv_audio' },
   { id: 'home_cinema', name: 'Home Cinéma', icon: '🔊', parentCategory: 'tv_audio' },
   { id: 'enceintes', name: 'Enceintes', icon: '🔈', parentCategory: 'tv_audio' },
   { id: 'casques_ecouteurs', name: 'Casques', icon: '🎧', parentCategory: 'tv_audio' },
+  { id: 'autres_tv_audio', name: 'Autres', icon: '✨', parentCategory: 'tv_audio' },
 
   // Jeux Vidéo
   { id: 'consoles', name: 'Consoles', icon: '🎮', parentCategory: 'jeux_video' },
   { id: 'jeux_video', name: 'Jeux', icon: '🕹️', parentCategory: 'jeux_video' },
   { id: 'accessoires_gaming', name: 'Accessoires', icon: '🖱️', parentCategory: 'jeux_video' },
+  { id: 'autres_jeux_video', name: 'Autres', icon: '✨', parentCategory: 'jeux_video' },
 
   // Photo & Vidéo
   { id: 'appareils_photo', name: 'Appareils Photo', icon: '📷', parentCategory: 'photo_video' },
   { id: 'cameras', name: 'Caméras', icon: '📹', parentCategory: 'photo_video' },
   { id: 'drones', name: 'Drones', icon: '🚁', parentCategory: 'photo_video' },
   { id: 'accessoires_photo', name: 'Accessoires', icon: '🔭', parentCategory: 'photo_video' },
+  { id: 'autres_photo_video', name: 'Autres', icon: '✨', parentCategory: 'photo_video' },
 
   // Maison
   { id: 'meubles', name: 'Meubles', icon: '🛋️', parentCategory: 'maison' },
@@ -73,11 +80,13 @@ export const subCategories: SubCategoryInfo[] = [
   { id: 'bricolage', name: 'Bricolage', icon: '🔨', parentCategory: 'maison' },
   { id: 'jardin', name: 'Jardin', icon: '🌻', parentCategory: 'maison' },
   { id: 'fournitures_maison', name: 'Fournitures', icon: '📝', parentCategory: 'maison' },
+  { id: 'autres_maison', name: 'Autres', icon: '✨', parentCategory: 'maison' },
 
   // Enfant
   { id: 'jouets', name: 'Jouets', icon: '🧸', parentCategory: 'enfant' },
   { id: 'puericulture', name: 'Puériculture', icon: '🍼', parentCategory: 'enfant' },
   { id: 'ecole', name: 'École', icon: '🎒', parentCategory: 'enfant' },
+  { id: 'autres_enfant', name: 'Autres', icon: '✨', parentCategory: 'enfant' },
 
   // Sport
   { id: 'fitness', name: 'Fitness', icon: '💪', parentCategory: 'sport' },
@@ -85,26 +94,31 @@ export const subCategories: SubCategoryInfo[] = [
   { id: 'velo', name: 'Vélo', icon: '🚲', parentCategory: 'sport' },
   { id: 'camping', name: 'Camping', icon: '⛺', parentCategory: 'sport' },
   { id: 'nutrition_sportive', name: 'Nutrition', icon: '🥤', parentCategory: 'sport' },
+  { id: 'autres_sport', name: 'Autres', icon: '✨', parentCategory: 'sport' },
 
   // Supermarché
   { id: 'alimentation', name: 'Alimentation', icon: '🍎', parentCategory: 'supermarche' },
   { id: 'boissons', name: 'Boissons', icon: '🥤', parentCategory: 'supermarche' },
   { id: 'produits_menagers', name: 'Produits Ménagers', icon: '🧹', parentCategory: 'supermarche' },
+  { id: 'autres_supermarche', name: 'Autres', icon: '✨', parentCategory: 'supermarche' },
 
   // Librairie
   { id: 'livres', name: 'Livres', icon: '📚', parentCategory: 'librairie' },
   { id: 'fournitures_scolaires', name: 'Scolaire', icon: '📏', parentCategory: 'librairie' },
   { id: 'papeterie', name: 'Papeterie', icon: '✏️', parentCategory: 'librairie' },
+  { id: 'autres_librairie', name: 'Autres', icon: '✨', parentCategory: 'librairie' },
 
   // Musique
   { id: 'instruments', name: 'Instruments', icon: '🎸', parentCategory: 'musique' },
   { id: 'sonorisation', name: 'Sonorisation', icon: '🔉', parentCategory: 'musique' },
+  { id: 'autres_musique', name: 'Autres', icon: '✨', parentCategory: 'musique' },
 
   // Véhicules
   { id: 'voitures', name: 'Voitures', icon: '🚗', parentCategory: 'vehicles' },
   { id: 'motos', name: 'Motos', icon: '🏍️', parentCategory: 'vehicles' },
   { id: 'pieces_detachees', name: 'Pièces Détachées', icon: '🔧', parentCategory: 'vehicles' },
   { id: 'location_vehicules', name: 'Location', icon: '🔑', parentCategory: 'vehicles' },
+  { id: 'autres_vehicles', name: 'Autres', icon: '✨', parentCategory: 'vehicles' },
 
   // Transport & Livraison (Service)
   { id: 'covoiturage', name: 'Covoiturage', icon: '🚗', parentCategory: 'delivery' },
@@ -112,6 +126,7 @@ export const subCategories: SubCategoryInfo[] = [
   { id: 'gp', name: 'GP', icon: '✈️', parentCategory: 'delivery' },
   { id: 'conteneur', name: 'Conteneur', icon: '🚢', parentCategory: 'delivery' },
   { id: 'demenagement', name: 'Déménagement', icon: '📦', parentCategory: 'delivery' },
+  { id: 'autres_delivery', name: 'Autres', icon: '✨', parentCategory: 'delivery' },
   
   // Autres
   { id: 'autres', name: 'Autres', icon: '✨', parentCategory: 'autres' },

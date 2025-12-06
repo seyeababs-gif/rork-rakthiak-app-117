@@ -252,7 +252,7 @@ export default function ShopScreen() {
             <View style={styles.infoRow}>
               <Phone size={16} color="#666" />
               <Text style={styles.infoText}>
-                {isAuthenticated ? seller.phone : `${seller.phone.substring(0, 2)} ** ** ** **`}
+                {isAuthenticated ? seller.phone : '** ** ** **'}
               </Text>
             </View>
             {sellerRating.count > 0 && (
