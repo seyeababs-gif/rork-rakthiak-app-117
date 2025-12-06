@@ -21,7 +21,7 @@
 5. Remplissez les champs :
    - **Policy name** : `Allow authenticated users to upload`
    - **Allowed operations** : Cochez `INSERT`
-   - **Target roles** : `authenticated` et `anon`
+   - **Target roles** : `authenticated` et `anon` (PAS service_role !)
    - **Policy definition** : 
    ```sql
    true
@@ -35,7 +35,7 @@
 3. Remplissez les champs :
    - **Policy name** : `Allow public read access`
    - **Allowed operations** : Cochez `SELECT`
-   - **Target roles** : `authenticated`, `anon`, et `public`
+   - **Target roles** : `authenticated` et `anon` (il n'y a pas de rôle "public" dans la liste, c'est normal)
    - **Policy definition** : 
    ```sql
    true
