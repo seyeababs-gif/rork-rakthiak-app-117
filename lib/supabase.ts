@@ -150,3 +150,50 @@ export function getThumbnailUrl(url: string): string {
   
   return url;
 }
+
+export async function uploadImageToStorage(uri: string): Promise<string> {
+  try {
+    console.log('Starting image upload to Supabase Storage...');
+    
+    let blob: Blob;
+    
+    if (Platform.OS === 'web') {
+      const response = await fetch(uri);
+      blob = await response.blob();
+    } else {
+      const response = await fetch(uri);
+      blob = await response.blob();
+    }
+    
+    const fileExt = 'jpg';
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+    const filePath = `products/${fileName}`;
+    
+    console.log('Uploading image to:', filePath);
+    
+    const { error } = await supabase.storage
+      .from('product-images')
+      .upload(filePath, blob, {
+        contentType: 'image/jpeg',
+        cacheControl: '3600',
+        upsert: false,
+      });
+    
+    if (error) {
+      console.error('Upload error:', error);
+      throw new Error(`Failed to upload image: ${error.message}`);
+    }
+    
+    const { data: publicUrlData } = supabase.storage
+      .from('product-images')
+      .getPublicUrl(filePath);
+    
+    const publicUrl = publicUrlData.publicUrl;
+    console.log('Image uploaded successfully:', publicUrl);
+    
+    return publicUrl;
+  } catch (error) {
+    console.error('Error uploading image to storage:', error);
+    throw error;
+  }
+}

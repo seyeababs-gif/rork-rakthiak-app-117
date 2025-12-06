@@ -17,7 +17,7 @@ import { X, Camera, Image as ImageIcon, Package, Briefcase, Calendar as Calendar
 import { useRouter } from 'expo-router';
 import { useMarketplace } from '@/contexts/MarketplaceContext';
 import { useToast } from '@/contexts/ToastContext';
-import { compressImage } from '@/lib/supabase';
+import { compressImage, uploadImageToStorage } from '@/lib/supabase';
 import { categories, getSubCategoriesForCategory } from '@/constants/categories';
 import { Category, ListingType } from '@/types/marketplace';
 
@@ -99,28 +99,6 @@ export default function AddProductScreen() {
         imageUri = await compressImage(asset.uri, 800);
         console.log('Image compressée avec succès');
 
-        if (Platform.OS === 'web') {
-          const response = await fetch(imageUri);
-          const blob = await response.blob();
-          const base64 = await new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result);
-            reader.onerror = reject;
-            reader.readAsDataURL(blob);
-          });
-          imageUri = base64 as string;
-        } else {
-          const response = await fetch(imageUri);
-          const blob = await response.blob();
-          const base64 = await new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result);
-            reader.onerror = reject;
-            reader.readAsDataURL(blob);
-          });
-          imageUri = base64 as string;
-        }
-
         setImages([...images, imageUri]);
       } catch (e) {
         console.error('Error processing image:', e);
@@ -167,16 +145,6 @@ export default function AddProductScreen() {
         console.log('Compression de l\'image...');
         imageUri = await compressImage(asset.uri, 800);
         console.log('Image compressée avec succès');
-
-        const response = await fetch(imageUri);
-        const blob = await response.blob();
-        const base64 = await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result);
-          reader.onerror = reject;
-          reader.readAsDataURL(blob);
-        });
-        imageUri = base64 as string;
 
         setImages([...images, imageUri]);
       } catch (e) {
@@ -309,6 +277,25 @@ export default function AddProductScreen() {
 
     setIsSubmitting(true);
     try {
+      console.log('Uploading images to Supabase Storage...');
+      const uploadedImageUrls: string[] = [];
+      
+      for (let i = 0; i < images.length; i++) {
+        try {
+          console.log(`Uploading image ${i + 1} of ${images.length}...`);
+          const publicUrl = await uploadImageToStorage(images[i]);
+          uploadedImageUrls.push(publicUrl);
+          console.log(`Image ${i + 1} uploaded:`, publicUrl);
+        } catch (uploadError) {
+          console.error(`Error uploading image ${i + 1}:`, uploadError);
+          toast.showError(`Erreur lors de l'upload de l'image ${i + 1}`);
+          setIsSubmitting(false);
+          return;
+        }
+      }
+      
+      console.log('All images uploaded successfully:', uploadedImageUrls);
+      
       // @ts-ignore - addProduct returns a promise with status
       const result = await addProduct({
         title: title.trim(),
@@ -318,7 +305,7 @@ export default function AddProductScreen() {
         category: category!,
         subCategory: subCategory as any,
         condition: listingType === 'product' ? condition : undefined,
-        images,
+        images: uploadedImageUrls,
         sellerPhone: currentUser?.phone || '',
         listingType,
         stockQuantity: listingType === 'product' && manageStock && stockQuantity ? Number(stockQuantity) : undefined,
