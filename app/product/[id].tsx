@@ -42,6 +42,14 @@ export default function ProductDetailScreen() {
 
   const product = products.find(p => p.id === id);
   const [isTransitioning, setIsTransitioning] = useState(true);
+  
+  const productReviews = product ? getProductReviews(product.id) : [];
+  const productRating = product ? getProductRating(product.id) : { average: 0, count: 0 };
+  const sellerRating = product ? getSellerRating(product.sellerId) : { average: 0, count: 0 };
+
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('fr-FR').format(price) + ' FCFA';
+  };
 
   useEffect(() => {
     if (product) {
@@ -64,18 +72,48 @@ export default function ProductDetailScreen() {
       const metaImage = document.querySelector('meta[property="og:image"]');
       const metaUrl = document.querySelector('meta[property="og:url"]');
 
+      const fullDescription = `${product.title} - ${formatPrice(product.price)} - ${product.location} - ${product.description.substring(0, 150)}...`;
+
       if (metaTitle) metaTitle.setAttribute('content', product.title);
-      if (metaDescription) metaDescription.setAttribute('content', product.description);
+      if (metaDescription) metaDescription.setAttribute('content', fullDescription);
       if (metaImage) metaImage.setAttribute('content', product.images[0]);
       if (metaUrl) metaUrl.setAttribute('content', `https://rakthiak.com/product/${product.id}`);
 
-      document.title = `${product.title} - Rakthiak`;
+      document.title = `${product.title} - ${formatPrice(product.price)} | Rakthiak`;
+
+      const structuredData = {
+        '@context': 'https://schema.org',
+        '@type': 'Product',
+        name: product.title,
+        description: product.description,
+        image: product.images,
+        offers: {
+          '@type': 'Offer',
+          price: product.price,
+          priceCurrency: 'XOF',
+          availability: product.isOutOfStock ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock',
+          seller: {
+            '@type': 'Person',
+            name: product.sellerName,
+          },
+        },
+        aggregateRating: productRating.count > 0 ? {
+          '@type': 'AggregateRating',
+          ratingValue: productRating.average,
+          reviewCount: productRating.count,
+        } : undefined,
+      };
+
+      let scriptTag = document.getElementById('product-structured-data') as HTMLScriptElement | null;
+      if (!scriptTag) {
+        scriptTag = document.createElement('script');
+        scriptTag.id = 'product-structured-data';
+        scriptTag.type = 'application/ld+json';
+        document.head.appendChild(scriptTag);
+      }
+      scriptTag.textContent = JSON.stringify(structuredData);
     }
-  }, [product]);
-  
-  const productReviews = product ? getProductReviews(product.id) : [];
-  const productRating = product ? getProductRating(product.id) : { average: 0, count: 0 };
-  const sellerRating = product ? getSellerRating(product.sellerId) : { average: 0, count: 0 };
+  }, [product, productRating, formatPrice]);
   
   const displayedReviews = showAllReviews ? productReviews : productReviews.slice(0, 2);
 
@@ -128,11 +166,7 @@ export default function ProductDetailScreen() {
     );
   }
 
-  const favorite = isFavorite(product.id);
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('fr-FR').format(price) + ' FCFA';
-  };
 
   const getPriceDisplay = () => {
     if (product.listingType === 'service' && product.serviceDetails) {
