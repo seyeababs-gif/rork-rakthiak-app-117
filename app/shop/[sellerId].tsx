@@ -71,19 +71,38 @@ export default function ShopScreen() {
 
   useEffect(() => {
     if (Platform.OS === 'web' && seller) {
-      const metaTitle = document.querySelector('meta[property="og:title"]');
-      const metaDescription = document.querySelector('meta[property="og:description"]');
-      const metaImage = document.querySelector('meta[property="og:image"]');
-      const metaUrl = document.querySelector('meta[property="og:url"]');
-
-      if (metaTitle) metaTitle.setAttribute('content', `Boutique de ${seller.name}`);
-      if (metaDescription) metaDescription.setAttribute('content', `Découvrez les produits de ${seller.name} sur Rakthiak`);
-      if (metaImage) metaImage.setAttribute('content', seller.avatar);
-      if (metaUrl) metaUrl.setAttribute('content', `https://rakthiak.com/shop/${seller.id}`);
+      const ogTitle = `Boutique de ${seller.name}`;
+      const ogDescription = `Découvrez les produits de ${seller.name} sur Rakthiak. ${sellerProducts.length} produit${sellerProducts.length > 1 ? 's' : ''} disponible${sellerProducts.length > 1 ? 's' : ''} - ${seller.location}`;
+      const ogImage = seller.avatar;
+      const ogUrl = `https://rakthiak.com/shop/${seller.id}`;
 
       document.title = `Boutique de ${seller.name} - Rakthiak`;
+
+      const updateOrCreateMeta = (property: string, content: string, isName = false) => {
+        const attr = isName ? 'name' : 'property';
+        let meta = document.querySelector(`meta[${attr}="${property}"]`);
+        if (!meta) {
+          meta = document.createElement('meta');
+          meta.setAttribute(attr, property);
+          document.head.appendChild(meta);
+        }
+        meta.setAttribute('content', content);
+      };
+
+      updateOrCreateMeta('og:title', ogTitle);
+      updateOrCreateMeta('og:description', ogDescription);
+      updateOrCreateMeta('og:image', ogImage);
+      updateOrCreateMeta('og:url', ogUrl);
+      updateOrCreateMeta('og:type', 'website');
+
+      updateOrCreateMeta('twitter:card', 'summary_large_image', true);
+      updateOrCreateMeta('twitter:title', ogTitle, true);
+      updateOrCreateMeta('twitter:description', ogDescription, true);
+      updateOrCreateMeta('twitter:image', ogImage, true);
+
+      updateOrCreateMeta('description', ogDescription, true);
     }
-  }, [seller]);
+  }, [seller, sellerProducts.length]);
 
   if (isInitialLoad) {
     return (

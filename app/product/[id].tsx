@@ -69,19 +69,36 @@ export default function ProductDetailScreen() {
 
   useEffect(() => {
     if (Platform.OS === 'web' && product) {
-      const metaTitle = document.querySelector('meta[property="og:title"]');
-      const metaDescription = document.querySelector('meta[property="og:description"]');
-      const metaImage = document.querySelector('meta[property="og:image"]');
-      const metaUrl = document.querySelector('meta[property="og:url"]');
-
-      const fullDescription = `${product.title} - ${formatPrice(product.price)} - ${product.location} - ${product.description.substring(0, 150)}...`;
-
-      if (metaTitle) metaTitle.setAttribute('content', product.title);
-      if (metaDescription) metaDescription.setAttribute('content', fullDescription);
-      if (metaImage) metaImage.setAttribute('content', product.images[0]);
-      if (metaUrl) metaUrl.setAttribute('content', `https://rakthiak.com/product/${product.id}`);
+      const ogTitle = product.title;
+      const ogDescription = `${product.title} - ${formatPrice(product.price)} - ${product.location}. ${product.description.substring(0, 150)}...`;
+      const ogImage = product.images[0];
+      const ogUrl = `https://rakthiak.com/product/${product.id}`;
 
       document.title = `${product.title} - ${formatPrice(product.price)} | Rakthiak`;
+
+      const updateOrCreateMeta = (property: string, content: string, isName = false) => {
+        const attr = isName ? 'name' : 'property';
+        let meta = document.querySelector(`meta[${attr}="${property}"]`);
+        if (!meta) {
+          meta = document.createElement('meta');
+          meta.setAttribute(attr, property);
+          document.head.appendChild(meta);
+        }
+        meta.setAttribute('content', content);
+      };
+
+      updateOrCreateMeta('og:title', ogTitle);
+      updateOrCreateMeta('og:description', ogDescription);
+      updateOrCreateMeta('og:image', ogImage);
+      updateOrCreateMeta('og:url', ogUrl);
+      updateOrCreateMeta('og:type', 'product');
+
+      updateOrCreateMeta('twitter:card', 'summary_large_image', true);
+      updateOrCreateMeta('twitter:title', ogTitle, true);
+      updateOrCreateMeta('twitter:description', ogDescription, true);
+      updateOrCreateMeta('twitter:image', ogImage, true);
+
+      updateOrCreateMeta('description', ogDescription, true);
 
       const structuredData = {
         '@context': 'https://schema.org',
