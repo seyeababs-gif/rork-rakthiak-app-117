@@ -579,6 +579,9 @@ export default function ProductDetailScreen() {
                   <MapPin size={14} color="#666" />
                   <Text style={styles.sellerMetaText}>{product.location}</Text>
                 </View>
+                <View style={styles.sellerMeta}>
+                  <Text style={styles.sellerMetaText}>📞 {product.sellerPhone.replace(/(\d{2})\s?(\d{3})\s?(\d{2})\s?(\d{2})/, '$1 XXX XX XX')}</Text>
+                </View>
                 <Text style={styles.sellerDate}>
                   Publié le {formatDate(product.createdAt)}
                 </Text>
