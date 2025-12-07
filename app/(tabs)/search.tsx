@@ -8,7 +8,8 @@ import {
   FlatList,
   useWindowDimensions,
   Keyboard,
-  TouchableWithoutFeedback
+  TouchableWithoutFeedback,
+  Platform
 } from 'react-native';
 import OptimizedImage from '@/components/OptimizedImage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -28,13 +29,14 @@ export default function SearchScreen() {
   const getSearchCardDimensions = useCallback(() => {
     const padding = 16;
     const gap = 16;
+    const scrollbarWidth = Platform.OS === 'web' ? 15 : 0;
     
     let numColumns = 2;
     if (screenWidth > 768) numColumns = 3;
     if (screenWidth > 1024) numColumns = 4;
     if (screenWidth > 1280) numColumns = 5;
     
-    const availableWidth = screenWidth - (padding * 2) - (gap * (numColumns - 1));
+    const availableWidth = screenWidth - (padding * 2) - (gap * (numColumns - 1)) - scrollbarWidth;
     const cardWidth = Math.floor(availableWidth / numColumns);
     
     return { width: cardWidth, gap, columns: numColumns, padding };

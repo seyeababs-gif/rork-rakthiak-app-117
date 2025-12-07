@@ -29,6 +29,7 @@ export default function HomeScreen() {
   const getProductCardDimensions = useCallback(() => {
     const padding = 16;
     const gap = 12;
+    const scrollbarWidth = isWeb ? 15 : 0;
     
     let numColumns = 2;
     if (screenWidth > 768) numColumns = 3;
@@ -36,7 +37,7 @@ export default function HomeScreen() {
     if (screenWidth > 1280) numColumns = 5;
     if (screenWidth > 1600) numColumns = 6;
     
-    const availableWidth = screenWidth - (padding * 2) - (gap * (numColumns - 1));
+    const availableWidth = screenWidth - (padding * 2) - (gap * (numColumns - 1)) - scrollbarWidth;
     const cardWidth = Math.floor(availableWidth / numColumns);
     
     return { width: cardWidth, gap, columns: numColumns, padding };
