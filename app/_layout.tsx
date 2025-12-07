@@ -3,7 +3,6 @@ import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { View, Text, StyleSheet } from "react-native";
 import { MarketplaceProvider, useMarketplace } from "@/contexts/MarketplaceContext";
 import { CartProvider } from "@/contexts/CartContext";
 import { OrderProvider } from "@/contexts/OrderContext";
@@ -55,111 +54,37 @@ function NotificationSetup() {
   return null;
 }
 
-class ErrorBoundary extends React.Component<
-  { children: React.ReactNode },
-  { hasError: boolean; error?: Error }
-> {
-  constructor(props: { children: React.ReactNode }) {
-    super(props);
-    this.state = { hasError: false };
-  }
-
-  static getDerivedStateFromError(error: Error) {
-    console.error('ErrorBoundary caught error:', error);
-    return { hasError: true, error };
-  }
-
-  componentDidCatch(error: Error, errorInfo: any) {
-    console.error('ErrorBoundary details:', error, errorInfo);
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return (
-        <View style={errorStyles.container}>
-          <Text style={errorStyles.title}>Une erreur est survenue</Text>
-          <Text style={errorStyles.message}>
-            {this.state.error?.message || 'Erreur inconnue'}
-          </Text>
-          <Text style={errorStyles.stack}>
-            {this.state.error?.stack}
-          </Text>
-        </View>
-      );
-    }
-
-    return this.props.children;
-  }
-}
-
-const errorStyles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    padding: 20,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#E31B23',
-    marginBottom: 16,
-  },
-  message: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  stack: {
-    fontSize: 12,
-    color: '#999',
-    textAlign: 'left',
-  },
-});
-
 function AuthGuard({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
 export default function RootLayout() {
   useEffect(() => {
-    console.log('RootLayout mounted');
-    try {
-      SplashScreen.hideAsync();
-      console.log('SplashScreen hidden');
-    } catch (error) {
-      console.error('Error hiding splash screen:', error);
-    }
+    SplashScreen.hideAsync();
   }, []);
 
-  console.log('RootLayout rendering');
-
   return (
-    <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <ToastProvider>
-          <NotificationProvider>
-            <MarketplaceProvider>
-              <CartProvider>
-                <OrderProvider>
-                  <ReviewProvider>
-                    <GestureHandlerRootView style={{ flex: 1 }}>
-                      <AuthGuard>
-                        <NotificationSetup />
-                        <RootLayoutNav />
-                        <ToastContainer />
-                        <GlobalAlert />
-                      </AuthGuard>
-                    </GestureHandlerRootView>
-                  </ReviewProvider>
-                </OrderProvider>
-              </CartProvider>
-            </MarketplaceProvider>
-          </NotificationProvider>
-        </ToastProvider>
-      </QueryClientProvider>
-    </ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <ToastProvider>
+        <NotificationProvider>
+          <MarketplaceProvider>
+            <CartProvider>
+              <OrderProvider>
+                <ReviewProvider>
+                  <GestureHandlerRootView style={{ flex: 1 }}>
+                    <AuthGuard>
+                      <NotificationSetup />
+                      <RootLayoutNav />
+                      <ToastContainer />
+                      <GlobalAlert />
+                    </AuthGuard>
+                  </GestureHandlerRootView>
+                </ReviewProvider>
+              </OrderProvider>
+            </CartProvider>
+          </MarketplaceProvider>
+        </NotificationProvider>
+      </ToastProvider>
+    </QueryClientProvider>
   );
 }
