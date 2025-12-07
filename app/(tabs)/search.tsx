@@ -17,19 +17,19 @@ import { useRouter } from 'expo-router';
 import { useMarketplace } from '@/contexts/MarketplaceContext';
 import { Product } from '@/types/marketplace';
 
-const { width } = Dimensions.get('window');
+const { width: screenWidth } = Dimensions.get('window');
 
-function getSearchCardWidth() {
+function getSearchCardDimensions() {
   const containerPadding = 16;
   const gap = 16;
   const columns = 2;
-  const availableWidth = width - (containerPadding * 2);
+  const availableWidth = screenWidth - (containerPadding * 2);
   const totalGapWidth = gap * (columns - 1);
   const calculatedWidth = (availableWidth - totalGapWidth) / columns;
-  return Math.floor(calculatedWidth);
+  return { width: Math.floor(calculatedWidth), gap };
 }
 
-const RESPONSIVE_CARD_WIDTH = getSearchCardWidth();
+const CARD_DIMENSIONS = getSearchCardDimensions();
 
 export default function SearchScreen() {
   const router = useRouter();
@@ -294,13 +294,13 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   columnWrapper: {
-    gap: 16,
+    gap: CARD_DIMENSIONS.gap,
     justifyContent: 'flex-start',
     alignItems: 'flex-start',
   },
   // Product Card Styles
   productCard: {
-    width: RESPONSIVE_CARD_WIDTH,
+    width: CARD_DIMENSIONS.width,
     backgroundColor: '#fff',
     borderRadius: 20,
     overflow: 'hidden',
@@ -316,7 +316,7 @@ const styles = StyleSheet.create({
   imageContainer: {
     position: 'relative',
     width: '100%',
-    height: RESPONSIVE_CARD_WIDTH * 1.1,
+    height: CARD_DIMENSIONS.width * 1.1,
     backgroundColor: '#f5f5f5',
   },
   productImage: {

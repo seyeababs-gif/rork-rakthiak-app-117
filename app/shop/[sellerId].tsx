@@ -18,21 +18,22 @@ import OptimizedImage from '@/components/OptimizedImage';
 import ProductSkeleton from '@/components/ProductSkeleton';
 import { useToast } from '@/contexts/ToastContext';
 
-const { width } = Dimensions.get('window');
+const { width: screenWidth } = Dimensions.get('window');
 
-function getShopCardWidth() {
+function getShopCardDimensions() {
   const containerPadding = 16;
   const gap = 16;
   const columns = 2;
-  const availableWidth = width - (containerPadding * 2);
+  const availableWidth = screenWidth - (containerPadding * 2);
   const totalGapWidth = gap * (columns - 1);
   const calculatedWidth = (availableWidth - totalGapWidth) / columns;
   const maxCardWidth = 260;
   const minCardWidth = 140;
-  return Math.max(Math.min(calculatedWidth, maxCardWidth), minCardWidth);
+  const finalWidth = Math.max(Math.min(calculatedWidth, maxCardWidth), minCardWidth);
+  return { width: finalWidth, gap };
 }
 
-const RESPONSIVE_CARD_WIDTH = getShopCardWidth();
+const CARD_DIMENSIONS = getShopCardDimensions();
 
 export default function ShopScreen() {
   const { sellerId } = useLocalSearchParams();
@@ -507,12 +508,12 @@ const styles = StyleSheet.create({
   productsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 16,
+    gap: CARD_DIMENSIONS.gap,
     justifyContent: 'flex-start',
     alignItems: 'flex-start',
   },
   productCard: {
-    width: RESPONSIVE_CARD_WIDTH,
+    width: CARD_DIMENSIONS.width,
     backgroundColor: '#fff',
     borderRadius: 16,
     overflow: 'hidden',
@@ -524,7 +525,7 @@ const styles = StyleSheet.create({
   },
   productImage: {
     width: '100%',
-    height: RESPONSIVE_CARD_WIDTH,
+    height: CARD_DIMENSIONS.width,
     backgroundColor: '#f5f5f5',
   },
   discountBadge: {
@@ -668,6 +669,6 @@ const styles = StyleSheet.create({
   skeletonContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 16,
+    gap: CARD_DIMENSIONS.gap,
   },
 });

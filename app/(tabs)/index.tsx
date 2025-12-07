@@ -19,46 +19,48 @@ import { useMarketplace } from '@/contexts/MarketplaceContext';
 import { categories, getSubCategoriesForCategory } from '@/constants/categories';
 import { Product } from '@/types/marketplace';
 
-const { width } = Dimensions.get('window');
+const { width: screenWidth } = Dimensions.get('window');
 const isWeb = Platform.OS === 'web';
 
-function getProductCardWidth() {
+function getProductCardDimensions() {
   const containerPadding = isWeb ? 20 : 16;
   
-  if (width < 600) {
+  if (screenWidth < 600) {
     const gap = 12;
     const columns = 2;
-    const availableWidth = width - (containerPadding * 2);
+    const availableWidth = screenWidth - (containerPadding * 2);
     const totalGapWidth = gap * (columns - 1);
     const calculatedWidth = (availableWidth - totalGapWidth) / columns;
-    return Math.floor(calculatedWidth);
-  } else if (width < 900) {
+    return { width: Math.floor(calculatedWidth), gap, columns };
+  } else if (screenWidth < 900) {
     const gap = 16;
     const columns = 3;
-    const availableWidth = width - (containerPadding * 2);
+    const availableWidth = screenWidth - (containerPadding * 2);
     const totalGapWidth = gap * (columns - 1);
-    return Math.floor((availableWidth - totalGapWidth) / columns);
-  } else if (width < 1200) {
+    return { width: Math.floor((availableWidth - totalGapWidth) / columns), gap, columns };
+  } else if (screenWidth < 1200) {
     const gap = 16;
     const columns = 4;
-    const availableWidth = width - (containerPadding * 2);
+    const availableWidth = screenWidth - (containerPadding * 2);
     const totalGapWidth = gap * (columns - 1);
-    return Math.floor((availableWidth - totalGapWidth) / columns);
-  } else if (width < 1600) {
-    const containerWidth = Math.min(width, 1600);
+    return { width: Math.floor((availableWidth - totalGapWidth) / columns), gap, columns };
+  } else if (screenWidth < 1600) {
+    const containerWidth = Math.min(screenWidth, 1600);
     const gap = 20;
     const columns = 5;
     const availableWidth = containerWidth - (containerPadding * 2);
     const totalGapWidth = gap * (columns - 1);
-    return Math.floor((availableWidth - totalGapWidth) / columns);
+    return { width: Math.floor((availableWidth - totalGapWidth) / columns), gap, columns };
   } else {
     const gap = 20;
     const columns = 6;
     const availableWidth = 1600 - (containerPadding * 2);
     const totalGapWidth = gap * (columns - 1);
-    return Math.floor((availableWidth - totalGapWidth) / columns);
+    return { width: Math.floor((availableWidth - totalGapWidth) / columns), gap, columns };
   }
 }
+
+const CARD_DIMENSIONS = getProductCardDimensions();
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -252,19 +254,17 @@ export default function HomeScreen() {
       ? product.originalPrice * (1 - (product.discountPercent || 0) / 100)
       : product.price;
 
-    const cardWidth = getProductCardWidth();
-
     return (
       <TouchableOpacity
         key={product.id}
-        style={[styles.productCard, { width: cardWidth }]}
+        style={styles.productCard}
         onPress={() => router.push(`/product/${product.id}` as any)}
         activeOpacity={0.9}
       >
         <View style={styles.imageContainer}>
           <OptimizedImage 
             uri={product.images[0]} 
-            style={[styles.productImage, { height: cardWidth * 1.1 }]}
+            style={styles.productImage}
             resizeMode="cover"
           />
           {hasDiscount && (
@@ -826,16 +826,17 @@ const styles = StyleSheet.create({
   productsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: width < 600 ? 12 : (width < 1200 ? 16 : 20),
+    gap: CARD_DIMENSIONS.gap,
   },
   loadingContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: width < 600 ? 12 : (width < 1200 ? 16 : 20),
+    gap: CARD_DIMENSIONS.gap,
     justifyContent: 'flex-start',
     marginBottom: 20,
   },
   productCard: {
+    width: CARD_DIMENSIONS.width,
     backgroundColor: '#fff',
     borderRadius: 16,
     overflow: 'hidden',
@@ -854,6 +855,7 @@ const styles = StyleSheet.create({
   },
   productImage: {
     width: '100%',
+    height: CARD_DIMENSIONS.width * 1.1,
     backgroundColor: '#f5f5f5',
     resizeMode: 'cover' as const,
   },
