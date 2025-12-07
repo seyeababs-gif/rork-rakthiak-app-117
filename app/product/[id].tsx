@@ -19,6 +19,7 @@ import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { MapPin, ShoppingCart, Star, Share2, MessageCircle, Edit, Store } from 'lucide-react-native';
 import { useMarketplace } from '@/contexts/MarketplaceContext';
 import { useCart } from '@/contexts/CartContext';
+import { useToast } from '@/contexts/ToastContext';
 
 const { width } = Dimensions.get('window');
 const MAX_IMAGE_WIDTH = 600;
@@ -29,6 +30,7 @@ export default function ProductDetailScreen() {
   const { products, toggleFavorite, isFavorite, getProductReviews, getProductRating, getSellerRating, isAuthenticated, currentUser } = useMarketplace();
   const { addToCart, isInCart, getCartItemsCount } = useCart();
   const router = useRouter();
+  const toast = useToast();
   
   const [showAllReviews, setShowAllReviews] = useState(false);
   const [showContactModal, setShowContactModal] = useState(false);
@@ -207,91 +209,53 @@ export default function ProductDetailScreen() {
 
   const handleContactWhatsApp = () => {
     if (!isAuthenticated) {
-      if (Platform.OS === 'web') {
-        if (confirm('Vous devez être connecté pour contacter le vendeur. Voulez-vous vous connecter ?')) {
-          router.push('/auth/login');
-        }
-      } else {
-        Alert.alert(
-          'Connexion requise',
-          'Vous devez être connecté pour contacter le vendeur.',
-          [
-            { text: 'Annuler', style: 'cancel' },
-            { text: 'Se connecter', onPress: () => router.push('/auth/login') },
-          ]
-        );
-      }
+      toast.showAlert(
+        'Connexion requise',
+        'Vous devez être connecté pour contacter le vendeur.',
+        [
+          { text: 'Annuler', style: 'cancel' },
+          { text: 'Se connecter', onPress: () => router.push('/auth/login') },
+        ]
+      );
       return;
     }
 
-    if (Platform.OS === 'web') {
-      if (confirm(
-        '⚠️ PROTECTION ACHETEUR - IMPORTANT\n\n' +
-        '🛡️ Pour votre sécurité, effectuez TOUJOURS vos paiements via l\'application !\n\n' +
-        'En payant dans l\'application vous bénéficiez de :\n' +
-        '✅ Blocage sécurisé de la transaction\n' +
-        '✅ Remboursement garanti si le produit n\'est pas livré\n' +
-        '✅ Remboursement garanti si le produit ne correspond pas\n' +
-        '✅ Protection contre les arnaques\n\n' +
-        '⛔ NE PAYEZ JAMAIS directement au vendeur en dehors de l\'application !\n\n' +
-        'Voulez-vous contacter le vendeur ? (N\'oubliez pas de payer via l\'application)'
-      )) {
-        const message = encodeURIComponent(
-          `Bonjour, je suis intéressé par votre produit:\n\n` +
-          `${product.title}\n` +
-          `Prix: ${formatPrice(product.price)}\n` +
-          `Localisation: ${product.location}\n\n` +
-          `Pouvez-vous me donner plus d'informations ?`
-        );
-        
-        const whatsappUrl = `https://wa.me/${product.sellerPhone.replace(/[^0-9]/g, '')}?text=${message}`;
-        
-        Linking.canOpenURL(whatsappUrl)
-          .then((supported) => {
-            if (supported) {
-              return Linking.openURL(whatsappUrl);
-            }
-          })
-          .catch((err) => console.error('Error opening WhatsApp:', err));
-      }
-    } else {
-      Alert.alert(
-        '⚠️ PROTECTION ACHETEUR',
-        '🛡️ Pour votre sécurité, effectuez TOUJOURS vos paiements via l\'application !\n\n' +
-        'En payant dans l\'application vous bénéficiez de :\n' +
-        '✅ Blocage sécurisé de la transaction\n' +
-        '✅ Remboursement garanti si le produit n\'est pas livré\n' +
-        '✅ Remboursement garanti si le produit ne correspond pas\n' +
-        '✅ Protection contre les arnaques\n\n' +
-        '⛔ NE PAYEZ JAMAIS directement au vendeur en dehors de l\'application !',
-        [
-          { text: 'Annuler', style: 'cancel' },
-          {
-            text: 'J\'ai compris, contacter',
-            style: 'default',
-            onPress: () => {
-              const message = encodeURIComponent(
-                `Bonjour, je suis intéressé par votre produit:\n\n` +
-                `${product.title}\n` +
-                `Prix: ${formatPrice(product.price)}\n` +
-                `Localisation: ${product.location}\n\n` +
-                `Pouvez-vous me donner plus d'informations ?`
-              );
-              
-              const whatsappUrl = `https://wa.me/${product.sellerPhone.replace(/[^0-9]/g, '')}?text=${message}`;
-              
-              Linking.canOpenURL(whatsappUrl)
-                .then((supported) => {
-                  if (supported) {
-                    return Linking.openURL(whatsappUrl);
-                  }
-                })
-                .catch((err) => console.error('Error opening WhatsApp:', err));
-            },
+    toast.showAlert(
+      '⚠️ PROTECTION ACHETEUR',
+      '🛡️ Pour votre sécurité, effectuez TOUJOURS vos paiements via l\'application !\n\n' +
+      'En payant dans l\'application vous bénéficiez de :\n' +
+      '✅ Blocage sécurisé de la transaction\n' +
+      '✅ Remboursement garanti si le produit n\'est pas livré\n' +
+      '✅ Remboursement garanti si le produit ne correspond pas\n' +
+      '✅ Protection contre les arnaques\n\n' +
+      '⛔ NE PAYEZ JAMAIS directement au vendeur en dehors de l\'application !',
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'J\'ai compris, contacter',
+          style: 'default',
+          onPress: () => {
+            const message = encodeURIComponent(
+              `Bonjour, je suis intéressé par votre produit:\n\n` +
+              `${product.title}\n` +
+              `Prix: ${formatPrice(product.price)}\n` +
+              `Localisation: ${product.location}\n\n` +
+              `Pouvez-vous me donner plus d'informations ?`
+            );
+            
+            const whatsappUrl = `https://wa.me/${product.sellerPhone.replace(/[^0-9]/g, '')}?text=${message}`;
+            
+            Linking.canOpenURL(whatsappUrl)
+              .then((supported) => {
+                if (supported) {
+                  return Linking.openURL(whatsappUrl);
+                }
+              })
+              .catch((err) => console.error('Error opening WhatsApp:', err));
           },
-        ]
-      );
-    }
+        },
+      ]
+    );
   };
 
   const handleContactWave = () => {
