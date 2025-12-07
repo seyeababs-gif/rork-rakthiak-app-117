@@ -27,7 +27,6 @@ export type SubCategory =
   | 'accessoires_mode'
   | 'chaussures'
   | 'sacs'
-  | 'autres_fashion'
   // Sante & Beaute
   | 'maquillage'
   | 'soins_visage'
@@ -35,37 +34,31 @@ export type SubCategory =
   | 'soins_cheveux'
   | 'parfums'
   | 'hygiene'
-  | 'autres_sante_beaute'
   // Telephone & Tablette
   | 'smartphones'
   | 'tablettes'
   | 'accessoires_telephonie'
   | 'smartwatches'
-  | 'autres_telephone_tablette'
   // Informatique
   | 'ordinateurs_portables'
   | 'ordinateurs_bureau'
   | 'imprimantes_scanners'
   | 'stockage'
   | 'accessoires_informatique'
-  | 'autres_informatique'
   // TV & Audio
   | 'televiseurs'
   | 'home_cinema'
   | 'enceintes'
   | 'casques_ecouteurs'
-  | 'autres_tv_audio'
   // Jeux Video
   | 'consoles'
   | 'jeux_video'
   | 'accessoires_gaming'
-  | 'autres_jeux_video'
   // Photo & Video
   | 'appareils_photo'
   | 'cameras'
   | 'drones'
   | 'accessoires_photo'
-  | 'autres_photo_video'
   // Maison
   | 'meubles'
   | 'decoration'
@@ -74,46 +67,38 @@ export type SubCategory =
   | 'bricolage'
   | 'jardin'
   | 'fournitures_maison'
-  | 'autres_maison'
   // Enfant (Jeux & Puericulture)
   | 'jouets'
   | 'puericulture'
   | 'ecole'
-  | 'autres_enfant'
   // Sport
   | 'fitness'
   | 'sports_collectifs'
   | 'velo'
   | 'camping'
   | 'nutrition_sportive'
-  | 'autres_sport'
   // Supermarche
   | 'alimentation'
   | 'boissons'
   | 'produits_menagers'
-  | 'autres_supermarche'
   // Librairie
   | 'livres'
   | 'fournitures_scolaires'
   | 'papeterie'
-  | 'autres_librairie'
   // Musique
   | 'instruments'
   | 'sonorisation'
-  | 'autres_musique'
   // Vehicles
   | 'voitures'
   | 'motos'
   | 'pieces_detachees'
   | 'location_vehicules'
-  | 'autres_vehicles'
   // Delivery
   | 'covoiturage'
   | 'thiaktiak'
   | 'gp'
   | 'conteneur'
   | 'demenagement'
-  | 'autres_delivery'
   // General
   | 'autres'
   | 'all';
