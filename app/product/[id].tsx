@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Dimensions,
   Linking,
+  Alert,
   Share,
   Modal,
   TextInput,
@@ -18,7 +19,6 @@ import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { MapPin, ShoppingCart, Star, Share2, MessageCircle, Edit, Store } from 'lucide-react-native';
 import { useMarketplace } from '@/contexts/MarketplaceContext';
 import { useCart } from '@/contexts/CartContext';
-import { useToast } from '@/contexts/ToastContext';
 
 const { width } = Dimensions.get('window');
 const MAX_IMAGE_WIDTH = 600;
@@ -28,7 +28,6 @@ export default function ProductDetailScreen() {
   const { id } = useLocalSearchParams();
   const { products, toggleFavorite, isFavorite, getProductReviews, getProductRating, getSellerRating, isAuthenticated, currentUser } = useMarketplace();
   const { addToCart, isInCart, getCartItemsCount } = useCart();
-  const toast = useToast();
   const router = useRouter();
   
   const [showAllReviews, setShowAllReviews] = useState(false);
@@ -174,70 +173,109 @@ export default function ProductDetailScreen() {
 
   const handleContactWhatsApp = () => {
     if (!isAuthenticated) {
-      toast.showAlert(
-        'Connexion requise',
-        'Vous devez être connecté pour contacter le vendeur.',
-        [
-          { text: 'Annuler', style: 'cancel' },
-          { text: 'Se connecter', style: 'default', onPress: () => router.push('/auth/login') },
-        ]
-      );
+      if (Platform.OS === 'web') {
+        if (confirm('Vous devez être connecté pour contacter le vendeur. Voulez-vous vous connecter ?')) {
+          router.push('/auth/login');
+        }
+      } else {
+        Alert.alert(
+          'Connexion requise',
+          'Vous devez être connecté pour contacter le vendeur.',
+          [
+            { text: 'Annuler', style: 'cancel' },
+            { text: 'Se connecter', onPress: () => router.push('/auth/login') },
+          ]
+        );
+      }
       return;
     }
 
-    toast.showAlert(
-      '⚠️ PROTECTION ACHETEUR',
-      '🛡️ Pour votre sécurité, effectuez TOUJOURS vos paiements via l\'application !\n\n' +
-      'En payant dans l\'application vous bénéficiez de :\n' +
-      '✅ Blocage sécurisé de la transaction\n' +
-      '✅ Remboursement garanti si le produit n\'est pas livré\n' +
-      '✅ Remboursement garanti si le produit ne correspond pas\n' +
-      '✅ Protection contre les arnaques\n\n' +
-      '⛔ NE PAYEZ JAMAIS directement au vendeur en dehors de l\'application !',
-      [
-        { text: 'Annuler', style: 'cancel' },
-        {
-          text: 'J\'ai compris, contacter',
-          style: 'default',
-          onPress: () => {
-            const message = encodeURIComponent(
-              `Bonjour, je suis intéressé par votre produit:\n\n` +
-              `${product.title}\n` +
-              `Prix: ${formatPrice(product.price)}\n` +
-              `Localisation: ${product.location}\n\n` +
-              `Pouvez-vous me donner plus d'informations ?`
-            );
-            
-            const whatsappUrl = `https://wa.me/${product.sellerPhone.replace(/[^0-9]/g, '')}?text=${message}`;
-            
-            Linking.canOpenURL(whatsappUrl)
-              .then((supported) => {
-                if (supported) {
-                  return Linking.openURL(whatsappUrl);
-                } else {
-                  toast.showError('WhatsApp n\'est pas disponible sur cet appareil');
-                }
-              })
-              .catch((err) => {
-                console.error('Error opening WhatsApp:', err);
-                toast.showError('Impossible d\'ouvrir WhatsApp');
-              });
+    if (Platform.OS === 'web') {
+      if (confirm(
+        '⚠️ PROTECTION ACHETEUR - IMPORTANT\n\n' +
+        '🛡️ Pour votre sécurité, effectuez TOUJOURS vos paiements via l\'application !\n\n' +
+        'En payant dans l\'application vous bénéficiez de :\n' +
+        '✅ Blocage sécurisé de la transaction\n' +
+        '✅ Remboursement garanti si le produit n\'est pas livré\n' +
+        '✅ Remboursement garanti si le produit ne correspond pas\n' +
+        '✅ Protection contre les arnaques\n\n' +
+        '⛔ NE PAYEZ JAMAIS directement au vendeur en dehors de l\'application !\n\n' +
+        'Voulez-vous contacter le vendeur ? (N\'oubliez pas de payer via l\'application)'
+      )) {
+        const message = encodeURIComponent(
+          `Bonjour, je suis intéressé par votre produit:\n\n` +
+          `${product.title}\n` +
+          `Prix: ${formatPrice(product.price)}\n` +
+          `Localisation: ${product.location}\n\n` +
+          `Pouvez-vous me donner plus d'informations ?`
+        );
+        
+        const whatsappUrl = `https://wa.me/${product.sellerPhone.replace(/[^0-9]/g, '')}?text=${message}`;
+        
+        Linking.canOpenURL(whatsappUrl)
+          .then((supported) => {
+            if (supported) {
+              return Linking.openURL(whatsappUrl);
+            }
+          })
+          .catch((err) => console.error('Error opening WhatsApp:', err));
+      }
+    } else {
+      Alert.alert(
+        '⚠️ PROTECTION ACHETEUR',
+        '🛡️ Pour votre sécurité, effectuez TOUJOURS vos paiements via l\'application !\n\n' +
+        'En payant dans l\'application vous bénéficiez de :\n' +
+        '✅ Blocage sécurisé de la transaction\n' +
+        '✅ Remboursement garanti si le produit n\'est pas livré\n' +
+        '✅ Remboursement garanti si le produit ne correspond pas\n' +
+        '✅ Protection contre les arnaques\n\n' +
+        '⛔ NE PAYEZ JAMAIS directement au vendeur en dehors de l\'application !',
+        [
+          { text: 'Annuler', style: 'cancel' },
+          {
+            text: 'J\'ai compris, contacter',
+            style: 'default',
+            onPress: () => {
+              const message = encodeURIComponent(
+                `Bonjour, je suis intéressé par votre produit:\n\n` +
+                `${product.title}\n` +
+                `Prix: ${formatPrice(product.price)}\n` +
+                `Localisation: ${product.location}\n\n` +
+                `Pouvez-vous me donner plus d'informations ?`
+              );
+              
+              const whatsappUrl = `https://wa.me/${product.sellerPhone.replace(/[^0-9]/g, '')}?text=${message}`;
+              
+              Linking.canOpenURL(whatsappUrl)
+                .then((supported) => {
+                  if (supported) {
+                    return Linking.openURL(whatsappUrl);
+                  }
+                })
+                .catch((err) => console.error('Error opening WhatsApp:', err));
+            },
           },
-        },
-      ]
-    );
+        ]
+      );
+    }
   };
 
   const handleContactWave = () => {
     if (!isAuthenticated) {
-      toast.showAlert(
-        'Connexion requise',
-        'Vous devez être connecté pour contacter le vendeur.',
-        [
-          { text: 'Annuler', style: 'cancel' },
-          { text: 'Se connecter', style: 'default', onPress: () => router.push('/auth/login') },
-        ]
-      );
+      if (Platform.OS === 'web') {
+        if (confirm('Vous devez être connecté pour contacter le vendeur. Voulez-vous vous connecter ?')) {
+          router.push('/auth/login');
+        }
+      } else {
+        Alert.alert(
+          'Connexion requise',
+          'Vous devez être connecté pour contacter le vendeur.',
+          [
+            { text: 'Annuler', style: 'cancel' },
+            { text: 'Se connecter', onPress: () => router.push('/auth/login') },
+          ]
+        );
+      }
       return;
     }
     setShowContactModal(true);
@@ -245,21 +283,25 @@ export default function ProductDetailScreen() {
 
   const handleBuyNow = () => {
     if (!isAuthenticated) {
-      toast.showAlert(
-        'Connexion requise',
-        'Vous devez être connecté pour acheter.',
-        [
-          { text: 'Annuler', style: 'cancel' },
-          { text: 'Se connecter', style: 'default', onPress: () => router.push('/auth/login') },
-        ]
-      );
+      if (Platform.OS === 'web') {
+        if (confirm('Vous devez être connecté pour acheter. Voulez-vous vous connecter ?')) {
+          router.push('/auth/login');
+        }
+      } else {
+        Alert.alert(
+          'Connexion requise',
+          'Vous devez être connecté pour acheter.',
+          [
+            { text: 'Annuler', style: 'cancel' },
+            { text: 'Se connecter', onPress: () => router.push('/auth/login') },
+          ]
+        );
+      }
       return;
     }
 
     if (product.isOutOfStock) {
-      toast.showAlert('Rupture de stock', 'Ce produit n\'est plus disponible.', [
-        { text: 'OK', style: 'default' },
-      ]);
+      Alert.alert('Rupture de stock', 'Ce produit n\'est plus disponible.');
       return;
     }
 
@@ -274,12 +316,12 @@ export default function ProductDetailScreen() {
 
   const handleConfirmBuyNow = () => {
     if (!deliveryName.trim() || !deliveryPhone.trim() || !deliveryAddress.trim() || !deliveryCity.trim()) {
-      toast.showError('Veuillez remplir toutes les informations de livraison');
+      Alert.alert('Erreur', 'Veuillez remplir toutes les informations de livraison');
       return;
     }
 
     if (!paymentWaveNumber.trim()) {
-      toast.showError('Veuillez entrer votre numéro Wave');
+      Alert.alert('Erreur', 'Veuillez entrer votre numéro Wave');
       return;
     }
 
@@ -290,26 +332,26 @@ export default function ProductDetailScreen() {
       .then((supported) => {
         if (supported) {
           Linking.openURL(waveUrl);
-          toast.showAlert(
+          Alert.alert(
             'Paiement Wave',
             'Après le paiement, veuillez confirmer votre paiement pour que votre commande soit validée par un administrateur.',
             [
-              { text: 'OK', style: 'default' },
+              { text: 'OK' },
             ]
           );
         } else {
-          toast.showError('Impossible d\'ouvrir Wave');
+          Alert.alert('Erreur', 'Impossible d\'ouvrir Wave');
         }
       })
       .catch((err) => {
         console.error('Error opening Wave:', err);
-        toast.showError('Une erreur est survenue');
+        Alert.alert('Erreur', 'Une erreur est survenue');
       });
   };
 
   const handleWavePayment = () => {
     if (!wavePhoneNumber.trim()) {
-      toast.showError('Veuillez entrer votre numéro Wave');
+      Alert.alert('Erreur', 'Veuillez entrer votre numéro Wave');
       return;
     }
 
@@ -320,33 +362,31 @@ export default function ProductDetailScreen() {
       .then((supported) => {
         if (supported) {
           Linking.openURL(waveUrl);
-          toast.showAlert(
+          Alert.alert(
             'Paiement Wave',
             'Après le paiement, vous pouvez contacter le vendeur sur WhatsApp.',
             [
-              { text: 'OK', style: 'default', onPress: () => setWavePhoneNumber('') },
+              { text: 'OK', onPress: () => setWavePhoneNumber('') },
             ]
           );
         } else {
-          toast.showError('Impossible d\'ouvrir Wave');
+          Alert.alert('Erreur', 'Impossible d\'ouvrir Wave');
         }
       })
       .catch((err) => {
         console.error('Error opening Wave:', err);
-        toast.showError('Une erreur est survenue');
+        Alert.alert('Erreur', 'Une erreur est survenue');
       });
   };
 
   const handleAddToCart = () => {
     if (product.isOutOfStock) {
-      toast.showAlert('Rupture de stock', 'Ce produit n\'est plus disponible.', [
-        { text: 'OK', style: 'default' },
-      ]);
+      Alert.alert('Rupture de stock', 'Ce produit n\'est plus disponible.');
       return;
     }
 
     addToCart(product, 1);
-    toast.showSuccess('Produit ajouté au panier !');
+    Alert.alert('Succès', 'Produit ajouté au panier !');
   };
 
   const handleShare = async () => {
@@ -367,7 +407,7 @@ export default function ProductDetailScreen() {
       }
     } catch (error) {
       console.error('Error sharing product:', error);
-      toast.showError('Impossible de partager ce produit.');
+      Alert.alert('Erreur', 'Impossible de partager ce produit.');
     }
   };
 
@@ -375,10 +415,10 @@ export default function ProductDetailScreen() {
     try {
       const productUrl = `https://rakthiak.com/product/${product.id}`;
       await Clipboard.setStringAsync(productUrl);
-      toast.showSuccess('Le lien du produit a été copié dans le presse-papiers.');
+      Alert.alert('Lien copié', 'Le lien du produit a été copié dans le presse-papiers.');
     } catch (error) {
       console.error('Error copying link:', error);
-      toast.showError('Impossible de copier le lien.');
+      Alert.alert('Erreur', 'Impossible de copier le lien.');
     }
   };
 
@@ -578,9 +618,6 @@ export default function ProductDetailScreen() {
                 <View style={styles.sellerMeta}>
                   <MapPin size={14} color="#666" />
                   <Text style={styles.sellerMetaText}>{product.location}</Text>
-                </View>
-                <View style={styles.sellerMeta}>
-                  <Text style={styles.sellerMetaText}>📞 {product.sellerPhone.replace(/(\d{2})\s?(\d{3})\s?(\d{2})\s?(\d{2})/, '$1 XXX XX XX')}</Text>
                 </View>
                 <Text style={styles.sellerDate}>
                   Publié le {formatDate(product.createdAt)}

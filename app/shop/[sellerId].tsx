@@ -9,12 +9,12 @@ import {
   Dimensions,
   Share,
   Linking,
+  Alert,
   Platform,
 } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { MapPin, Phone, Star, Package, Calendar, ExternalLink, MessageCircle } from 'lucide-react-native';
 import { useMarketplace } from '@/contexts/MarketplaceContext';
-import { useToast } from '@/contexts/ToastContext';
 import OptimizedImage from '@/components/OptimizedImage';
 import ProductSkeleton from '@/components/ProductSkeleton';
 
@@ -26,7 +26,6 @@ export default function ShopScreen() {
   const { sellerId } = useLocalSearchParams();
   const router = useRouter();
   const { products, allUsers, getSellerRating, isAuthenticated } = useMarketplace();
-  const toast = useToast();
 
   const seller = useMemo(() => {
     return allUsers.find(u => u.id === sellerId);
@@ -118,54 +117,83 @@ export default function ShopScreen() {
 
   const handleContactWhatsApp = () => {
     if (!isAuthenticated) {
-      toast.showAlert(
-        'Connexion requise',
-        'Vous devez être connecté pour contacter le vendeur.',
-        [
-          { text: 'Annuler', style: 'cancel' },
-          { text: 'Se connecter', style: 'default', onPress: () => router.push('/auth/login') },
-        ]
-      );
+      if (Platform.OS === 'web') {
+        if (confirm('Vous devez être connecté pour contacter le vendeur. Voulez-vous vous connecter ?')) {
+          router.push('/auth/login');
+        }
+      } else {
+        Alert.alert(
+          'Connexion requise',
+          'Vous devez être connecté pour contacter le vendeur.',
+          [
+            { text: 'Annuler', style: 'cancel' },
+            { text: 'Se connecter', onPress: () => router.push('/auth/login') },
+          ]
+        );
+      }
       return;
     }
 
-    toast.showAlert(
-      '⚠️ PROTECTION ACHETEUR',
-      '🛡️ Pour votre sécurité, effectuez TOUJOURS vos paiements via l\'application !\n\n' +
-      'En payant dans l\'application vous bénéficiez de :\n' +
-      '✅ Blocage sécurisé de la transaction\n' +
-      '✅ Remboursement garanti si le produit n\'est pas livré\n' +
-      '✅ Remboursement garanti si le produit ne correspond pas\n' +
-      '✅ Protection contre les arnaques\n\n' +
-      '⛔ NE PAYEZ JAMAIS directement au vendeur en dehors de l\'application !',
-      [
-        { text: 'Annuler', style: 'cancel' },
-        {
-          text: 'J\'ai compris, contacter',
-          style: 'default',
-          onPress: () => {
-            const message = encodeURIComponent(
-              `Bonjour, je suis intéressé par vos produits sur votre boutique.`
-            );
-            
-            const whatsappUrl = `https://wa.me/${seller.phone.replace(/[^0-9]/g, '')}?text=${message}`;
-            
-            Linking.canOpenURL(whatsappUrl)
-              .then((supported) => {
-                if (supported) {
-                  return Linking.openURL(whatsappUrl);
-                } else {
-                  toast.showError('WhatsApp n\'est pas disponible sur cet appareil');
-                }
-              })
-              .catch((err) => {
-                console.error('Error opening WhatsApp:', err);
-                toast.showError('Impossible d\'ouvrir WhatsApp');
-              });
+    if (Platform.OS === 'web') {
+      if (confirm(
+        '⚠️ PROTECTION ACHETEUR - IMPORTANT\n\n' +
+        '🛡️ Pour votre sécurité, effectuez TOUJOURS vos paiements via l\'application !\n\n' +
+        'En payant dans l\'application vous bénéficiez de :\n' +
+        '✅ Blocage sécurisé de la transaction\n' +
+        '✅ Remboursement garanti si le produit n\'est pas livré\n' +
+        '✅ Remboursement garanti si le produit ne correspond pas\n' +
+        '✅ Protection contre les arnaques\n\n' +
+        '⛔ NE PAYEZ JAMAIS directement au vendeur en dehors de l\'application !\n\n' +
+        'Voulez-vous contacter le vendeur ? (N\'oubliez pas de payer via l\'application)'
+      )) {
+        const message = encodeURIComponent(
+          `Bonjour, je suis intéressé par vos produits sur votre boutique.`
+        );
+        
+        const whatsappUrl = `https://wa.me/${seller.phone.replace(/[^0-9]/g, '')}?text=${message}`;
+        
+        Linking.canOpenURL(whatsappUrl)
+          .then((supported) => {
+            if (supported) {
+              return Linking.openURL(whatsappUrl);
+            }
+          })
+          .catch((err) => console.error('Error opening WhatsApp:', err));
+      }
+    } else {
+      Alert.alert(
+        '⚠️ PROTECTION ACHETEUR',
+        '🛡️ Pour votre sécurité, effectuez TOUJOURS vos paiements via l\'application !\n\n' +
+        'En payant dans l\'application vous bénéficiez de :\n' +
+        '✅ Blocage sécurisé de la transaction\n' +
+        '✅ Remboursement garanti si le produit n\'est pas livré\n' +
+        '✅ Remboursement garanti si le produit ne correspond pas\n' +
+        '✅ Protection contre les arnaques\n\n' +
+        '⛔ NE PAYEZ JAMAIS directement au vendeur en dehors de l\'application !',
+        [
+          { text: 'Annuler', style: 'cancel' },
+          {
+            text: 'J\'ai compris, contacter',
+            style: 'default',
+            onPress: () => {
+              const message = encodeURIComponent(
+                `Bonjour, je suis intéressé par vos produits sur votre boutique.`
+              );
+              
+              const whatsappUrl = `https://wa.me/${seller.phone.replace(/[^0-9]/g, '')}?text=${message}`;
+              
+              Linking.canOpenURL(whatsappUrl)
+                .then((supported) => {
+                  if (supported) {
+                    return Linking.openURL(whatsappUrl);
+                  }
+                })
+                .catch((err) => console.error('Error opening WhatsApp:', err));
+            },
           },
-        },
-      ]
-    );
+        ]
+      );
+    }
   };
 
   const handleShareShop = async () => {
@@ -224,7 +252,7 @@ export default function ShopScreen() {
             <View style={styles.infoRow}>
               <Phone size={16} color="#666" />
               <Text style={styles.infoText}>
-                {isAuthenticated ? seller.phone.replace(/(\d{2})\s?(\d{3})\s?(\d{2})\s?(\d{2})/, '$1 XXX XX XX') : 'XX XXX XX XX'}
+                {isAuthenticated ? seller.phone : '** ** ** **'}
               </Text>
             </View>
             {sellerRating.count > 0 && (
