@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -42,6 +42,18 @@ export default function ProductDetailScreen() {
 
   const product = products.find(p => p.id === id);
   const [isTransitioning, setIsTransitioning] = useState(true);
+  
+  const productReviews = useMemo(() => {
+    return product ? getProductReviews(product.id) : [];
+  }, [product, getProductReviews]);
+  
+  const productRating = useMemo(() => {
+    return product ? getProductRating(product.id) : { average: 0, count: 0 };
+  }, [product, getProductRating]);
+  
+  const sellerRating = useMemo(() => {
+    return product ? getSellerRating(product.sellerId) : { average: 0, count: 0 };
+  }, [product, getSellerRating]);
 
   useEffect(() => {
     if (product) {
@@ -62,20 +74,83 @@ export default function ProductDetailScreen() {
       const metaTitle = document.querySelector('meta[property="og:title"]');
       const metaDescription = document.querySelector('meta[property="og:description"]');
       const metaImage = document.querySelector('meta[property="og:image"]');
+      const metaImageWidth = document.querySelector('meta[property="og:image:width"]');
+      const metaImageHeight = document.querySelector('meta[property="og:image:height"]');
       const metaUrl = document.querySelector('meta[property="og:url"]');
 
       if (metaTitle) metaTitle.setAttribute('content', product.title);
       if (metaDescription) metaDescription.setAttribute('content', product.description);
       if (metaImage) metaImage.setAttribute('content', product.images[0]);
+      if (metaImageWidth) metaImageWidth.setAttribute('content', '1200');
+      if (metaImageHeight) metaImageHeight.setAttribute('content', '630');
       if (metaUrl) metaUrl.setAttribute('content', `https://rakthiak.com/product/${product.id}`);
 
       document.title = `${product.title} - Rakthiak`;
+      
+      let existingScript = document.querySelector('script[type="application/ld+json"]#product-schema');
+      if (existingScript) {
+        existingScript.remove();
+      }
+      
+      const productSchema: any = {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        "name": product.title,
+        "description": product.description,
+        "image": product.images,
+        "brand": {
+          "@type": "Brand",
+          "name": product.sellerName
+        },
+        "offers": {
+          "@type": "Offer",
+          "url": `https://rakthiak.com/product/${product.id}`,
+          "priceCurrency": "XOF",
+          "price": product.price,
+          "priceValidUntil": new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          "availability": product.isOutOfStock ? "https://schema.org/OutOfStock" : "https://schema.org/InStock",
+          "seller": {
+            "@type": "Organization",
+            "name": product.sellerName
+          },
+          "itemCondition": product.condition === 'new' ? "https://schema.org/NewCondition" : 
+                          product.condition === 'refurbished' ? "https://schema.org/RefurbishedCondition" : 
+                          "https://schema.org/UsedCondition"
+        }
+      };
+      
+      if (productRating.count > 0) {
+        productSchema.aggregateRating = {
+          "@type": "AggregateRating",
+          "ratingValue": productRating.average,
+          "reviewCount": productRating.count
+        };
+      }
+      
+      if (productReviews.length > 0) {
+        productSchema.review = productReviews.slice(0, 5).map(review => ({
+          "@type": "Review",
+          "reviewRating": {
+            "@type": "Rating",
+            "ratingValue": review.rating,
+            "bestRating": 5
+          },
+          "author": {
+            "@type": "Person",
+            "name": review.userName
+          },
+          "reviewBody": review.comment,
+          "datePublished": review.createdAt.toISOString()
+        }));
+      }
+      
+      const script = document.createElement('script');
+      script.id = 'product-schema';
+      script.type = 'application/ld+json';
+      script.text = JSON.stringify(productSchema);
+      document.head.appendChild(script);
     }
-  }, [product]);
-  
-  const productReviews = product ? getProductReviews(product.id) : [];
-  const productRating = product ? getProductRating(product.id) : { average: 0, count: 0 };
-  const sellerRating = product ? getSellerRating(product.sellerId) : { average: 0, count: 0 };
+  }, [product, productRating, productReviews]);
   
   const displayedReviews = showAllReviews ? productReviews : productReviews.slice(0, 2);
 

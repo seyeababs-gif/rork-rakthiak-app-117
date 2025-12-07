@@ -252,7 +252,7 @@ export default function ShopScreen() {
             <View style={styles.infoRow}>
               <Phone size={16} color="#666" />
               <Text style={styles.infoText}>
-                {isAuthenticated ? seller.phone : `${seller.phone.substring(0, 2)} ** ** ** **`}
+                {isAuthenticated ? seller.phone.replace(/(\d{2})\s?(\d{3})\s?(\d{2})\s?(\d{2})/, '$1 XXX XX XX') : `${seller.phone.substring(0, 2)} XXX XX XX`}
               </Text>
             </View>
             {sellerRating.count > 0 && (

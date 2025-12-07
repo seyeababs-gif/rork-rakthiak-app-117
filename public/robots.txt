@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+Allow: /product/*
+Allow: /shop/*
+Allow: /search
+Allow: /auth/login
+Allow: /auth/register
+
+Disallow: /admin
+Disallow: /bilan
+Disallow: /product/edit/*
+Disallow: /api/*
+
+Sitemap: https://rakthiak.com/sitemap.xml
