@@ -7,6 +7,7 @@ interface OptimizedImageProps {
   style?: StyleProp<ImageStyle>;
   resizeMode?: 'cover' | 'contain' | 'stretch' | 'center';
   width?: number;
+  thumbnail?: boolean;
 }
 
 const imageCache = new Map<string, boolean>();
@@ -25,7 +26,7 @@ export function prefetchImage(uri: string, width: number = 400) {
   });
 }
 
-export default function OptimizedImage({ uri, style, resizeMode = 'cover', width = 400 }: OptimizedImageProps) {
+export default function OptimizedImage({ uri, style, resizeMode = 'cover', width = 400, thumbnail = false }: OptimizedImageProps) {
   const [thumbnailLoaded, setThumbnailLoaded] = useState<boolean>(false);
   const [fullImageLoaded, setFullImageLoaded] = useState<boolean>(false);
   const [error, setError] = useState<boolean>(false);
@@ -34,7 +35,10 @@ export default function OptimizedImage({ uri, style, resizeMode = 'cover', width
   const isMounted = useRef<boolean>(true);
 
   const thumbnailUri = useMemo(() => getThumbnailUrl(uri), [uri]);
-  const optimizedUri = useMemo(() => getOptimizedImageUrl(uri, width), [uri, width]);
+  const optimizedUri = useMemo(() => {
+    const targetWidth = thumbnail ? 300 : width;
+    return getOptimizedImageUrl(uri, targetWidth);
+  }, [uri, width, thumbnail]);
 
   useEffect(() => {
     return () => {

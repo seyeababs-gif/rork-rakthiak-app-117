@@ -63,9 +63,10 @@ const fetchCurrentUser = async (): Promise<User | null> => {
 
 const fetchProducts = async (): Promise<Product[]> => {
   try {
+    console.log('[FETCH PRODUCTS] Starting products fetch...');
     const { data, error } = await supabase
       .from('products')
-      .select('id,title,description,price,images,category,sub_category,location,seller_id,seller_name,seller_avatar,seller_phone,created_at,condition,status,listing_type,service_details,has_discount,discount_percent,original_price,rejection_reason,approved_at,rejected_at,approved_by')
+      .select('id,title,description,price,images,category,sub_category,location,seller_id,seller_name,seller_avatar,seller_phone,condition,status,listing_type,has_discount,discount_percent,original_price,created_at,service_details,stock_quantity,is_out_of_stock,rejection_reason,approved_at,rejected_at,approved_by')
       .order('created_at', { ascending: false })
       .limit(100);
     

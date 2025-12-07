@@ -29,19 +29,25 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 
 export async function compressImage(uri: string, maxWidth: number = 800): Promise<string> {
   try {
+    console.log('[COMPRESSION] Starting image compression...');
+    console.log('[COMPRESSION] Original URI:', uri);
+    
     if (Platform.OS === 'web') {
-      return await compressImageWeb(uri, maxWidth, 0.7);
+      return await compressImageWeb(uri, maxWidth, 0.6);
     }
     
     const manipResult = await manipulateAsync(
       uri,
       [{ resize: { width: maxWidth } }],
-      { compress: 0.7, format: SaveFormat.JPEG }
+      { compress: 0.6, format: SaveFormat.JPEG }
     );
+    
+    console.log('[COMPRESSION] Compressed URI:', manipResult.uri);
+    console.log('[COMPRESSION] Compression successful');
     
     return manipResult.uri;
   } catch (error) {
-    console.error('Image compression error:', error);
+    console.error('[COMPRESSION] Image compression error:', error);
     return uri;
   }
 }
@@ -66,6 +72,7 @@ export async function createThumbnail(uri: string): Promise<string> {
 }
 
 async function compressImageWeb(uri: string, maxWidth: number, quality: number): Promise<string> {
+  console.log('[COMPRESSION WEB] Starting web compression...');
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
@@ -91,13 +98,22 @@ async function compressImageWeb(uri: string, maxWidth: number, quality: number):
       canvas.toBlob(
         (blob) => {
           if (!blob) {
+            console.log('[COMPRESSION WEB] Blob creation failed');
             resolve(uri);
             return;
           }
           
+          console.log('[COMPRESSION WEB] Blob size:', (blob.size / 1024).toFixed(2), 'KB');
+          
           const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.onerror = () => resolve(uri);
+          reader.onloadend = () => {
+            console.log('[COMPRESSION WEB] Compression successful');
+            resolve(reader.result as string);
+          };
+          reader.onerror = () => {
+            console.log('[COMPRESSION WEB] FileReader error');
+            resolve(uri);
+          };
           reader.readAsDataURL(blob);
         },
         'image/jpeg',
