@@ -9,7 +9,6 @@ import {
   Dimensions,
   Share,
   Linking,
-  Alert,
   Platform,
 } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
@@ -20,8 +19,20 @@ import ProductSkeleton from '@/components/ProductSkeleton';
 import { useToast } from '@/contexts/ToastContext';
 
 const { width } = Dimensions.get('window');
-const MAX_CARD_WIDTH = 260;
-const RESPONSIVE_CARD_WIDTH = Math.min((width - 48) / 2, MAX_CARD_WIDTH);
+
+function getShopCardWidth() {
+  const containerPadding = 16;
+  const gap = 16;
+  const columns = 2;
+  const availableWidth = width - (containerPadding * 2);
+  const totalGapWidth = gap * (columns - 1);
+  const calculatedWidth = (availableWidth - totalGapWidth) / columns;
+  const maxCardWidth = 260;
+  const minCardWidth = 140;
+  return Math.max(Math.min(calculatedWidth, maxCardWidth), minCardWidth);
+}
+
+const RESPONSIVE_CARD_WIDTH = getShopCardWidth();
 
 export default function ShopScreen() {
   const { sellerId } = useLocalSearchParams();
@@ -497,6 +508,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 16,
+    justifyContent: 'flex-start',
+    alignItems: 'flex-start',
   },
   productCard: {
     width: RESPONSIVE_CARD_WIDTH,

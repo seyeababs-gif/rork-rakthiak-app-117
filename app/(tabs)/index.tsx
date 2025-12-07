@@ -23,22 +23,40 @@ const { width } = Dimensions.get('window');
 const isWeb = Platform.OS === 'web';
 
 function getProductCardWidth() {
+  const containerPadding = isWeb ? 20 : 16;
+  
   if (width < 600) {
-    const containerPadding = isWeb ? 20 : 16;
     const gap = 12;
     const columns = 2;
     const availableWidth = width - (containerPadding * 2);
     const totalGapWidth = gap * (columns - 1);
-    return (availableWidth - totalGapWidth) / columns;
+    const calculatedWidth = (availableWidth - totalGapWidth) / columns;
+    return Math.max(calculatedWidth, 140);
   } else if (width < 900) {
-    return (width - 80) / 3;
+    const gap = 16;
+    const columns = 3;
+    const availableWidth = width - (containerPadding * 2);
+    const totalGapWidth = gap * (columns - 1);
+    return (availableWidth - totalGapWidth) / columns;
   } else if (width < 1200) {
-    return (width - 120) / 4;
+    const gap = 16;
+    const columns = 4;
+    const availableWidth = width - (containerPadding * 2);
+    const totalGapWidth = gap * (columns - 1);
+    return (availableWidth - totalGapWidth) / columns;
   } else if (width < 1600) {
     const containerWidth = Math.min(width, 1600);
-    return (containerWidth - 160) / 5;
+    const gap = 20;
+    const columns = 5;
+    const availableWidth = containerWidth - (containerPadding * 2);
+    const totalGapWidth = gap * (columns - 1);
+    return (availableWidth - totalGapWidth) / columns;
   } else {
-    return (1600 - 160) / 6;
+    const gap = 20;
+    const columns = 6;
+    const availableWidth = 1600 - (containerPadding * 2);
+    const totalGapWidth = gap * (columns - 1);
+    return (availableWidth - totalGapWidth) / columns;
   }
 }
 
@@ -810,6 +828,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: width < 600 ? 12 : (width < 1200 ? 16 : 20),
     justifyContent: 'flex-start',
+    alignItems: 'flex-start',
   },
   loadingContainer: {
     flexDirection: 'row',

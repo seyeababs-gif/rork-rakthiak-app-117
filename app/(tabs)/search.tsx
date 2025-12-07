@@ -18,9 +18,20 @@ import { useMarketplace } from '@/contexts/MarketplaceContext';
 import { Product } from '@/types/marketplace';
 
 const { width } = Dimensions.get('window');
-const CARD_WIDTH = (width - 48) / 2;
-const MAX_CARD_WIDTH = 260; 
-const RESPONSIVE_CARD_WIDTH = Math.min(CARD_WIDTH, MAX_CARD_WIDTH);
+
+function getSearchCardWidth() {
+  const containerPadding = 16;
+  const gap = 16;
+  const columns = 2;
+  const availableWidth = width - (containerPadding * 2);
+  const totalGapWidth = gap * (columns - 1);
+  const calculatedWidth = (availableWidth - totalGapWidth) / columns;
+  const maxCardWidth = 260;
+  const minCardWidth = 140;
+  return Math.max(Math.min(calculatedWidth, maxCardWidth), minCardWidth);
+}
+
+const RESPONSIVE_CARD_WIDTH = getSearchCardWidth();
 
 export default function SearchScreen() {
   const router = useRouter();
@@ -287,6 +298,7 @@ const styles = StyleSheet.create({
   columnWrapper: {
     gap: 16,
     justifyContent: 'flex-start',
+    alignItems: 'flex-start',
   },
   // Product Card Styles
   productCard: {
