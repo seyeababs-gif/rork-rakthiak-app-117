@@ -70,7 +70,7 @@ export default function ProductDetailScreen() {
   }, [product]);
 
   useEffect(() => {
-    if (Platform.OS === 'web' && product) {
+    if (Platform.OS === 'web' && product && typeof document !== 'undefined') {
       const metaTitle = document.querySelector('meta[property="og:title"]');
       const metaDescription = document.querySelector('meta[property="og:description"]');
       const metaImage = document.querySelector('meta[property="og:image"]');
