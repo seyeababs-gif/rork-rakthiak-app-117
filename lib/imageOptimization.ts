@@ -36,18 +36,6 @@ export function getResponsiveImageUrl(
       : `${url}?${params.toString()}`;
   }
   
-  if (url.includes('supabase.co') && url.includes('/storage/v1/object/public/')) {
-    const params = new URLSearchParams({
-      width: width.toString(),
-      quality: q.toString(),
-      format: 'webp',
-    });
-    
-    return url.includes('?')
-      ? `${url}&${params.toString()}`
-      : `${url}?${params.toString()}`;
-  }
-  
   return url;
 }
 

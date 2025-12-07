@@ -137,13 +137,6 @@ export function getOptimizedImageUrl(url: string, width: number = 400): string {
     return optimizedUrl;
   }
   
-  if (url.includes(supabaseUrl) && url.includes('/storage/v1/object/public/')) {
-    const optimizedUrl = url.includes('?')
-      ? `${url}&width=${width}&quality=60&format=webp`
-      : `${url}?width=${width}&quality=60&format=webp`;
-    return optimizedUrl;
-  }
-  
   return url;
 }
 
@@ -154,13 +147,6 @@ export function getThumbnailUrl(url: string): string {
     const thumbnailUrl = url.includes('?')
       ? `${url}&w=50&q=30&blur=20&fm=webp`
       : `${url}?w=50&q=30&blur=20&fm=webp`;
-    return thumbnailUrl;
-  }
-  
-  if (url.includes(supabaseUrl) && url.includes('/storage/v1/object/public/')) {
-    const thumbnailUrl = url.includes('?')
-      ? `${url}&width=50&quality=30&format=webp`
-      : `${url}?width=50&quality=30&format=webp`;
     return thumbnailUrl;
   }
   
