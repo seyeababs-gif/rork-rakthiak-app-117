@@ -26,16 +26,18 @@ export default function ShopScreen() {
   const { width: screenWidth } = useWindowDimensions();
 
   const getShopCardDimensions = useCallback(() => {
-    const containerPadding = 16;
+    const padding = 16;
     const gap = 16;
-    const columns = 2;
-    const availableWidth = screenWidth - (containerPadding * 2);
-    const totalGapWidth = gap * (columns - 1);
-    const calculatedWidth = (availableWidth - totalGapWidth) / columns;
-    const maxCardWidth = 260;
-    const minCardWidth = 140;
-    const finalWidth = Math.max(Math.min(calculatedWidth, maxCardWidth), minCardWidth);
-    return { width: finalWidth, gap };
+    
+    let numColumns = 2;
+    if (screenWidth > 768) numColumns = 3;
+    if (screenWidth > 1024) numColumns = 4;
+    if (screenWidth > 1280) numColumns = 5;
+    
+    const availableWidth = screenWidth - (padding * 2) - (gap * (numColumns - 1));
+    const cardWidth = Math.floor(availableWidth / numColumns);
+    
+    return { width: cardWidth, gap, columns: numColumns, padding };
   }, [screenWidth]);
 
   const CARD_DIMENSIONS = useMemo(() => getShopCardDimensions(), [getShopCardDimensions]);

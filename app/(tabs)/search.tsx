@@ -26,13 +26,18 @@ export default function SearchScreen() {
   const { width: screenWidth } = useWindowDimensions();
 
   const getSearchCardDimensions = useCallback(() => {
-    const containerPadding = 16;
+    const padding = 16;
     const gap = 16;
-    const columns = 2;
-    const availableWidth = screenWidth - (containerPadding * 2);
-    const totalGapWidth = gap * (columns - 1);
-    const calculatedWidth = (availableWidth - totalGapWidth) / columns;
-    return { width: Math.floor(calculatedWidth), gap };
+    
+    let numColumns = 2;
+    if (screenWidth > 768) numColumns = 3;
+    if (screenWidth > 1024) numColumns = 4;
+    if (screenWidth > 1280) numColumns = 5;
+    
+    const availableWidth = screenWidth - (padding * 2) - (gap * (numColumns - 1));
+    const cardWidth = Math.floor(availableWidth / numColumns);
+    
+    return { width: cardWidth, gap, columns: numColumns, padding };
   }, [screenWidth]);
 
   const CARD_DIMENSIONS = useMemo(() => getSearchCardDimensions(), [getSearchCardDimensions]);
@@ -218,9 +223,10 @@ export default function SearchScreen() {
           data={filteredItems}
           renderItem={renderItem}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
-          numColumns={2}
-          columnWrapperStyle={[styles.columnWrapper, { gap: CARD_DIMENSIONS.gap }]}
+          key={CARD_DIMENSIONS.columns}
+          contentContainerStyle={[styles.listContent, { paddingHorizontal: CARD_DIMENSIONS.padding }]}
+          numColumns={CARD_DIMENSIONS.columns}
+          columnWrapperStyle={{ gap: CARD_DIMENSIONS.gap, marginBottom: CARD_DIMENSIONS.gap }}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={() => (
             <View style={styles.emptyState}>
@@ -289,13 +295,10 @@ const styles = StyleSheet.create({
     padding: 0,
   },
   listContent: {
-    padding: 16,
     paddingBottom: 32,
+    paddingTop: 16,
   },
-  columnWrapper: {
-    justifyContent: 'flex-start',
-    alignItems: 'flex-start',
-  },
+
   // Product Card Styles
   productCard: {
     backgroundColor: '#fff',

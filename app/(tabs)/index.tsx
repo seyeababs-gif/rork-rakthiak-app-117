@@ -27,41 +27,19 @@ export default function HomeScreen() {
   const { width: screenWidth } = useWindowDimensions();
 
   const getProductCardDimensions = useCallback(() => {
-    const containerPadding = isWeb ? 20 : 16;
+    const padding = 16;
+    const gap = 12;
     
-    if (screenWidth < 600) {
-      const gap = 12;
-      const columns = 2;
-      const availableWidth = screenWidth - (containerPadding * 2);
-      const totalGapWidth = gap * (columns - 1);
-      const calculatedWidth = (availableWidth - totalGapWidth) / columns;
-      return { width: Math.floor(calculatedWidth), gap, columns };
-    } else if (screenWidth < 900) {
-      const gap = 16;
-      const columns = 3;
-      const availableWidth = screenWidth - (containerPadding * 2);
-      const totalGapWidth = gap * (columns - 1);
-      return { width: Math.floor((availableWidth - totalGapWidth) / columns), gap, columns };
-    } else if (screenWidth < 1200) {
-      const gap = 16;
-      const columns = 4;
-      const availableWidth = screenWidth - (containerPadding * 2);
-      const totalGapWidth = gap * (columns - 1);
-      return { width: Math.floor((availableWidth - totalGapWidth) / columns), gap, columns };
-    } else if (screenWidth < 1600) {
-      const containerWidth = Math.min(screenWidth, 1600);
-      const gap = 20;
-      const columns = 5;
-      const availableWidth = containerWidth - (containerPadding * 2);
-      const totalGapWidth = gap * (columns - 1);
-      return { width: Math.floor((availableWidth - totalGapWidth) / columns), gap, columns };
-    } else {
-      const gap = 20;
-      const columns = 6;
-      const availableWidth = 1600 - (containerPadding * 2);
-      const totalGapWidth = gap * (columns - 1);
-      return { width: Math.floor((availableWidth - totalGapWidth) / columns), gap, columns };
-    }
+    let numColumns = 2;
+    if (screenWidth > 768) numColumns = 3;
+    if (screenWidth > 1024) numColumns = 4;
+    if (screenWidth > 1280) numColumns = 5;
+    if (screenWidth > 1600) numColumns = 6;
+    
+    const availableWidth = screenWidth - (padding * 2) - (gap * (numColumns - 1));
+    const cardWidth = Math.floor(availableWidth / numColumns);
+    
+    return { width: cardWidth, gap, columns: numColumns, padding };
   }, [screenWidth]);
 
   const CARD_DIMENSIONS = useMemo(() => getProductCardDimensions(), [getProductCardDimensions]);
@@ -576,7 +554,7 @@ export default function HomeScreen() {
       <ScrollView
         ref={scrollViewRef}
         style={styles.productsContainer}
-        contentContainerStyle={[styles.productsContent]}
+        contentContainerStyle={[styles.productsContent, { paddingHorizontal: CARD_DIMENSIONS.padding }]}
         showsVerticalScrollIndicator={true}
         onScroll={handleScroll}
         scrollEventThrottle={400}
@@ -800,7 +778,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   productsContent: {
-    paddingHorizontal: isWeb ? 20 : 16,
     paddingTop: 16,
     paddingBottom: 100,
     alignSelf: 'center',
