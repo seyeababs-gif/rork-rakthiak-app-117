@@ -66,47 +66,61 @@ export async function createThumbnail(uri: string): Promise<string> {
 }
 
 async function compressImageWeb(uri: string, maxWidth: number, quality: number): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
+  if (typeof window === 'undefined' || typeof document === 'undefined') {
+    return uri;
+  }
+  
+  return new Promise((resolve) => {
+    try {
+      const img = new (window as any).Image();
+      img.crossOrigin = 'anonymous';
       
-      if (!ctx) {
-        resolve(uri);
-        return;
-      }
-      
-      const ratio = img.width / img.height;
-      const width = Math.min(maxWidth, img.width);
-      const height = width / ratio;
-      
-      canvas.width = width;
-      canvas.height = height;
-      
-      ctx.drawImage(img, 0, 0, width, height);
-      
-      canvas.toBlob(
-        (blob) => {
-          if (!blob) {
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          
+          if (!ctx) {
             resolve(uri);
             return;
           }
           
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.onerror = () => resolve(uri);
-          reader.readAsDataURL(blob);
-        },
-        'image/jpeg',
-        quality
-      );
-    };
-    
-    img.onerror = () => resolve(uri);
-    img.src = uri;
+          const ratio = img.width / img.height;
+          const width = Math.min(maxWidth, img.width);
+          const height = width / ratio;
+          
+          canvas.width = width;
+          canvas.height = height;
+          
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          canvas.toBlob(
+            (blob) => {
+              if (!blob) {
+                resolve(uri);
+                return;
+              }
+              
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result as string);
+              reader.onerror = () => resolve(uri);
+              reader.readAsDataURL(blob);
+            },
+            'image/jpeg',
+            quality
+          );
+        } catch (error) {
+          console.error('Error in img.onload:', error);
+          resolve(uri);
+        }
+      };
+      
+      img.onerror = () => resolve(uri);
+      img.src = uri;
+    } catch (error) {
+      console.error('Error in compressImageWeb:', error);
+      resolve(uri);
+    }
   });
 }
 
@@ -158,8 +172,13 @@ export async function uploadImageToStorage(uri: string): Promise<string> {
     let blob: Blob;
     
     if (Platform.OS === 'web') {
-      const response = await fetch(uri);
-      blob = await response.blob();
+      if (uri.startsWith('data:')) {
+        const base64Response = await fetch(uri);
+        blob = await base64Response.blob();
+      } else {
+        const response = await fetch(uri);
+        blob = await response.blob();
+      }
     } else {
       const response = await fetch(uri);
       blob = await response.blob();
