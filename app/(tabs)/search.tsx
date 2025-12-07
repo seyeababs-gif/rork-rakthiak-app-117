@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,7 +6,7 @@ import {
   TextInput,
   TouchableOpacity,
   FlatList,
-  Dimensions,
+  useWindowDimensions,
   Keyboard,
   TouchableWithoutFeedback
 } from 'react-native';
@@ -17,26 +17,25 @@ import { useRouter } from 'expo-router';
 import { useMarketplace } from '@/contexts/MarketplaceContext';
 import { Product } from '@/types/marketplace';
 
-const { width: screenWidth } = Dimensions.get('window');
-
-function getSearchCardDimensions() {
-  const containerPadding = 16;
-  const gap = 16;
-  const columns = 2;
-  const availableWidth = screenWidth - (containerPadding * 2);
-  const totalGapWidth = gap * (columns - 1);
-  const calculatedWidth = (availableWidth - totalGapWidth) / columns;
-  return { width: Math.floor(calculatedWidth), gap };
-}
-
-const CARD_DIMENSIONS = getSearchCardDimensions();
-
 export default function SearchScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { products, toggleFavorite, isFavorite, isAuthenticated } = useMarketplace();
   const [query, setQuery] = useState('');
   const [isFocused, setIsFocused] = useState(false);
+  const { width: screenWidth } = useWindowDimensions();
+
+  const getSearchCardDimensions = useCallback(() => {
+    const containerPadding = 16;
+    const gap = 16;
+    const columns = 2;
+    const availableWidth = screenWidth - (containerPadding * 2);
+    const totalGapWidth = gap * (columns - 1);
+    const calculatedWidth = (availableWidth - totalGapWidth) / columns;
+    return { width: Math.floor(calculatedWidth), gap };
+  }, [screenWidth]);
+
+  const CARD_DIMENSIONS = useMemo(() => getSearchCardDimensions(), [getSearchCardDimensions]);
 
   const filteredItems = useMemo(() => {
     if (!query.trim()) return [];
@@ -65,7 +64,7 @@ export default function SearchScreen() {
     };
   };
 
-  const renderItem = ({ item }: { item: Product }) => {
+  const renderItem = useCallback(({ item }: { item: Product }) => {
     const favorite = isFavorite(item.id);
 
     if (item.listingType === 'service') {
@@ -136,11 +135,11 @@ export default function SearchScreen() {
 
     return (
       <TouchableOpacity
-        style={styles.productCard}
+        style={[styles.productCard, { width: CARD_DIMENSIONS.width }]}
         onPress={() => router.push(`/product/${item.id}` as any)}
         activeOpacity={0.9}
       >
-        <View style={styles.imageContainer}>
+        <View style={[styles.imageContainer, { height: CARD_DIMENSIONS.width * 1.1 }]}>
           <OptimizedImage uri={item.images[0]} style={styles.productImage} />
           {hasDiscount && (
             <View style={styles.discountBadge}>
@@ -188,7 +187,7 @@ export default function SearchScreen() {
         </View>
       </TouchableOpacity>
     );
-  };
+  }, [router, isFavorite, toggleFavorite, isAuthenticated, CARD_DIMENSIONS]);
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -221,7 +220,7 @@ export default function SearchScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
           numColumns={2}
-          columnWrapperStyle={styles.columnWrapper}
+          columnWrapperStyle={[styles.columnWrapper, { gap: CARD_DIMENSIONS.gap }]}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={() => (
             <View style={styles.emptyState}>
@@ -294,13 +293,11 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   columnWrapper: {
-    gap: CARD_DIMENSIONS.gap,
     justifyContent: 'flex-start',
     alignItems: 'flex-start',
   },
   // Product Card Styles
   productCard: {
-    width: CARD_DIMENSIONS.width,
     backgroundColor: '#fff',
     borderRadius: 20,
     overflow: 'hidden',
@@ -316,7 +313,6 @@ const styles = StyleSheet.create({
   imageContainer: {
     position: 'relative',
     width: '100%',
-    height: CARD_DIMENSIONS.width * 1.1,
     backgroundColor: '#f5f5f5',
   },
   productImage: {

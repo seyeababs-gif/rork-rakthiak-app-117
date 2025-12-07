@@ -6,7 +6,7 @@ import {
   ScrollView,
   Image,
   TouchableOpacity,
-  Dimensions,
+  useWindowDimensions,
   Share,
   Linking,
   Platform,
@@ -18,28 +18,27 @@ import OptimizedImage from '@/components/OptimizedImage';
 import ProductSkeleton from '@/components/ProductSkeleton';
 import { useToast } from '@/contexts/ToastContext';
 
-const { width: screenWidth } = Dimensions.get('window');
-
-function getShopCardDimensions() {
-  const containerPadding = 16;
-  const gap = 16;
-  const columns = 2;
-  const availableWidth = screenWidth - (containerPadding * 2);
-  const totalGapWidth = gap * (columns - 1);
-  const calculatedWidth = (availableWidth - totalGapWidth) / columns;
-  const maxCardWidth = 260;
-  const minCardWidth = 140;
-  const finalWidth = Math.max(Math.min(calculatedWidth, maxCardWidth), minCardWidth);
-  return { width: finalWidth, gap };
-}
-
-const CARD_DIMENSIONS = getShopCardDimensions();
-
 export default function ShopScreen() {
   const { sellerId } = useLocalSearchParams();
   const router = useRouter();
   const { products, allUsers, getSellerRating, isAuthenticated } = useMarketplace();
   const toast = useToast();
+  const { width: screenWidth } = useWindowDimensions();
+
+  const getShopCardDimensions = useCallback(() => {
+    const containerPadding = 16;
+    const gap = 16;
+    const columns = 2;
+    const availableWidth = screenWidth - (containerPadding * 2);
+    const totalGapWidth = gap * (columns - 1);
+    const calculatedWidth = (availableWidth - totalGapWidth) / columns;
+    const maxCardWidth = 260;
+    const minCardWidth = 140;
+    const finalWidth = Math.max(Math.min(calculatedWidth, maxCardWidth), minCardWidth);
+    return { width: finalWidth, gap };
+  }, [screenWidth]);
+
+  const CARD_DIMENSIONS = useMemo(() => getShopCardDimensions(), [getShopCardDimensions]);
 
   const seller = useMemo(() => {
     return allUsers.find(u => u.id === sellerId);
@@ -306,21 +305,21 @@ export default function ShopScreen() {
           <Text style={styles.sectionTitle}>Produits ({sellerProducts.length})</Text>
           
           {products.length === 0 ? (
-            <View style={styles.skeletonContainer}>
+            <View style={[styles.skeletonContainer, { gap: CARD_DIMENSIONS.gap }]}>
               {Array.from({ length: 4 }).map((_, index) => (
                 <ProductSkeleton key={`skeleton-${index}`} />
               ))}
             </View>
           ) : sellerProducts.length > 0 ? (
-            <View style={styles.productsGrid}>
+            <View style={[styles.productsGrid, { gap: CARD_DIMENSIONS.gap }]}>
               {displayedProducts.map(product => (
                 <TouchableOpacity
                   key={product.id}
-                  style={styles.productCard}
+                  style={[styles.productCard, { width: CARD_DIMENSIONS.width }]}
                   onPress={() => router.push(`/product/${product.id}` as any)}
                   activeOpacity={0.7}
                 >
-                  <OptimizedImage uri={product.images[0]} style={styles.productImage} />
+                  <OptimizedImage uri={product.images[0]} style={[styles.productImage, { height: CARD_DIMENSIONS.width }]} />
                   {product.hasDiscount && product.discountPercent && (
                     <View style={styles.discountBadge}>
                       <Text style={styles.discountText}>-{product.discountPercent}%</Text>
@@ -508,12 +507,10 @@ const styles = StyleSheet.create({
   productsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: CARD_DIMENSIONS.gap,
     justifyContent: 'flex-start',
     alignItems: 'flex-start',
   },
   productCard: {
-    width: CARD_DIMENSIONS.width,
     backgroundColor: '#fff',
     borderRadius: 16,
     overflow: 'hidden',
@@ -525,7 +522,6 @@ const styles = StyleSheet.create({
   },
   productImage: {
     width: '100%',
-    height: CARD_DIMENSIONS.width,
     backgroundColor: '#f5f5f5',
   },
   discountBadge: {
@@ -669,6 +665,5 @@ const styles = StyleSheet.create({
   skeletonContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: CARD_DIMENSIONS.gap,
   },
 });
