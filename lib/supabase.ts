@@ -137,6 +137,12 @@ export function getOptimizedImageUrl(url: string, width: number = 400): string {
     return optimizedUrl;
   }
   
+  if (url.includes('supabase.co/storage')) {
+    const quality = 60;
+    const separator = url.includes('?') ? '&' : '?';
+    return `${url}${separator}width=${width}&quality=${quality}&resize=cover`;
+  }
+  
   return url;
 }
 
@@ -148,6 +154,11 @@ export function getThumbnailUrl(url: string): string {
       ? `${url}&w=50&q=30&blur=20&fm=webp`
       : `${url}?w=50&q=30&blur=20&fm=webp`;
     return thumbnailUrl;
+  }
+  
+  if (url.includes('supabase.co/storage')) {
+    const separator = url.includes('?') ? '&' : '?';
+    return `${url}${separator}width=100&quality=40&resize=cover`;
   }
   
   return url;

@@ -52,6 +52,9 @@ export default function HomeScreen() {
     selectedSubCategory,
     setSelectedSubCategory,
     currentUser,
+    loadMoreProducts,
+    isFetchingMore,
+    hasMoreProducts,
   } = useMarketplace();
   
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -59,9 +62,8 @@ export default function HomeScreen() {
   const [availableDates, setAvailableDates] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<'products' | 'services'>('products');
   const [showSearch, setShowSearch] = useState<boolean>(false);
-  const [displayCount, setDisplayCount] = useState<number>(8);
-  const [isInitialRender, setIsInitialRender] = useState<boolean>(true);
   const scrollViewRef = useRef<ScrollView>(null);
+  const [hasCalledLoadMore, setHasCalledLoadMore] = useState<boolean>(false);
 
   const filteredProducts = useMemo(() => {
     return products.filter(product => {
@@ -114,36 +116,29 @@ export default function HomeScreen() {
     return sorted.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }, [filteredProducts, selectedDate, viewMode]);
 
-  const displayedProducts = useMemo(() => {
-    return sortedProducts.slice(0, displayCount);
-  }, [sortedProducts, displayCount]);
-
   useEffect(() => {
-    if (isInitialRender) {
-      setIsInitialRender(false);
-      return;
-    }
-    const nextProducts = sortedProducts.slice(displayCount, displayCount + 6);
-    nextProducts.forEach((product, idx) => {
+    const upcomingProducts = sortedProducts.slice(0, 10);
+    upcomingProducts.forEach((product, idx) => {
       if (product.images && product.images[0]) {
         setTimeout(() => {
-          prefetchImage(product.images[0], 400);
-        }, idx * 50);
+          prefetchImage(product.images[0], 300);
+        }, idx * 30);
       }
     });
-  }, [displayCount, sortedProducts]);
-
-  const hasMore = displayCount < sortedProducts.length;
+  }, [sortedProducts]);
 
   const handleScroll = useCallback((event: any) => {
     const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
-    const paddingToBottom = 300;
+    const paddingToBottom = 400;
     const isCloseToBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom;
     
-    if (isCloseToBottom && hasMore) {
-      setDisplayCount(prev => Math.min(prev + 6, sortedProducts.length));
+    if (isCloseToBottom && hasMoreProducts && !isFetchingMore && !hasCalledLoadMore) {
+      console.log('[INFINITE SCROLL] Loading more products...');
+      setHasCalledLoadMore(true);
+      loadMoreProducts();
+      setTimeout(() => setHasCalledLoadMore(false), 1000);
     }
-  }, [hasMore, sortedProducts.length]);
+  }, [hasMoreProducts, isFetchingMore, loadMoreProducts, hasCalledLoadMore]);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('fr-FR').format(price) + ' FCFA';
@@ -573,7 +568,7 @@ export default function HomeScreen() {
             {viewMode === 'services' ? 'Services disponibles' : (selectedCategory === 'all' ? 'Tous les produits' : categories.find(c => c.id === selectedCategory)?.name)}
           </Text>
           <Text style={styles.productsCount}>
-            {displayedProducts.length} / {sortedProducts.length} {sortedProducts.length > 1 ? 'annonces' : 'annonce'}
+            {sortedProducts.length} {sortedProducts.length > 1 ? 'annonces' : 'annonce'}
           </Text>
         </View>
 
@@ -587,17 +582,17 @@ export default function HomeScreen() {
 
         {viewMode === 'services' ? (
           <View style={styles.servicesList}>
-            {displayedProducts.map(renderServiceCard)}
+            {sortedProducts.map(renderServiceCard)}
           </View>
         ) : (
           <View style={styles.productsGrid}>
-            {displayedProducts.map(renderProductCard)}
+            {sortedProducts.map(renderProductCard)}
           </View>
         )}
 
-        {hasMore && (
+        {isFetchingMore && hasMoreProducts && (
           <View style={styles.loadingMore}>
-            <Text style={styles.loadingMoreText}>Chargement...</Text>
+            <Text style={styles.loadingMoreText}>Chargement de plus d&apos;annonces...</Text>
           </View>
         )}
 

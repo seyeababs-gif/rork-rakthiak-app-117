@@ -1,5 +1,5 @@
 import createContextHook from '@nkzw/create-context-hook';
-import { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -61,14 +61,17 @@ const fetchCurrentUser = async (): Promise<User | null> => {
   }
 };
 
-const fetchProducts = async (): Promise<Product[]> => {
+const fetchProducts = async (page: number = 0, limit: number = 20): Promise<Product[]> => {
   try {
-    console.log('[FETCH PRODUCTS] Starting products fetch...');
+    console.log(`[FETCH PRODUCTS] Fetching page ${page} with limit ${limit}...`);
+    const start = page * limit;
+    const end = start + limit - 1;
+    
     const { data, error } = await supabase
       .from('products')
-      .select('id,title,description,price,images,category,sub_category,location,seller_id,seller_name,seller_avatar,seller_phone,condition,status,listing_type,has_discount,discount_percent,original_price,created_at,service_details,stock_quantity,is_out_of_stock,rejection_reason,approved_at,rejected_at,approved_by')
+      .select('id,title,price,images,category,sub_category,location,seller_id,seller_name,seller_avatar,condition,status,listing_type,has_discount,discount_percent,original_price,created_at,description')
       .order('created_at', { ascending: false })
-      .limit(100);
+      .range(start, end);
     
     if (error) {
       console.error('Error loading products:', error.message || error);
@@ -80,29 +83,20 @@ const fetchProducts = async (): Promise<Product[]> => {
     const mappedProducts: Product[] = data.map((p: any) => ({
       id: p.id,
       title: p.title,
-      description: p.description,
+      description: p.description || '',
       price: parseFloat(p.price),
-      images: p.images,
+      images: p.images || [],
       category: p.category as Category,
       subCategory: p.sub_category as SubCategory | undefined,
       location: p.location,
       sellerId: p.seller_id,
       sellerName: p.seller_name,
       sellerAvatar: p.seller_avatar,
-      sellerPhone: p.seller_phone,
+      sellerPhone: '',
       createdAt: new Date(p.created_at),
       condition: p.condition,
       status: p.status as ProductStatus,
-      rejectionReason: p.rejection_reason,
-      approvedAt: p.approved_at ? new Date(p.approved_at) : undefined,
-      rejectedAt: p.rejected_at ? new Date(p.rejected_at) : undefined,
-      approvedBy: p.approved_by,
-      averageRating: p.average_rating,
-      reviewCount: p.review_count,
       listingType: p.listing_type as ListingType,
-      serviceDetails: p.service_details,
-      stockQuantity: p.stock_quantity,
-      isOutOfStock: p.is_out_of_stock,
       hasDiscount: p.has_discount,
       discountPercent: p.discount_percent,
       originalPrice: p.original_price ? parseFloat(p.original_price) : undefined,
@@ -187,6 +181,8 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
   const [selectedCategory, setSelectedCategory] = useState<Category>('all');
   const [selectedSubCategory, setSelectedSubCategory] = useState<SubCategory | undefined>(undefined);
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [currentPage, setCurrentPage] = useState<number>(0);
+  const [allLoadedProducts, setAllLoadedProducts] = useState<Product[]>([]);
 
   const { data: currentUser = null } = useQuery({
     queryKey: ['currentUser'],
@@ -195,16 +191,32 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
     gcTime: 30 * 60 * 1000,
   });
 
-  const { data: products = [] } = useQuery({
-    queryKey: ['products'],
-    queryFn: fetchProducts,
-    staleTime: 3 * 60 * 1000,
+  const { data: products = [], isFetching } = useQuery({
+    queryKey: ['products', currentPage],
+    queryFn: () => fetchProducts(currentPage, 20),
+    staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
 
+  React.useEffect(() => {
+    if (products.length > 0) {
+      setAllLoadedProducts(prev => {
+        const existing = new Set(prev.map(p => p.id));
+        const newProducts = products.filter(p => !existing.has(p.id));
+        return [...prev, ...newProducts];
+      });
+    }
+  }, [products]);
+
+  const loadMoreProducts = useCallback(() => {
+    if (!isFetching) {
+      setCurrentPage(prev => prev + 1);
+    }
+  }, [isFetching]);
+
   const { data: favorites = [] } = useQuery({
-    queryKey: ['favorites', currentUser?.id],
+    queryKey: ['favorites', currentUser?.id, currentUser],
     queryFn: () => currentUser ? fetchFavorites(currentUser.id) : Promise.resolve([]),
     enabled: !!currentUser,
     staleTime: 5 * 60 * 1000,
@@ -254,7 +266,7 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
   const isFavorite = useCallback((productId: string) => favorites.includes(productId), [favorites]);
 
   const filteredProducts = useMemo(() => {
-    return products.filter(product => {
+    return allLoadedProducts.filter(product => {
       const isApproved = product.status === 'approved';
       const isAdmin = currentUser?.isAdmin === true;
       const isSuperAdmin = currentUser?.isSuperAdmin === true;
@@ -264,16 +276,16 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
       const matchesSubCategory = !selectedSubCategory || product.subCategory === selectedSubCategory;
       return (isAdmin || isSuperAdmin || isApproved) && matchesSearch && matchesCategory && matchesSubCategory;
     });
-  }, [products, searchQuery, selectedCategory, selectedSubCategory, currentUser]);
+  }, [allLoadedProducts, searchQuery, selectedCategory, selectedSubCategory, currentUser]);
 
   const favoriteProducts = useMemo(() => {
-    return products.filter(product => favorites.includes(product.id));
-  }, [products, favorites]);
+    return allLoadedProducts.filter(product => favorites.includes(product.id));
+  }, [allLoadedProducts, favorites]);
 
   const userProducts = useMemo(() => {
     if (!currentUser) return [];
-    return products.filter(product => product.sellerId === currentUser.id);
-  }, [products, currentUser]);
+    return allLoadedProducts.filter(product => product.sellerId === currentUser.id);
+  }, [allLoadedProducts, currentUser]);
 
   const addProductMutation = useMutation({
     mutationFn: async ({ product, user }: { product: Omit<Product, 'id' | 'createdAt' | 'sellerId' | 'sellerName' | 'sellerAvatar' | 'status'>, user: User }) => {
@@ -704,13 +716,13 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
   }, [reviews]);
 
   const getSellerRating = useCallback((sellerId: string) => {
-    const sellerProducts = products.filter(p => p.sellerId === sellerId);
+    const sellerProducts = allLoadedProducts.filter(p => p.sellerId === sellerId);
     const sellerProductIds = sellerProducts.map(p => p.id);
     const sellerReviews = reviews.filter(r => sellerProductIds.includes(r.productId));
     if (sellerReviews.length === 0) return { average: 0, count: 0 };
     const sum = sellerReviews.reduce((acc, review) => acc + review.rating, 0);
     return { average: sum / sellerReviews.length, count: sellerReviews.length };
-  }, [products, reviews]);
+  }, [allLoadedProducts, reviews]);
 
   const addReview = useCallback((review: Omit<Review, 'id' | 'createdAt' | 'userId' | 'userName' | 'userAvatar'>) => {
     if (!currentUser) return;
@@ -726,8 +738,8 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
   }, [currentUser, reviews]);
 
   const getProduct = useCallback((productId: string) => {
-    return products.find(p => p.id === productId);
-  }, [products]);
+    return allLoadedProducts.find(p => p.id === productId);
+  }, [allLoadedProducts]);
 
   const changeUserType = useCallback(async (userId: string, newType: UserType) => {
     if (!currentUser?.isAdmin) return { success: false, error: 'Non autorisé' };
@@ -777,8 +789,8 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
   }, [currentUser, allUsers, deleteUserMutation]);
 
   const pendingProducts = useMemo(() => {
-    return products.filter(product => product.status === 'pending');
-  }, [products]);
+    return allLoadedProducts.filter(product => product.status === 'pending');
+  }, [allLoadedProducts]);
 
   const approveProductMutation = useMutation({
     mutationFn: async ({ productId, userId, product }: { productId: string; userId: string; product: Product }) => {
@@ -809,14 +821,14 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
     if (!currentUser?.isAdmin) return;
     
     try {
-      const product = products.find(p => p.id === productId);
+      const product = allLoadedProducts.find(p => p.id === productId);
       if (!product) return;
 
       await approveProductMutation.mutateAsync({ productId, userId: currentUser.id, product });
     } catch (error) {
       console.error('Error approving product:', error);
     }
-  }, [products, currentUser, approveProductMutation]);
+  }, [allLoadedProducts, currentUser, approveProductMutation]);
 
   const toggleAdminStatus = useCallback(async (userId: string) => {
     if (!currentUser?.isSuperAdmin) return { success: false, error: 'Seul le super administrateur peut gérer les admins' };
@@ -869,17 +881,20 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
     if (!currentUser?.isAdmin) return;
     
     try {
-      const product = products.find(p => p.id === productId);
+      const product = allLoadedProducts.find(p => p.id === productId);
       if (!product) return;
 
       await rejectProductMutation.mutateAsync({ productId, reason, product });
     } catch (error) {
       console.error('Error rejecting product:', error);
     }
-  }, [products, currentUser, rejectProductMutation]);
+  }, [allLoadedProducts, currentUser, rejectProductMutation]);
 
   return useMemo(() => ({
-    products,
+    products: allLoadedProducts,
+    loadMoreProducts,
+    isFetchingMore: isFetching,
+    hasMoreProducts: products.length >= 20,
     filteredProducts,
     favoriteProducts,
     userProducts,
@@ -921,7 +936,10 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
     deleteUser,
     toggleAdminStatus,
   }), [
-    products,
+    allLoadedProducts,
+    loadMoreProducts,
+    isFetching,
+    products.length,
     filteredProducts,
     favoriteProducts,
     userProducts,
