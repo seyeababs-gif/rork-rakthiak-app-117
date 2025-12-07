@@ -26,9 +26,7 @@ function getSearchCardWidth() {
   const availableWidth = width - (containerPadding * 2);
   const totalGapWidth = gap * (columns - 1);
   const calculatedWidth = (availableWidth - totalGapWidth) / columns;
-  const maxCardWidth = 260;
-  const minCardWidth = 140;
-  return Math.max(Math.min(calculatedWidth, maxCardWidth), minCardWidth);
+  return Math.floor(calculatedWidth);
 }
 
 const RESPONSIVE_CARD_WIDTH = getSearchCardWidth();
