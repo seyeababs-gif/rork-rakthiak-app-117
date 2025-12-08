@@ -29,6 +29,7 @@ import {
   Shield,
   ShieldCheck,
   ChevronDown,
+  Settings as SettingsIcon,
 } from 'lucide-react-native';
 import { useOrders } from '@/contexts/OrderContext';
 import { useMarketplace } from '@/contexts/MarketplaceContext';
@@ -40,17 +41,18 @@ import {
   getProductCardWidth,
   isWeb,
   getContainerPadding,
-  getGridColumns,
   getButtonHeight,
   getButtonFontSize,
 } from '@/constants/responsive';
+import { useGlobalSettings } from '@/contexts/GlobalSettingsContext';
 
-type TabType = 'orders' | 'products' | 'users';
+type TabType = 'orders' | 'products' | 'users' | 'settings';
 
 export default function AdminScreen() {
   const insets = useSafeAreaInsets();
   const { orders, updateOrderStatus, deleteOrder, deleteAllUserOrders } = useOrders();
   const toast = useToast();
+  const { settings, updateSettings, isUpdating } = useGlobalSettings();
   const { 
     currentUser, 
     isAuthenticated, 
@@ -69,6 +71,16 @@ export default function AdminScreen() {
   const [selectedFilter, setSelectedFilter] = useState<OrderStatus | 'all' | 'pending'>('all');
   const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [selectedTab, setSelectedTab] = useState<TabType>('products');
+  
+  const [premiumEnabled, setPremiumEnabled] = useState<boolean>(settings.isGlobalPremiumEnabled);
+  const [scrollingMessage, setScrollingMessage] = useState<string>(settings.scrollingMessage);
+  const [commissionPercentage, setCommissionPercentage] = useState<string>(settings.commissionPercentage.toString());
+  
+  React.useEffect(() => {
+    setPremiumEnabled(settings.isGlobalPremiumEnabled);
+    setScrollingMessage(settings.scrollingMessage);
+    setCommissionPercentage(settings.commissionPercentage.toString());
+  }, [settings]);
 
   // Rejection Modal State
   const [rejectModal, setRejectModal] = useState<{
@@ -875,6 +887,143 @@ export default function AdminScreen() {
     );
   };
 
+  const handleSaveSettings = async () => {
+    const commission = parseFloat(commissionPercentage);
+    if (isNaN(commission) || commission < 0 || commission > 100) {
+      toast.showError('La commission doit être entre 0 et 100');
+      return;
+    }
+    
+    const result = await updateSettings({
+      isGlobalPremiumEnabled: premiumEnabled,
+      scrollingMessage: scrollingMessage.trim(),
+      commissionPercentage: commission,
+    });
+    
+    if (result.success) {
+      toast.showSuccess('Paramètres globaux mis à jour');
+    } else {
+      toast.showError(result.error || 'Erreur lors de la sauvegarde');
+    }
+  };
+
+  const renderSettingsTab = () => (
+    <View style={styles.tabContent}>
+      <ScrollView
+        style={styles.content}
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={true}
+      >
+        <View style={styles.settingsCard}>
+          <Text style={styles.settingsTitle}>⚡ Paramètres Globaux</Text>
+          <Text style={styles.settingsSubtitle}>Gérez les paramètres de l&apos;application</Text>
+
+          <View style={styles.settingSection}>
+            <View style={styles.settingHeader}>
+              <Crown size={20} color="#FFD700" />
+              <Text style={styles.settingLabel}>Mode Premium Global</Text>
+            </View>
+            <Text style={styles.settingDescription}>
+              Activez cette option pour activer le mode Premium pour tous les utilisateurs.
+            </Text>
+            <View style={styles.settingSwitchContainer}>
+              <Text style={styles.settingSwitchLabel}>
+                {premiumEnabled ? 'Activé' : 'Désactivé'}
+              </Text>
+              <TouchableOpacity
+                style={[styles.switchButton, premiumEnabled && styles.switchButtonActive]}
+                onPress={() => setPremiumEnabled(!premiumEnabled)}
+              >
+                <View style={[styles.switchThumb, premiumEnabled && styles.switchThumbActive]} />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <View style={styles.settingSectionDivider} />
+
+          <View style={styles.settingSection}>
+            <View style={styles.settingHeader}>
+              <Package size={20} color="#007AFF" />
+              <Text style={styles.settingLabel}>Message défilant</Text>
+            </View>
+            <Text style={styles.settingDescription}>
+              Ce message s&apos;affichera en haut de l&apos;application pour tous les utilisateurs.
+            </Text>
+            <TextInput
+              style={styles.settingTextInput}
+              placeholder="Entrez le message..."
+              placeholderTextColor="#999"
+              value={scrollingMessage}
+              onChangeText={setScrollingMessage}
+              multiline
+              numberOfLines={2}
+              maxLength={200}
+            />
+            <Text style={styles.settingCharCount}>
+              {scrollingMessage.length} / 200 caractères
+            </Text>
+          </View>
+
+          <View style={styles.settingSectionDivider} />
+
+          <View style={styles.settingSection}>
+            <View style={styles.settingHeader}>
+              <AlertCircle size={20} color="#E31B23" />
+              <Text style={styles.settingLabel}>Commission (%)</Text>
+            </View>
+            <Text style={styles.settingDescription}>
+              Pourcentage de commission appliqué sur chaque vente. Ce taux sera utilisé pour les calculs de prix.
+            </Text>
+            <TextInput
+              style={styles.settingNumberInput}
+              placeholder="10.0"
+              placeholderTextColor="#999"
+              value={commissionPercentage}
+              onChangeText={setCommissionPercentage}
+              keyboardType="decimal-pad"
+              maxLength={5}
+            />
+            <Text style={styles.settingHint}>
+              💡 Entrez une valeur entre 0 et 100
+            </Text>
+          </View>
+
+          <TouchableOpacity
+            style={[styles.saveButton, isUpdating && styles.saveButtonDisabled]}
+            onPress={handleSaveSettings}
+            disabled={isUpdating}
+          >
+            {isUpdating ? (
+              <Text style={styles.saveButtonText}>Enregistrement...</Text>
+            ) : (
+              <Text style={styles.saveButtonText}>Enregistrer les modifications</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.infoCard}>
+          <ShieldCheck size={24} color="#00A651" />
+          <Text style={styles.infoTitle}>Information</Text>
+          <Text style={styles.infoText}>
+            Ces paramètres sont globaux et affecteront tous les utilisateurs de l&apos;application.
+            Assurez-vous de vérifier les valeurs avant de sauvegarder.
+          </Text>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Dernière modification :</Text>
+            <Text style={styles.infoValue}>
+              {new Date(settings.updatedAt).toLocaleDateString('fr-FR', {
+                day: 'numeric',
+                month: 'short',
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
+            </Text>
+          </View>
+        </View>
+      </ScrollView>
+    </View>
+  );
+
   const renderUsersTab = () => {
     const premiumUsers = allUsers.filter(u => u.type === 'premium').length;
     const pendingPremium = allUsers.filter(u => u.premiumPaymentPending).length;
@@ -953,12 +1102,24 @@ export default function AdminScreen() {
               Utilisateurs
             </Text>
           </TouchableOpacity>
+          {isSuperAdmin && (
+            <TouchableOpacity
+              style={[styles.tab, selectedTab === 'settings' && styles.tabActive]}
+              onPress={() => setSelectedTab('settings')}
+            >
+              <SettingsIcon size={20} color={selectedTab === 'settings' ? '#00A651' : '#666'} />
+              <Text style={[styles.tabText, selectedTab === 'settings' && styles.tabTextActive]}>
+                Réglages
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
 
       {selectedTab === 'orders' && renderOrdersTab()}
       {selectedTab === 'products' && renderProductsTab()}
       {selectedTab === 'users' && renderUsersTab()}
+      {selectedTab === 'settings' && renderSettingsTab()}
 
       <Modal
         visible={rejectModal.visible}
@@ -1848,5 +2009,185 @@ const styles = StyleSheet.create({
     fontSize: getButtonFontSize(),
     fontWeight: '600' as const,
     color: '#E31B23',
+  },
+  settingsCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: isWeb ? 24 : 20,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  settingsTitle: {
+    fontSize: 24,
+    fontWeight: '700' as const,
+    color: '#000',
+    marginBottom: 8,
+  },
+  settingsSubtitle: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 24,
+  },
+  settingSection: {
+    marginBottom: 24,
+  },
+  settingSectionDivider: {
+    height: 1,
+    backgroundColor: '#f0f0f0',
+    marginVertical: 20,
+  },
+  settingHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  settingLabel: {
+    fontSize: 16,
+    fontWeight: '700' as const,
+    color: '#000',
+  },
+  settingDescription: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 12,
+    lineHeight: 20,
+  },
+  settingSwitchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 12,
+  },
+  settingSwitchLabel: {
+    fontSize: 15,
+    fontWeight: '600' as const,
+    color: '#000',
+  },
+  switchButton: {
+    width: 52,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#ddd',
+    justifyContent: 'center',
+    padding: 2,
+  },
+  switchButtonActive: {
+    backgroundColor: '#00A651',
+  },
+  switchThumb: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  switchThumbActive: {
+    alignSelf: 'flex-end',
+  },
+  settingTextInput: {
+    backgroundColor: '#f8f9fa',
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 15,
+    color: '#000',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    minHeight: 80,
+    textAlignVertical: 'top',
+  },
+  settingCharCount: {
+    fontSize: 12,
+    color: '#999',
+    marginTop: 4,
+    textAlign: 'right',
+  },
+  settingNumberInput: {
+    backgroundColor: '#f8f9fa',
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 18,
+    fontWeight: '700' as const,
+    color: '#000',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    textAlign: 'center',
+  },
+  settingHint: {
+    fontSize: 13,
+    color: '#666',
+    marginTop: 8,
+    fontStyle: 'italic' as const,
+  },
+  saveButton: {
+    backgroundColor: '#00A651',
+    borderRadius: 12,
+    paddingVertical: isWeb ? 18 : 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
+    minHeight: getButtonHeight(),
+    shadowColor: '#00A651',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  saveButtonDisabled: {
+    backgroundColor: '#999',
+    shadowOpacity: 0.1,
+  },
+  saveButtonText: {
+    fontSize: getButtonFontSize(),
+    fontWeight: '700' as const,
+    color: '#fff',
+  },
+  infoCard: {
+    backgroundColor: '#E8F5E9',
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: '#C8E6C9',
+    alignItems: 'center',
+  },
+  infoTitle: {
+    fontSize: 18,
+    fontWeight: '700' as const,
+    color: '#00A651',
+    marginTop: 12,
+    marginBottom: 8,
+  },
+  infoText: {
+    fontSize: 14,
+    color: '#2E7D32',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 16,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  infoLabel: {
+    fontSize: 13,
+    color: '#2E7D32',
+    fontWeight: '600' as const,
+  },
+  infoValue: {
+    fontSize: 13,
+    color: '#2E7D32',
+    fontWeight: '700' as const,
   },
 });

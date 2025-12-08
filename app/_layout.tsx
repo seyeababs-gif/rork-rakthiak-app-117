@@ -10,6 +10,7 @@ import { OrderProvider } from "@/contexts/OrderContext";
 import { ReviewProvider } from "@/contexts/ReviewContext";
 import { NotificationProvider, useNotifications } from "@/contexts/NotificationContext";
 import { ToastProvider } from "@/contexts/ToastContext";
+import { GlobalSettingsProvider } from "@/contexts/GlobalSettingsContext";
 import ToastContainer from "@/components/ToastContainer";
 import GlobalAlert from "@/components/GlobalAlert";
 import { queryClient } from "@/lib/queryClient";
@@ -99,20 +100,22 @@ export default function RootLayout() {
       <ToastProvider>
         <NotificationProvider>
           <MarketplaceProvider>
-            <CartProvider>
-              <OrderProvider>
-                <ReviewProvider>
-                  <GestureHandlerRootView style={{ flex: 1 }}>
-                    <AuthGuard>
-                      <NotificationSetup />
-                      <RootLayoutNav />
-                      <ToastContainer />
-                      <GlobalAlert />
-                    </AuthGuard>
-                  </GestureHandlerRootView>
-                </ReviewProvider>
-              </OrderProvider>
-            </CartProvider>
+            <GlobalSettingsProvider>
+              <CartProvider>
+                <OrderProvider>
+                  <ReviewProvider>
+                    <GestureHandlerRootView style={{ flex: 1 }}>
+                      <AuthGuard>
+                        <NotificationSetup />
+                        <RootLayoutNav />
+                        <ToastContainer />
+                        <GlobalAlert />
+                      </AuthGuard>
+                    </GestureHandlerRootView>
+                  </ReviewProvider>
+                </OrderProvider>
+              </CartProvider>
+            </GlobalSettingsProvider>
           </MarketplaceProvider>
         </NotificationProvider>
       </ToastProvider>
