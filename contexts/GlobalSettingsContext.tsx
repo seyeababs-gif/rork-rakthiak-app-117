@@ -86,34 +86,31 @@ export const [GlobalSettingsProvider, useGlobalSettings] = createContextHook(() 
         throw new Error(errorMsg);
       }
       
-      const upsertData: any = {
-        id: FIXED_SETTINGS_ID,
+      const updateData: any = {
         updated_by: currentUser.id,
       };
       
       if (updates.isGlobalPremiumEnabled !== undefined) {
-        upsertData.is_global_premium_enabled = updates.isGlobalPremiumEnabled;
+        updateData.is_global_premium_enabled = updates.isGlobalPremiumEnabled;
       }
       if (updates.scrollingMessage !== undefined) {
-        upsertData.scrolling_message = updates.scrollingMessage;
+        updateData.scrolling_message = updates.scrollingMessage;
       }
       if (updates.commissionPercentage !== undefined) {
-        upsertData.commission_percentage = updates.commissionPercentage;
+        updateData.commission_percentage = updates.commissionPercentage;
       }
       
-      console.log('[GLOBAL SETTINGS] 📤 Upserting data:', JSON.stringify(upsertData, null, 2));
+      console.log('[GLOBAL SETTINGS] 📤 Updating data:', JSON.stringify(updateData, null, 2));
       
       const { data, error } = await supabase
         .from('global_settings')
-        .upsert(upsertData, { 
-          onConflict: 'id',
-          ignoreDuplicates: false 
-        })
+        .update(updateData)
+        .eq('id', FIXED_SETTINGS_ID)
         .select()
         .single();
       
       if (error) {
-        console.error('[GLOBAL SETTINGS] ❌ Upsert failed:', {
+        console.error('[GLOBAL SETTINGS] ❌ Update failed:', {
           message: error.message,
           details: error.details,
           hint: error.hint,
@@ -123,7 +120,7 @@ export const [GlobalSettingsProvider, useGlobalSettings] = createContextHook(() 
       }
       
       if (!data) {
-        console.error('[GLOBAL SETTINGS] ❌ No data returned after upsert');
+        console.error('[GLOBAL SETTINGS] ❌ No data returned after update');
         throw new Error('Aucune donnée retournée après la sauvegarde');
       }
       
