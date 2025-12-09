@@ -104,10 +104,18 @@ export const [GlobalSettingsProvider, useGlobalSettings] = createContextHook(() 
       
       const { data, error } = await supabase
         .from('global_settings')
-        .update(updateData)
-        .eq('id', FIXED_SETTINGS_ID)
+        .upsert(
+          {
+            id: FIXED_SETTINGS_ID,
+            ...updateData,
+          },
+          {
+            onConflict: 'id',
+            ignoreDuplicates: false,
+          }
+        )
         .select()
-        .single();
+        .maybeSingle();
       
       if (error) {
         console.error('[GLOBAL SETTINGS] ❌ Update failed:', {
