@@ -13,10 +13,10 @@ interface ScrollingTextProps {
 export default function ScrollingText({
   message,
   speed = 50,
-  backgroundColor = '#00A651',
-  textColor = '#FFFFFF',
-  height = 32,
-  fontSize = 14,
+  backgroundColor = 'transparent',
+  textColor = '#FFD700',
+  height = 24,
+  fontSize = 13,
 }: ScrollingTextProps) {
   const scrollAnim = useRef(new Animated.Value(0)).current;
   const [containerWidth, setContainerWidth] = useState<number>(0);
@@ -84,7 +84,7 @@ export default function ScrollingText({
           style={[styles.text, { color: textColor, fontSize }]}
           numberOfLines={1}
         >
-          {message}
+          ✨ {message}
         </Text>
       </Animated.View>
     </View>
@@ -101,14 +101,14 @@ const styles = StyleSheet.create({
     position: 'absolute',
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: 8,
   },
   text: {
     fontWeight: '700' as const,
     whiteSpace: 'nowrap' as any,
-    letterSpacing: 0.5,
-    textShadowColor: 'rgba(0, 0, 0, 0.1)',
+    letterSpacing: 0.3,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
     textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+    textShadowRadius: 3,
   },
 });

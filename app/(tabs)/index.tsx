@@ -315,10 +315,6 @@ export default function HomeScreen() {
             <ScrollingText 
               message={bannerMessage}
               speed={50}
-              backgroundColor="#FFD700"
-              textColor="#1a1a1a"
-              height={36}
-              fontSize={14}
             />
           </View>
         )}
@@ -665,15 +661,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   bannerContainer: {
-    marginTop: 12,
-    marginHorizontal: -16,
-    borderRadius: 12,
-    overflow: 'hidden',
-    shadowColor: '#FFD700',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 4,
+    marginTop: 8,
+    marginBottom: 4,
   },
   searchButton: {
     width: 40,
