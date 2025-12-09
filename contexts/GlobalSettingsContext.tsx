@@ -101,6 +101,7 @@ export const [GlobalSettingsProvider, useGlobalSettings] = createContextHook(() 
       }
       
       console.log('[GLOBAL SETTINGS] 📤 Updating data:', JSON.stringify(updateData, null, 2));
+      console.log('[GLOBAL SETTINGS] 📤 Target ID:', FIXED_SETTINGS_ID);
       
       const { data, error } = await supabase
         .from('global_settings')
@@ -115,7 +116,7 @@ export const [GlobalSettingsProvider, useGlobalSettings] = createContextHook(() 
           }
         )
         .select()
-        .maybeSingle();
+        .single();
       
       if (error) {
         console.error('[GLOBAL SETTINGS] ❌ Update failed:', {
@@ -124,6 +125,11 @@ export const [GlobalSettingsProvider, useGlobalSettings] = createContextHook(() 
           hint: error.hint,
           code: error.code,
         });
+        
+        if (error.code === '42501') {
+          throw new Error(`Permission refusée. Assurez-vous d'être connecté en tant que Super Admin. (Code RLS: ${error.code})`);
+        }
+        
         throw new Error(`Erreur Supabase: ${error.message} (Code: ${error.code})`);
       }
       
