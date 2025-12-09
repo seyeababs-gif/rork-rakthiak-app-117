@@ -131,15 +131,17 @@ BEGIN
       RAISE NOTICE '   ID: %', current_user_id;
     ELSIF is_super THEN
       RAISE NOTICE '';
-      RAISE NOTICE '✅ Utilisateur: % (%) - SUPER ADMIN', user_name, current_user_id;
+      RAISE NOTICE '✅ Utilisateur: % - SUPER ADMIN', user_name;
+      RAISE NOTICE '   ID: %', current_user_id;
       RAISE NOTICE '   Vous POUVEZ modifier les paramètres globaux';
     ELSE
       RAISE NOTICE '';
-      RAISE NOTICE '❌ Utilisateur: % (%) - PAS SUPER ADMIN', user_name, current_user_id;
+      RAISE NOTICE '❌ Utilisateur: % - PAS SUPER ADMIN', user_name;
+      RAISE NOTICE '   ID: %', current_user_id;
       RAISE NOTICE '   Vous NE POUVEZ PAS modifier les paramètres globaux';
       RAISE NOTICE '';
       RAISE NOTICE '🔧 POUR DEVENIR SUPER ADMIN, exécutez:';
-      RAISE NOTICE '   UPDATE users SET is_super_admin = true WHERE id = ''%'';', current_user_id;
+      RAISE NOTICE '   UPDATE users SET is_super_admin = true WHERE id = ''%s'';', current_user_id;
     END IF;
   END IF;
 END $$;
@@ -148,17 +150,20 @@ END $$;
 DO $$
 DECLARE
   settings_record RECORD;
+  commission_display TEXT;
 BEGIN
   SELECT * INTO settings_record FROM global_settings WHERE id = '00000000-0000-0000-0000-000000000001';
   
   IF settings_record IS NOT NULL THEN
+    commission_display := settings_record.commission_percentage::TEXT || '%';
+    
     RAISE NOTICE '';
     RAISE NOTICE '════════════════════════════════════════════════════════';
     RAISE NOTICE '📋 CONFIGURATION GLOBALE ACTUELLE:';
     RAISE NOTICE '   ID: %', settings_record.id;
     RAISE NOTICE '   Premium Global: %', settings_record.is_global_premium_enabled;
     RAISE NOTICE '   Message: %', settings_record.scrolling_message;
-    RAISE NOTICE '   Commission: %%', settings_record.commission_percentage;
+    RAISE NOTICE '   Commission: %', commission_display;
     RAISE NOTICE '   Dernière mise à jour: %', settings_record.updated_at;
     IF settings_record.updated_by IS NOT NULL THEN
       RAISE NOTICE '   Modifié par: %', settings_record.updated_by;
