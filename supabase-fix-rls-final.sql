@@ -84,14 +84,14 @@ BEGIN
     USING (
       EXISTS (
         SELECT 1 FROM users 
-        WHERE users.id = auth.uid() 
+        WHERE users.id = auth.uid()::text 
         AND users.is_super_admin = true
       )
     )
     WITH CHECK (
       EXISTS (
         SELECT 1 FROM users 
-        WHERE users.id = auth.uid() 
+        WHERE users.id = auth.uid()::text 
         AND users.is_super_admin = true
       )
     );
@@ -113,7 +113,7 @@ BEGIN
     WITH CHECK (
       EXISTS (
         SELECT 1 FROM users 
-        WHERE users.id = auth.uid() 
+        WHERE users.id = auth.uid()::text 
         AND users.is_super_admin = true
       )
     );
@@ -136,7 +136,7 @@ BEGIN
     SELECT is_super_admin, email 
     INTO is_super, user_email
     FROM users 
-    WHERE id = current_user_id;
+    WHERE id = current_user_id::text;
     
     IF is_super THEN
       RAISE NOTICE '✅ Utilisateur actuel: % (%) - SUPER ADMIN', user_email, current_user_id;
