@@ -1,5 +1,4 @@
 import createContextHook from '@nkzw/create-context-hook';
-import { useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useMarketplace } from '@/contexts/MarketplaceContext';
@@ -113,18 +112,15 @@ export const [GlobalSettingsProvider, useGlobalSettings] = createContextHook(() 
     },
   });
   
-  const updateSettings = useCallback(
-    async (updates: Partial<GlobalSettings>) => {
-      try {
-        await updateSettingsMutation.mutateAsync(updates);
-        return { success: true };
-      } catch (error: any) {
-        console.error('[GLOBAL SETTINGS] Failed to update settings:', error);
-        return { success: false, error: error.message || 'Erreur lors de la mise à jour' };
-      }
-    },
-    [updateSettingsMutation.mutateAsync]
-  );
+  const updateSettings = async (updates: Partial<GlobalSettings>) => {
+    try {
+      await updateSettingsMutation.mutateAsync(updates);
+      return { success: true };
+    } catch (error: any) {
+      console.error('[GLOBAL SETTINGS] Failed to update settings:', error);
+      return { success: false, error: error.message || 'Erreur lors de la mise à jour' };
+    }
+  };
   
   const isPremium = settings?.isGlobalPremiumEnabled || false;
   const bannerMessage = settings?.scrollingMessage || 'Bienvenue sur Rakthiak';
