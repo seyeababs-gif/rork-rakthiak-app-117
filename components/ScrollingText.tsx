@@ -104,7 +104,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   text: {
-    fontWeight: '600' as const,
+    fontWeight: '700' as const,
     whiteSpace: 'nowrap' as any,
+    letterSpacing: 0.5,
+    textShadowColor: 'rgba(0, 0, 0, 0.1)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
 });

@@ -287,16 +287,6 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      {bannerMessage && (
-        <ScrollingText 
-          message={bannerMessage}
-          speed={50}
-          backgroundColor="#00A651"
-          textColor="#FFFFFF"
-          height={32}
-          fontSize={14}
-        />
-      )}
       <LinearGradient
         colors={['#0D2D5E', '#1E3A8A', '#2563EB', '#87CEEB']}
         start={{ x: 0, y: 0 }}
@@ -319,6 +309,19 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </View>
         </View>
+        
+        {bannerMessage && (
+          <View style={styles.bannerContainer}>
+            <ScrollingText 
+              message={bannerMessage}
+              speed={50}
+              backgroundColor="#FFD700"
+              textColor="#1a1a1a"
+              height={36}
+              fontSize={14}
+            />
+          </View>
+        )}
         
         {showSearch && (
           <View style={styles.searchBarContainer}>
@@ -660,6 +663,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+  },
+  bannerContainer: {
+    marginTop: 12,
+    marginHorizontal: -16,
+    borderRadius: 12,
+    overflow: 'hidden',
+    shadowColor: '#FFD700',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 4,
   },
   searchButton: {
     width: 40,
