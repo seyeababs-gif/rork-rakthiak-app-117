@@ -18,6 +18,8 @@ import { useRouter } from 'expo-router';
 import { useMarketplace } from '@/contexts/MarketplaceContext';
 import { categories, getSubCategoriesForCategory } from '@/constants/categories';
 import { Product } from '@/types/marketplace';
+import { useGlobalSettings } from '@/contexts/GlobalSettingsContext';
+import ScrollingText from '@/components/ScrollingText';
 
 const isWeb = Platform.OS === 'web';
 
@@ -55,6 +57,8 @@ export default function HomeScreen() {
     isFetchingMore,
     hasMoreProducts,
   } = useMarketplace();
+  
+  const { bannerMessage } = useGlobalSettings();
   
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedDate, setSelectedDate] = useState<string | undefined>(undefined);
@@ -283,6 +287,16 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
+      {bannerMessage && (
+        <ScrollingText 
+          message={bannerMessage}
+          speed={50}
+          backgroundColor="#00A651"
+          textColor="#FFFFFF"
+          height={32}
+          fontSize={14}
+        />
+      )}
       <LinearGradient
         colors={['#0D2D5E', '#1E3A8A', '#2563EB', '#87CEEB']}
         start={{ x: 0, y: 0 }}
