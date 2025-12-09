@@ -76,8 +76,8 @@ export const [GlobalSettingsProvider, useGlobalSettings] = createContextHook(() 
   
   const updateSettingsMutation = useMutation({
     mutationFn: async (updates: Partial<GlobalSettings>) => {
-      if (!currentUser?.isAdmin && !currentUser?.isSuperAdmin) {
-        throw new Error('Non autorisé');
+      if (!currentUser?.isSuperAdmin) {
+        throw new Error('Seul le super administrateur peut modifier les paramètres globaux');
       }
       
       const updateData: any = {};

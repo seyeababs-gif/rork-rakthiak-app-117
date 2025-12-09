@@ -69,9 +69,9 @@ FOR SELECT
 TO public
 USING (true);
 
--- Policy: Seuls les admins peuvent MODIFIER la configuration
--- Note: Vous devez avoir une colonne is_admin dans votre table users
-CREATE POLICY "Admins can update global settings"
+-- Policy: Seul le SUPER ADMIN peut MODIFIER la configuration
+-- Note: Vous devez avoir une colonne is_super_admin dans votre table users
+CREATE POLICY "Only super admin can update global settings"
 ON public.global_settings
 FOR UPDATE
 TO public
@@ -79,7 +79,7 @@ USING (
   EXISTS (
     SELECT 1 FROM public.users
     WHERE users.id = auth.uid()::text
-    AND (users.is_admin = true OR users.is_super_admin = true)
+    AND users.is_super_admin = true
   )
 );
 

@@ -907,7 +907,22 @@ export default function AdminScreen() {
     }
   };
 
-  const renderSettingsTab = () => (
+  const renderSettingsTab = () => {
+    if (!isSuperAdmin) {
+      return (
+        <View style={styles.tabContent}>
+          <View style={styles.accessDeniedContainer}>
+            <ShieldAlert size={64} color="#E31B23" />
+            <Text style={styles.accessDeniedTitle}>Accès Refusé</Text>
+            <Text style={styles.accessDeniedText}>
+              Seul le super administrateur peut modifier les paramètres globaux de l&apos;application.
+            </Text>
+          </View>
+        </View>
+      );
+    }
+
+    return (
     <View style={styles.tabContent}>
       <ScrollView
         style={styles.content}
@@ -1022,7 +1037,8 @@ export default function AdminScreen() {
         </View>
       </ScrollView>
     </View>
-  );
+    );
+  };
 
   const renderUsersTab = () => {
     const premiumUsers = allUsers.filter(u => u.type === 'premium').length;
