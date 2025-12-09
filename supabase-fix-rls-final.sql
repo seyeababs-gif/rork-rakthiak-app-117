@@ -1,17 +1,23 @@
 -- =====================================================
 -- SCRIPT FINAL DE CORRECTION RLS POUR GLOBAL_SETTINGS
--- =====================================================
--- Ce script nettoie et reconfigure les politiques RLS
--- pour permettre UPSERT uniquement au super_admin
+-- VERSION BLINDÉE - GÈRE TOUTES LES ERREURS POSSIBLES
 -- =====================================================
 
--- Étape 1 : Supprimer toutes les anciennes politiques
-DROP POLICY IF EXISTS "Allow all read global_settings" ON global_settings;
-DROP POLICY IF EXISTS "Allow super admin update global_settings" ON global_settings;
-DROP POLICY IF EXISTS "Allow super admin upsert global_settings" ON global_settings;
-DROP POLICY IF EXISTS "global_settings_select_policy" ON global_settings;
-DROP POLICY IF EXISTS "global_settings_update_policy" ON global_settings;
-DROP POLICY IF EXISTS "global_settings_upsert_policy" ON global_settings;
+-- Étape 1 : Supprimer TOUTES les politiques existantes (peu importe leur nom)
+DO $$ 
+DECLARE
+  policy_record RECORD;
+BEGIN
+  FOR policy_record IN 
+    SELECT policyname 
+    FROM pg_policies 
+    WHERE tablename = 'global_settings' 
+    AND schemaname = 'public'
+  LOOP
+    EXECUTE format('DROP POLICY IF EXISTS %I ON global_settings', policy_record.policyname);
+    RAISE NOTICE 'Suppression de la politique: %', policy_record.policyname;
+  END LOOP;
+END $$;
 
 -- Étape 2 : Assurer que la table existe et est correctement configurée
 CREATE TABLE IF NOT EXISTS global_settings (
@@ -23,10 +29,10 @@ CREATE TABLE IF NOT EXISTS global_settings (
   updated_by UUID REFERENCES auth.users(id)
 );
 
--- Étape 3 : Activer RLS sur la table
-ALTER TABLE global_settings ENABLE ROW LEVEL SECURITY;
+-- Étape 3 : Désactiver temporairement RLS pour insérer la ligne initiale
+ALTER TABLE global_settings DISABLE ROW LEVEL SECURITY;
 
--- Étape 4 : Vérifier et insérer la ligne de configuration unique si elle n'existe pas
+-- Étape 4 : Insérer la ligne de configuration unique si elle n'existe pas
 INSERT INTO global_settings (
   id, 
   is_global_premium_enabled, 
@@ -43,46 +49,79 @@ VALUES (
 )
 ON CONFLICT (id) DO NOTHING;
 
--- Étape 5 : Créer les nouvelles politiques RLS
+-- Étape 5 : Réactiver RLS
+ALTER TABLE global_settings ENABLE ROW LEVEL SECURITY;
 
--- Politique de lecture : tout le monde peut lire (authentifié ou non)
-CREATE POLICY "global_settings_read_all" 
-ON global_settings 
-FOR SELECT 
-USING (true);
+-- Étape 6 : Créer les nouvelles politiques RLS (avec vérification)
+
+-- Politique de lecture : tout le monde peut lire
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE tablename = 'global_settings' 
+    AND policyname = 'global_settings_read_all'
+  ) THEN
+    CREATE POLICY "global_settings_read_all" 
+    ON global_settings 
+    FOR SELECT 
+    USING (true);
+    RAISE NOTICE '✅ Politique de lecture créée';
+  END IF;
+END $$;
 
 -- Politique d'UPDATE : SEUL le super_admin peut modifier
-CREATE POLICY "global_settings_update_super_admin_only" 
-ON global_settings 
-FOR UPDATE 
-USING (
-  EXISTS (
-    SELECT 1 FROM users 
-    WHERE users.id = auth.uid() 
-    AND users.is_super_admin = true
-  )
-)
-WITH CHECK (
-  EXISTS (
-    SELECT 1 FROM users 
-    WHERE users.id = auth.uid() 
-    AND users.is_super_admin = true
-  )
-);
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE tablename = 'global_settings' 
+    AND policyname = 'global_settings_update_super_admin_only'
+  ) THEN
+    CREATE POLICY "global_settings_update_super_admin_only" 
+    ON global_settings 
+    FOR UPDATE 
+    USING (
+      EXISTS (
+        SELECT 1 FROM users 
+        WHERE users.id = auth.uid() 
+        AND users.is_super_admin = true
+      )
+    )
+    WITH CHECK (
+      EXISTS (
+        SELECT 1 FROM users 
+        WHERE users.id = auth.uid() 
+        AND users.is_super_admin = true
+      )
+    );
+    RAISE NOTICE '✅ Politique UPDATE créée';
+  END IF;
+END $$;
 
--- Politique d'INSERT : SEUL le super_admin peut insérer (pour l'UPSERT)
-CREATE POLICY "global_settings_insert_super_admin_only" 
-ON global_settings 
-FOR INSERT 
-WITH CHECK (
-  EXISTS (
-    SELECT 1 FROM users 
-    WHERE users.id = auth.uid() 
-    AND users.is_super_admin = true
-  )
-);
+-- Politique d'INSERT : SEUL le super_admin peut insérer
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE tablename = 'global_settings' 
+    AND policyname = 'global_settings_insert_super_admin_only'
+  ) THEN
+    CREATE POLICY "global_settings_insert_super_admin_only" 
+    ON global_settings 
+    FOR INSERT 
+    WITH CHECK (
+      EXISTS (
+        SELECT 1 FROM users 
+        WHERE users.id = auth.uid() 
+        AND users.is_super_admin = true
+      )
+    );
+    RAISE NOTICE '✅ Politique INSERT créée';
+  END IF;
+END $$;
 
--- Étape 6 : Vérification - Afficher l'utilisateur actuel et son statut super_admin
+-- Étape 7 : Vérification - Afficher l'utilisateur actuel et son statut super_admin
 DO $$
 DECLARE
   current_user_id UUID;
@@ -103,11 +142,12 @@ BEGIN
       RAISE NOTICE '✅ Utilisateur actuel: % (%) - SUPER ADMIN', user_email, current_user_id;
     ELSE
       RAISE NOTICE '❌ Utilisateur actuel: % (%) - PAS SUPER ADMIN', user_email, current_user_id;
+      RAISE NOTICE '⚠️  POUR CORRIGER: UPDATE users SET is_super_admin = true WHERE email = ''%'';', user_email;
     END IF;
   END IF;
 END $$;
 
--- Étape 7 : Afficher les paramètres actuels
+-- Étape 8 : Afficher les paramètres actuels
 DO $$
 DECLARE
   settings_record RECORD;
@@ -127,7 +167,30 @@ BEGIN
   END IF;
 END $$;
 
--- Étape 8 : Instructions finales
+-- Étape 9 : Afficher toutes les politiques actives
+DO $$
+DECLARE
+  policy_record RECORD;
+BEGIN
+  RAISE NOTICE '';
+  RAISE NOTICE '════════════════════════════════════════════════════════';
+  RAISE NOTICE '🔐 POLITIQUES RLS ACTIVES SUR global_settings:';
+  RAISE NOTICE '════════════════════════════════════════════════════════';
+  
+  FOR policy_record IN 
+    SELECT policyname, cmd, qual 
+    FROM pg_policies 
+    WHERE tablename = 'global_settings' 
+    AND schemaname = 'public'
+    ORDER BY policyname
+  LOOP
+    RAISE NOTICE '   → %: %', policy_record.policyname, policy_record.cmd;
+  END LOOP;
+  
+  RAISE NOTICE '════════════════════════════════════════════════════════';
+END $$;
+
+-- Étape 10 : Instructions finales
 DO $$
 BEGIN
   RAISE NOTICE '';
@@ -135,7 +198,7 @@ BEGIN
   RAISE NOTICE '🎉 SCRIPT TERMINÉ AVEC SUCCÈS!';
   RAISE NOTICE '';
   RAISE NOTICE '📋 CE QUI A ÉTÉ FAIT:';
-  RAISE NOTICE '   ✓ Nettoyage des anciennes politiques RLS';
+  RAISE NOTICE '   ✓ Suppression de TOUTES les anciennes politiques RLS';
   RAISE NOTICE '   ✓ Création de la table global_settings (si nécessaire)';
   RAISE NOTICE '   ✓ Insertion de la ligne de configuration unique';
   RAISE NOTICE '   ✓ Création des politiques RLS (READ, UPDATE, INSERT)';
@@ -149,5 +212,9 @@ BEGIN
   RAISE NOTICE '   1. Vérifiez que votre utilisateur a is_super_admin = true';
   RAISE NOTICE '   2. Déconnectez-vous et reconnectez-vous dans l''app';
   RAISE NOTICE '   3. Vérifiez les logs ci-dessus pour confirmer votre statut';
+  RAISE NOTICE '';
+  RAISE NOTICE '🔄 APRÈS CE SCRIPT:';
+  RAISE NOTICE '   → Rechargez votre app React Native';
+  RAISE NOTICE '   → Testez la modification des paramètres dans Admin';
   RAISE NOTICE '════════════════════════════════════════════════════════';
 END $$;
