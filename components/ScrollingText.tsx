@@ -4,19 +4,11 @@ import { View, Text, StyleSheet, Animated, LayoutChangeEvent, Platform } from 'r
 interface ScrollingTextProps {
   message: string;
   speed?: number;
-  backgroundColor?: string;
-  textColor?: string;
-  height?: number;
-  fontSize?: number;
 }
 
 export default function ScrollingText({
   message,
   speed = 50,
-  backgroundColor = 'transparent',
-  textColor = '#FFD700',
-  height = 24,
-  fontSize = 13,
 }: ScrollingTextProps) {
   const scrollAnim = useRef(new Animated.Value(0)).current;
   const [containerWidth, setContainerWidth] = useState<number>(0);
@@ -68,7 +60,7 @@ export default function ScrollingText({
 
   return (
     <View
-      style={[styles.container, { backgroundColor, height }]}
+      style={styles.container}
       onLayout={handleContainerLayout}
     >
       <Animated.View
@@ -80,10 +72,7 @@ export default function ScrollingText({
         ]}
         onLayout={handleTextLayout}
       >
-        <Text
-          style={[styles.text, { color: textColor, fontSize }]}
-          numberOfLines={1}
-        >
+        <Text style={styles.text} numberOfLines={1}>
           ✨ {message}
         </Text>
       </Animated.View>
@@ -93,22 +82,25 @@ export default function ScrollingText({
 
 const styles = StyleSheet.create({
   container: {
+    height: 24,
     overflow: 'hidden',
     justifyContent: 'center',
     width: '100%',
+    backgroundColor: 'transparent',
   },
   textContainer: {
     position: 'absolute',
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 8,
   },
   text: {
+    fontSize: 12,
     fontWeight: '700' as const,
+    color: '#FFD700',
     whiteSpace: 'nowrap' as any,
-    letterSpacing: 0.3,
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    letterSpacing: 0.5,
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
     textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
+    textShadowRadius: 2,
   },
 });

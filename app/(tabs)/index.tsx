@@ -312,10 +312,7 @@ export default function HomeScreen() {
         
         {bannerMessage && (
           <View style={styles.bannerContainer}>
-            <ScrollingText 
-              message={bannerMessage}
-              speed={50}
-            />
+            <ScrollingText message={bannerMessage} speed={50} />
           </View>
         )}
         
@@ -661,8 +658,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   bannerContainer: {
-    marginTop: 8,
-    marginBottom: 4,
+    marginTop: 6,
+    marginBottom: 8,
   },
   searchButton: {
     width: 40,
