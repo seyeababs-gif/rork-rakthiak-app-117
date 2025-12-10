@@ -5,11 +5,10 @@ import { useMarketplace } from '@/contexts/MarketplaceContext';
 
 export interface GlobalSettings {
   id: string;
-  isGlobalPremiumEnabled: boolean;
-  scrollingMessage: string;
-  commissionPercentage: number;
+  premiumEnabled: boolean;
+  messageText: string;
+  commissionRate: number;
   updatedAt: Date;
-  updatedBy?: string;
 }
 
 const FIXED_SETTINGS_ID = '00000000-0000-0000-0000-000000000001';
@@ -33,20 +32,19 @@ const fetchGlobalSettings = async (): Promise<GlobalSettings> => {
       console.warn('[GLOBAL SETTINGS] No settings found, returning defaults');
       return {
         id: FIXED_SETTINGS_ID,
-        isGlobalPremiumEnabled: false,
-        scrollingMessage: 'Bienvenue sur Rakthiak - Achetez et vendez facilement au Sénégal',
-        commissionPercentage: 10.0,
+        premiumEnabled: false,
+        messageText: 'Bienvenue sur Rakthiak - Achetez et vendez facilement au Sénégal',
+        commissionRate: 10.0,
         updatedAt: new Date(),
       };
     }
     
     const settings: GlobalSettings = {
       id: data.id,
-      isGlobalPremiumEnabled: data.is_global_premium_enabled || false,
-      scrollingMessage: data.scrolling_message || 'Bienvenue',
-      commissionPercentage: parseFloat(data.commission_percentage) || 10.0,
+      premiumEnabled: data.premium_enabled || false,
+      messageText: data.message_text || 'Bienvenue',
+      commissionRate: parseFloat(data.commission_rate) || 10.0,
       updatedAt: new Date(data.updated_at),
-      updatedBy: data.updated_by,
     };
     
     console.log('[GLOBAL SETTINGS] Settings loaded:', settings);
@@ -55,9 +53,9 @@ const fetchGlobalSettings = async (): Promise<GlobalSettings> => {
     console.error('[GLOBAL SETTINGS] Failed to load settings:', error);
     return {
       id: FIXED_SETTINGS_ID,
-      isGlobalPremiumEnabled: false,
-      scrollingMessage: 'Bienvenue sur Rakthiak - Achetez et vendez facilement au Sénégal',
-      commissionPercentage: 10.0,
+      premiumEnabled: false,
+      messageText: 'Bienvenue sur Rakthiak - Achetez et vendez facilement au Sénégal',
+      commissionRate: 10.0,
       updatedAt: new Date(),
     };
   }
@@ -86,18 +84,16 @@ export const [GlobalSettingsProvider, useGlobalSettings] = createContextHook(() 
         throw new Error(errorMsg);
       }
       
-      const updateData: any = {
-        updated_by: currentUser.id,
-      };
+      const updateData: any = {};
       
-      if (updates.isGlobalPremiumEnabled !== undefined) {
-        updateData.is_global_premium_enabled = updates.isGlobalPremiumEnabled;
+      if (updates.premiumEnabled !== undefined) {
+        updateData.premium_enabled = updates.premiumEnabled;
       }
-      if (updates.scrollingMessage !== undefined) {
-        updateData.scrolling_message = updates.scrollingMessage;
+      if (updates.messageText !== undefined) {
+        updateData.message_text = updates.messageText;
       }
-      if (updates.commissionPercentage !== undefined) {
-        updateData.commission_percentage = updates.commissionPercentage;
+      if (updates.commissionRate !== undefined) {
+        updateData.commission_rate = updates.commissionRate;
       }
       
       console.log('[GLOBAL SETTINGS] 📤 Updating data:', JSON.stringify(updateData, null, 2));
@@ -164,16 +160,16 @@ export const [GlobalSettingsProvider, useGlobalSettings] = createContextHook(() 
     }
   };
   
-  const isPremium = settings?.isGlobalPremiumEnabled || false;
-  const bannerMessage = settings?.scrollingMessage || 'Bienvenue sur Rakthiak';
-  const commissionRate = settings?.commissionPercentage || 10.0;
+  const isPremium = settings?.premiumEnabled || false;
+  const bannerMessage = settings?.messageText || 'Bienvenue sur Rakthiak';
+  const commissionRate = settings?.commissionRate || 10.0;
   
   return {
     settings: settings || {
       id: FIXED_SETTINGS_ID,
-      isGlobalPremiumEnabled: false,
-      scrollingMessage: 'Bienvenue sur Rakthiak - Achetez et vendez facilement au Sénégal',
-      commissionPercentage: 10.0,
+      premiumEnabled: false,
+      messageText: 'Bienvenue sur Rakthiak - Achetez et vendez facilement au Sénégal',
+      commissionRate: 10.0,
       updatedAt: new Date(),
     },
     isPremium,

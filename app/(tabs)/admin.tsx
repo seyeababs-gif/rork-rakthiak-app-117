@@ -72,14 +72,14 @@ export default function AdminScreen() {
   const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [selectedTab, setSelectedTab] = useState<TabType>('products');
   
-  const [premiumEnabled, setPremiumEnabled] = useState<boolean>(settings.isGlobalPremiumEnabled);
-  const [scrollingMessage, setScrollingMessage] = useState<string>(settings.scrollingMessage);
-  const [commissionPercentage, setCommissionPercentage] = useState<string>(settings.commissionPercentage.toString());
+  const [premiumEnabled, setPremiumEnabled] = useState<boolean>(settings.premiumEnabled);
+  const [scrollingMessage, setScrollingMessage] = useState<string>(settings.messageText);
+  const [commissionPercentage, setCommissionPercentage] = useState<string>(settings.commissionRate.toString());
   
   React.useEffect(() => {
-    setPremiumEnabled(settings.isGlobalPremiumEnabled);
-    setScrollingMessage(settings.scrollingMessage);
-    setCommissionPercentage(settings.commissionPercentage.toString());
+    setPremiumEnabled(settings.premiumEnabled);
+    setScrollingMessage(settings.messageText);
+    setCommissionPercentage(settings.commissionRate.toString());
   }, [settings]);
 
   // Rejection Modal State
@@ -895,9 +895,9 @@ export default function AdminScreen() {
     }
     
     const result = await updateSettings({
-      isGlobalPremiumEnabled: premiumEnabled,
-      scrollingMessage: scrollingMessage.trim(),
-      commissionPercentage: commission,
+      premiumEnabled: premiumEnabled,
+      messageText: scrollingMessage.trim(),
+      commissionRate: commission,
     });
     
     if (result.success) {
