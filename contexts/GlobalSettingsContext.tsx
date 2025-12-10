@@ -41,9 +41,9 @@ const fetchGlobalSettings = async (): Promise<GlobalSettings> => {
     
     const settings: GlobalSettings = {
       id: data.id,
-      premiumEnabled: data.premium_enabled || false,
-      messageText: data.message_text || 'Bienvenue',
-      commissionRate: parseFloat(data.commission_rate) || 10.0,
+      premiumEnabled: data.is_global_premium_enabled || false,
+      messageText: data.scrolling_message || 'Bienvenue',
+      commissionRate: parseFloat(data.commission_percentage) || 10.0,
       updatedAt: new Date(data.updated_at),
     };
     
@@ -78,8 +78,8 @@ export const [GlobalSettingsProvider, useGlobalSettings] = createContextHook(() 
       console.log('[GLOBAL SETTINGS] 🔄 Starting update process...');
       console.log('[GLOBAL SETTINGS] Current user:', currentUser?.id, currentUser?.isSuperAdmin);
       
-      if (!currentUser?.isSuperAdmin) {
-        const errorMsg = 'Seul le super administrateur peut modifier les paramètres globaux';
+      if (!currentUser?.isAdmin && !currentUser?.isSuperAdmin) {
+        const errorMsg = 'Seul un administrateur peut modifier les paramètres globaux';
         console.error('[GLOBAL SETTINGS] ❌ Permission denied:', errorMsg);
         throw new Error(errorMsg);
       }
@@ -87,13 +87,13 @@ export const [GlobalSettingsProvider, useGlobalSettings] = createContextHook(() 
       const updateData: any = {};
       
       if (updates.premiumEnabled !== undefined) {
-        updateData.premium_enabled = updates.premiumEnabled;
+        updateData.is_global_premium_enabled = updates.premiumEnabled;
       }
       if (updates.messageText !== undefined) {
-        updateData.message_text = updates.messageText;
+        updateData.scrolling_message = updates.messageText;
       }
       if (updates.commissionRate !== undefined) {
-        updateData.commission_rate = updates.commissionRate;
+        updateData.commission_percentage = updates.commissionRate;
       }
       
       console.log('[GLOBAL SETTINGS] 📤 Updating data:', JSON.stringify(updateData, null, 2));
