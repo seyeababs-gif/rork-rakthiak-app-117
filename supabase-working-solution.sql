@@ -1,108 +1,92 @@
--- SOLUTION FINALE POUR GLOBAL SETTINGS
--- Ce script ajoute les colonnes manquantes et configure les RLS correctement
+-- ✅ SOLUTION FINALE ULTRA-SIMPLE QUI MARCHE
+-- Donne les droits à TOUS les ADMINS (is_admin = true)
 
--- 1. Ajouter les colonnes manquantes si elles n'existent pas
+-- ÉTAPE 1: Supprimer TOUTES les anciennes politiques
 DO $$ 
+DECLARE 
+  pol RECORD;
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'global_settings' AND column_name = 'premium_enabled') THEN
-    ALTER TABLE public.global_settings ADD COLUMN premium_enabled BOOLEAN DEFAULT FALSE;
-    RAISE NOTICE 'Colonne premium_enabled ajoutée';
-  END IF;
-  
-  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'global_settings' AND column_name = 'message_text') THEN
-    ALTER TABLE public.global_settings ADD COLUMN message_text TEXT DEFAULT 'Bienvenue sur Rakthiak - Achetez et vendez facilement au Sénégal';
-    RAISE NOTICE 'Colonne message_text ajoutée';
-  END IF;
-  
-  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'global_settings' AND column_name = 'commission_rate') THEN
-    ALTER TABLE public.global_settings ADD COLUMN commission_rate NUMERIC(5,2) DEFAULT 10.0;
-    RAISE NOTICE 'Colonne commission_rate ajoutée';
-  END IF;
+  FOR pol IN 
+    SELECT policyname 
+    FROM pg_policies 
+    WHERE tablename = 'global_settings' 
+      AND schemaname = 'public'
+  LOOP
+    EXECUTE format('DROP POLICY IF EXISTS %I ON public.global_settings', pol.policyname);
+  END LOOP;
 END $$;
 
--- 2. Migrer les données des anciennes colonnes vers les nouvelles (si elles existent)
-DO $$
-BEGIN
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'global_settings' AND column_name = 'is_global_premium_enabled') THEN
-    UPDATE public.global_settings SET premium_enabled = is_global_premium_enabled;
-    RAISE NOTICE 'Données migrées: is_global_premium_enabled -> premium_enabled';
-  END IF;
-  
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'global_settings' AND column_name = 'scrolling_message') THEN
-    UPDATE public.global_settings SET message_text = scrolling_message;
-    RAISE NOTICE 'Données migrées: scrolling_message -> message_text';
-  END IF;
-  
-  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'global_settings' AND column_name = 'commission_percentage') THEN
-    UPDATE public.global_settings SET commission_rate = commission_percentage;
-    RAISE NOTICE 'Données migrées: commission_percentage -> commission_rate';
-  END IF;
-END $$;
+-- ÉTAPE 2: S'assurer que RLS est activé
+ALTER TABLE public.global_settings ENABLE ROW LEVEL SECURITY;
 
--- 3. S'assurer que la ligne de configuration existe
-INSERT INTO public.global_settings (id, premium_enabled, message_text, commission_rate)
-VALUES (
-  '00000000-0000-0000-0000-000000000001',
+-- ÉTAPE 3: Créer des politiques SIMPLES qui MARCHENT
+-- Tout le monde peut lire
+CREATE POLICY "allow_select_to_all"
+  ON public.global_settings
+  FOR SELECT
+  USING (true);
+
+-- Tous les ADMINS peuvent UPDATE
+CREATE POLICY "allow_update_to_admins"
+  ON public.global_settings
+  FOR UPDATE
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.users
+      WHERE users.id = auth.uid()::text
+      AND users.is_admin = true
+    )
+  );
+
+-- Tous les ADMINS peuvent INSERT (pour les UPSERT)
+CREATE POLICY "allow_insert_to_admins"
+  ON public.global_settings
+  FOR INSERT
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.users
+      WHERE users.id = auth.uid()::text
+      AND users.is_admin = true
+    )
+  );
+
+-- ÉTAPE 4: S'assurer que la ligne de configuration existe
+INSERT INTO public.global_settings (
+  id,
+  is_global_premium_enabled,
+  scrolling_message,
+  commission_percentage
+) VALUES (
+  '00000000-0000-0000-0000-000000000001'::uuid,
   FALSE,
   'Bienvenue sur Rakthiak - Achetez et vendez facilement au Sénégal',
   10.0
 )
 ON CONFLICT (id) DO UPDATE SET
-  premium_enabled = COALESCE(global_settings.premium_enabled, FALSE),
-  message_text = COALESCE(global_settings.message_text, 'Bienvenue sur Rakthiak - Achetez et vendez facilement au Sénégal'),
-  commission_rate = COALESCE(global_settings.commission_rate, 10.0);
+  is_global_premium_enabled = COALESCE(global_settings.is_global_premium_enabled, FALSE),
+  scrolling_message = COALESCE(global_settings.scrolling_message, 'Bienvenue sur Rakthiak'),
+  commission_percentage = COALESCE(global_settings.commission_percentage, 10.0);
 
--- 4. Activer RLS
-ALTER TABLE public.global_settings ENABLE ROW LEVEL SECURITY;
-
--- 5. Supprimer toutes les anciennes policies
-DROP POLICY IF EXISTS "Public can read global settings" ON public.global_settings;
-DROP POLICY IF EXISTS "Only super admin can update global settings" ON public.global_settings;
-DROP POLICY IF EXISTS "Prevent insert on global settings" ON public.global_settings;
-DROP POLICY IF EXISTS "Prevent delete on global settings" ON public.global_settings;
-DROP POLICY IF EXISTS "global_settings_read_all" ON public.global_settings;
-DROP POLICY IF EXISTS "global_settings_update_super_admin_only" ON public.global_settings;
-
--- 6. Créer les policies finales
--- Lecture publique
-CREATE POLICY "global_settings_read_all"
-ON public.global_settings
-FOR SELECT
-USING (true);
-
--- UPDATE uniquement pour super admin (avec UPSERT support)
-CREATE POLICY "global_settings_upsert_super_admin"
-ON public.global_settings
-FOR ALL
-USING (
-  EXISTS (
-    SELECT 1 FROM public.users
-    WHERE users.id = auth.uid()::text
-    AND users.is_super_admin = true
-  )
-)
-WITH CHECK (
-  EXISTS (
-    SELECT 1 FROM public.users
-    WHERE users.id = auth.uid()::text
-    AND users.is_super_admin = true
-  )
-);
-
--- 7. Afficher le résultat
+-- ÉTAPE 5: Vérifier que tout est OK
 SELECT 
-  id,
-  premium_enabled,
-  message_text,
-  commission_rate,
-  updated_at
-FROM public.global_settings
-WHERE id = '00000000-0000-0000-0000-000000000001';
+  '✅ Configuration terminée avec succès!' as status,
+  (SELECT COUNT(*) FROM pg_policies WHERE tablename = 'global_settings') as nombre_politiques,
+  (SELECT COUNT(*) FROM public.global_settings) as nombre_lignes;
 
--- 8. Logs de confirmation
-DO $$
-BEGIN
-  RAISE NOTICE '✅ Configuration terminée avec succès !';
-  RAISE NOTICE '✅ Colonnes: premium_enabled, message_text, commission_rate';
-  RAISE NOTICE '✅ RLS configuré: lecture publique, modification super admin uniquement';
-END $$;
+-- Afficher les politiques actives
+SELECT 
+  policyname as nom_politique,
+  cmd as commande,
+  CASE 
+    WHEN cmd = 'SELECT' THEN '👁️ Lecture'
+    WHEN cmd = 'UPDATE' THEN '✏️ Modification'
+    WHEN cmd = 'INSERT' THEN '➕ Insertion'
+    WHEN cmd = 'DELETE' THEN '🗑️ Suppression'
+  END as type
+FROM pg_policies 
+WHERE tablename = 'global_settings' 
+  AND schemaname = 'public'
+ORDER BY cmd;
+
+-- Afficher la configuration actuelle
+SELECT * FROM public.global_settings;
