@@ -7,7 +7,7 @@ import { Product, Category, User, UserType, Review, ProductStatus, SubCategory, 
 import { supabase } from '@/lib/supabase';
 import { useNotifications } from '@/contexts/NotificationContext';
 import { useToast } from '@/contexts/ToastContext';
-import { useScrollingMessage } from '@/contexts/ScrollingMessageContext';
+import { useGlobalSettings } from '@/contexts/GlobalSettingsContext';
 
 const fetchCurrentUser = async (): Promise<User | null> => {
   try {
@@ -177,7 +177,7 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
   const notifications = useNotifications();
   const toast = useToast();
   const queryClient = useQueryClient();
-  const { isGlobalPremiumEnabled } = useScrollingMessage();
+  const { isPremium: isGlobalPremiumEnabled } = useGlobalSettings();
   
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<Category>('all');

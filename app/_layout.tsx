@@ -11,6 +11,7 @@ import { ReviewProvider } from "@/contexts/ReviewContext";
 import { NotificationProvider, useNotifications } from "@/contexts/NotificationContext";
 import { ToastProvider } from "@/contexts/ToastContext";
 import { ScrollingMessageProvider } from "@/contexts/ScrollingMessageContext";
+import { GlobalSettingsProvider } from "@/contexts/GlobalSettingsContext";
 import ToastContainer from "@/components/ToastContainer";
 import GlobalAlert from "@/components/GlobalAlert";
 import { queryClient } from "@/lib/queryClient";
@@ -97,28 +98,30 @@ export default function RootLayout() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ToastProvider>
-        <NotificationProvider>
-          <ScrollingMessageProvider>
-            <MarketplaceProvider>
-              <CartProvider>
-                <OrderProvider>
-                  <ReviewProvider>
-                    <GestureHandlerRootView style={{ flex: 1 }}>
-                      <AuthGuard>
-                        <NotificationSetup />
-                        <RootLayoutNav />
-                        <ToastContainer />
-                        <GlobalAlert />
-                      </AuthGuard>
-                    </GestureHandlerRootView>
-                  </ReviewProvider>
-                </OrderProvider>
-              </CartProvider>
-            </MarketplaceProvider>
-          </ScrollingMessageProvider>
-        </NotificationProvider>
-      </ToastProvider>
+      <GlobalSettingsProvider>
+        <ToastProvider>
+          <NotificationProvider>
+            <ScrollingMessageProvider>
+              <MarketplaceProvider>
+                <CartProvider>
+                  <OrderProvider>
+                    <ReviewProvider>
+                      <GestureHandlerRootView style={{ flex: 1 }}>
+                        <AuthGuard>
+                          <NotificationSetup />
+                          <RootLayoutNav />
+                          <ToastContainer />
+                          <GlobalAlert />
+                        </AuthGuard>
+                      </GestureHandlerRootView>
+                    </ReviewProvider>
+                  </OrderProvider>
+                </CartProvider>
+              </MarketplaceProvider>
+            </ScrollingMessageProvider>
+          </NotificationProvider>
+        </ToastProvider>
+      </GlobalSettingsProvider>
     </QueryClientProvider>
   );
 }

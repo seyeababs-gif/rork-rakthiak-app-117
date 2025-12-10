@@ -44,7 +44,7 @@ import {
   getButtonHeight,
   getButtonFontSize,
 } from '@/constants/responsive';
-import { useScrollingMessage } from '@/contexts/ScrollingMessageContext';
+import { useGlobalSettings } from '@/contexts/GlobalSettingsContext';
 
 type TabType = 'orders' | 'products' | 'users' | 'settings';
 
@@ -52,7 +52,7 @@ export default function AdminScreen() {
   const insets = useSafeAreaInsets();
   const { orders, updateOrderStatus, deleteOrder, deleteAllUserOrders } = useOrders();
   const toast = useToast();
-  const { message, updateMessage, isGlobalPremiumEnabled, updateGlobalPremium, isLoading: isUpdating } = useScrollingMessage();
+  const { settings, updateSettings, isPremium: isGlobalPremiumEnabled, isUpdating } = useGlobalSettings();
   const { 
     currentUser, 
     isAuthenticated, 
@@ -72,16 +72,16 @@ export default function AdminScreen() {
   const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [selectedTab, setSelectedTab] = useState<TabType>('products');
   
-  const [scrollingMessage, setScrollingMessage] = useState<string>(message);
-  const [globalPremiumEnabled, setGlobalPremiumEnabled] = useState<boolean>(isGlobalPremiumEnabled);
+  const [scrollingMessage, setScrollingMessage] = useState<string>(settings.messageText);
+  const [globalPremiumEnabled, setGlobalPremiumEnabled] = useState<boolean>(settings.premiumEnabled);
   
   React.useEffect(() => {
-    setScrollingMessage(message);
-  }, [message]);
+    setScrollingMessage(settings.messageText);
+  }, [settings.messageText]);
 
   React.useEffect(() => {
-    setGlobalPremiumEnabled(isGlobalPremiumEnabled);
-  }, [isGlobalPremiumEnabled]);
+    setGlobalPremiumEnabled(settings.premiumEnabled);
+  }, [settings.premiumEnabled]);
 
   // Rejection Modal State
   const [rejectModal, setRejectModal] = useState<{
@@ -894,13 +894,17 @@ export default function AdminScreen() {
       return;
     }
     
-    const messageResult = await updateMessage(scrollingMessage.trim());
-    const premiumResult = await updateGlobalPremium(globalPremiumEnabled);
+    console.log('[ADMIN] Saving settings:', { messageText: scrollingMessage.trim(), premiumEnabled: globalPremiumEnabled });
     
-    if (messageResult.success && premiumResult.success) {
+    const result = await updateSettings({
+      messageText: scrollingMessage.trim(),
+      premiumEnabled: globalPremiumEnabled,
+    });
+    
+    if (result.success) {
       toast.showSuccess('Paramètres mis à jour avec succès');
     } else {
-      toast.showError('Erreur lors de la sauvegarde de certains paramètres');
+      toast.showError(result.error || 'Erreur lors de la sauvegarde');
     }
   };
 
