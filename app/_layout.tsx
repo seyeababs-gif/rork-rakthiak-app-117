@@ -99,8 +99,8 @@ export default function RootLayout() {
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
         <NotificationProvider>
-          <MarketplaceProvider>
-            <ScrollingMessageProvider>
+          <ScrollingMessageProvider>
+            <MarketplaceProvider>
               <CartProvider>
                 <OrderProvider>
                   <ReviewProvider>
@@ -115,8 +115,8 @@ export default function RootLayout() {
                   </ReviewProvider>
                 </OrderProvider>
               </CartProvider>
-            </ScrollingMessageProvider>
-          </MarketplaceProvider>
+            </MarketplaceProvider>
+          </ScrollingMessageProvider>
         </NotificationProvider>
       </ToastProvider>
     </QueryClientProvider>
