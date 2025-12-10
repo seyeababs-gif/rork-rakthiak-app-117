@@ -1,7 +1,6 @@
 import createContextHook from '@nkzw/create-context-hook';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import { useMarketplace } from '@/contexts/MarketplaceContext';
 
 export interface GlobalSettings {
   id: string;
@@ -63,7 +62,6 @@ const fetchGlobalSettings = async (): Promise<GlobalSettings> => {
 
 export const [GlobalSettingsProvider, useGlobalSettings] = createContextHook(() => {
   const queryClient = useQueryClient();
-  const { currentUser } = useMarketplace();
   
   const { data: settings, isLoading } = useQuery({
     queryKey: ['globalSettings'],
@@ -76,13 +74,6 @@ export const [GlobalSettingsProvider, useGlobalSettings] = createContextHook(() 
   const updateSettingsMutation = useMutation({
     mutationFn: async (updates: Partial<GlobalSettings>) => {
       console.log('[GLOBAL SETTINGS] 🔄 Starting update process...');
-      console.log('[GLOBAL SETTINGS] Current user:', currentUser?.id, currentUser?.isSuperAdmin);
-      
-      if (!currentUser?.isAdmin && !currentUser?.isSuperAdmin) {
-        const errorMsg = 'Seul un administrateur peut modifier les paramètres globaux';
-        console.error('[GLOBAL SETTINGS] ❌ Permission denied:', errorMsg);
-        throw new Error(errorMsg);
-      }
       
       const updateData: any = {};
       
