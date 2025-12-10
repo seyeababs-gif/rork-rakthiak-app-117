@@ -44,7 +44,7 @@ import {
   getButtonHeight,
   getButtonFontSize,
 } from '@/constants/responsive';
-import { useGlobalSettings } from '@/contexts/GlobalSettingsContext';
+import { useScrollingMessage } from '@/contexts/ScrollingMessageContext';
 
 type TabType = 'orders' | 'products' | 'users' | 'settings';
 
@@ -52,7 +52,7 @@ export default function AdminScreen() {
   const insets = useSafeAreaInsets();
   const { orders, updateOrderStatus, deleteOrder, deleteAllUserOrders } = useOrders();
   const toast = useToast();
-  const { settings, updateSettings, isUpdating } = useGlobalSettings();
+  const { message, updateMessage, isLoading: isUpdating } = useScrollingMessage();
   const { 
     currentUser, 
     isAuthenticated, 
@@ -72,15 +72,11 @@ export default function AdminScreen() {
   const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [selectedTab, setSelectedTab] = useState<TabType>('products');
   
-  const [premiumEnabled, setPremiumEnabled] = useState<boolean>(settings.premiumEnabled);
-  const [scrollingMessage, setScrollingMessage] = useState<string>(settings.messageText);
-  const [commissionPercentage, setCommissionPercentage] = useState<string>(settings.commissionRate.toString());
+  const [scrollingMessage, setScrollingMessage] = useState<string>(message);
   
   React.useEffect(() => {
-    setPremiumEnabled(settings.premiumEnabled);
-    setScrollingMessage(settings.messageText);
-    setCommissionPercentage(settings.commissionRate.toString());
-  }, [settings]);
+    setScrollingMessage(message);
+  }, [message]);
 
   // Rejection Modal State
   const [rejectModal, setRejectModal] = useState<{
@@ -888,20 +884,15 @@ export default function AdminScreen() {
   };
 
   const handleSaveSettings = async () => {
-    const commission = parseFloat(commissionPercentage);
-    if (isNaN(commission) || commission < 0 || commission > 100) {
-      toast.showError('La commission doit être entre 0 et 100');
+    if (!scrollingMessage.trim()) {
+      toast.showError('Le message ne peut pas être vide');
       return;
     }
     
-    const result = await updateSettings({
-      premiumEnabled: premiumEnabled,
-      messageText: scrollingMessage.trim(),
-      commissionRate: commission,
-    });
+    const result = await updateMessage(scrollingMessage.trim());
     
     if (result.success) {
-      toast.showSuccess('Paramètres globaux mis à jour');
+      toast.showSuccess('Message défilant mis à jour');
     } else {
       toast.showError(result.error || 'Erreur lors de la sauvegarde');
     }
@@ -930,31 +921,8 @@ export default function AdminScreen() {
         showsVerticalScrollIndicator={true}
       >
         <View style={styles.settingsCard}>
-          <Text style={styles.settingsTitle}>⚡ Paramètres Globaux</Text>
-          <Text style={styles.settingsSubtitle}>Gérez les paramètres de l&apos;application</Text>
-
-          <View style={styles.settingSection}>
-            <View style={styles.settingHeader}>
-              <Crown size={20} color="#FFD700" />
-              <Text style={styles.settingLabel}>Mode Premium Global</Text>
-            </View>
-            <Text style={styles.settingDescription}>
-              Activez cette option pour activer le mode Premium pour tous les utilisateurs.
-            </Text>
-            <View style={styles.settingSwitchContainer}>
-              <Text style={styles.settingSwitchLabel}>
-                {premiumEnabled ? 'Activé' : 'Désactivé'}
-              </Text>
-              <TouchableOpacity
-                style={[styles.switchButton, premiumEnabled && styles.switchButtonActive]}
-                onPress={() => setPremiumEnabled(!premiumEnabled)}
-              >
-                <View style={[styles.switchThumb, premiumEnabled && styles.switchThumbActive]} />
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <View style={styles.settingSectionDivider} />
+          <Text style={styles.settingsTitle}>✨ Message Défilant</Text>
+          <Text style={styles.settingsSubtitle}>Personnalisez le message qui s&apos;affiche en haut de l&apos;accueil</Text>
 
           <View style={styles.settingSection}>
             <View style={styles.settingHeader}>
@@ -962,7 +930,7 @@ export default function AdminScreen() {
               <Text style={styles.settingLabel}>Message défilant</Text>
             </View>
             <Text style={styles.settingDescription}>
-              Ce message s&apos;affichera en haut de l&apos;application pour tous les utilisateurs.
+              Ce message s&apos;affichera en haut de la page d&apos;accueil pour tous les utilisateurs. Utilisez-le pour des annonces, promotions ou informations importantes.
             </Text>
             <TextInput
               style={styles.settingTextInput}
@@ -979,30 +947,6 @@ export default function AdminScreen() {
             </Text>
           </View>
 
-          <View style={styles.settingSectionDivider} />
-
-          <View style={styles.settingSection}>
-            <View style={styles.settingHeader}>
-              <AlertCircle size={20} color="#E31B23" />
-              <Text style={styles.settingLabel}>Commission (%)</Text>
-            </View>
-            <Text style={styles.settingDescription}>
-              Pourcentage de commission appliqué sur chaque vente. Ce taux sera utilisé pour les calculs de prix.
-            </Text>
-            <TextInput
-              style={styles.settingNumberInput}
-              placeholder="10.0"
-              placeholderTextColor="#999"
-              value={commissionPercentage}
-              onChangeText={setCommissionPercentage}
-              keyboardType="decimal-pad"
-              maxLength={5}
-            />
-            <Text style={styles.settingHint}>
-              💡 Entrez une valeur entre 0 et 100
-            </Text>
-          </View>
-
           <TouchableOpacity
             style={[styles.saveButton, isUpdating && styles.saveButtonDisabled]}
             onPress={handleSaveSettings}
@@ -1011,28 +955,22 @@ export default function AdminScreen() {
             {isUpdating ? (
               <Text style={styles.saveButtonText}>Enregistrement...</Text>
             ) : (
-              <Text style={styles.saveButtonText}>Enregistrer les modifications</Text>
+              <Text style={styles.saveButtonText}>Enregistrer le message</Text>
             )}
           </TouchableOpacity>
         </View>
 
         <View style={styles.infoCard}>
           <ShieldCheck size={24} color="#00A651" />
-          <Text style={styles.infoTitle}>Information</Text>
+          <Text style={styles.infoTitle}>Aperçu</Text>
           <Text style={styles.infoText}>
-            Ces paramètres sont globaux et affecteront tous les utilisateurs de l&apos;application.
-            Assurez-vous de vérifier les valeurs avant de sauvegarder.
+            Le message défilera automatiquement en haut de la page d&apos;accueil avec une animation fluide. Il sera visible par tous les utilisateurs de l&apos;application.
           </Text>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Dernière modification :</Text>
-            <Text style={styles.infoValue}>
-              {new Date(settings.updatedAt).toLocaleDateString('fr-FR', {
-                day: 'numeric',
-                month: 'short',
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
-            </Text>
+          <View style={styles.previewBanner}>
+            <Text style={styles.previewLabel}>Aperçu du message:</Text>
+            <View style={styles.previewContainer}>
+              <Text style={styles.previewText} numberOfLines={1}>✨ {scrollingMessage || 'Votre message ici...'}</Text>
+            </View>
           </View>
         </View>
       </ScrollView>
@@ -2204,6 +2142,27 @@ const styles = StyleSheet.create({
   infoValue: {
     fontSize: 13,
     color: '#2E7D32',
+    fontWeight: '700' as const,
+  },
+  previewBanner: {
+    width: '100%',
+    marginTop: 12,
+  },
+  previewLabel: {
+    fontSize: 12,
+    color: '#2E7D32',
+    fontWeight: '600' as const,
+    marginBottom: 8,
+  },
+  previewContainer: {
+    backgroundColor: '#0D2D5E',
+    borderRadius: 8,
+    padding: 12,
+    overflow: 'hidden',
+  },
+  previewText: {
+    fontSize: 12,
+    color: '#FFD700',
     fontWeight: '700' as const,
   },
 });

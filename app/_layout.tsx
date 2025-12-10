@@ -10,7 +10,7 @@ import { OrderProvider } from "@/contexts/OrderContext";
 import { ReviewProvider } from "@/contexts/ReviewContext";
 import { NotificationProvider, useNotifications } from "@/contexts/NotificationContext";
 import { ToastProvider } from "@/contexts/ToastContext";
-import { GlobalSettingsProvider } from "@/contexts/GlobalSettingsContext";
+import { ScrollingMessageProvider } from "@/contexts/ScrollingMessageContext";
 import ToastContainer from "@/components/ToastContainer";
 import GlobalAlert from "@/components/GlobalAlert";
 import { queryClient } from "@/lib/queryClient";
@@ -100,7 +100,7 @@ export default function RootLayout() {
       <ToastProvider>
         <NotificationProvider>
           <MarketplaceProvider>
-            <GlobalSettingsProvider>
+            <ScrollingMessageProvider>
               <CartProvider>
                 <OrderProvider>
                   <ReviewProvider>
@@ -115,7 +115,7 @@ export default function RootLayout() {
                   </ReviewProvider>
                 </OrderProvider>
               </CartProvider>
-            </GlobalSettingsProvider>
+            </ScrollingMessageProvider>
           </MarketplaceProvider>
         </NotificationProvider>
       </ToastProvider>

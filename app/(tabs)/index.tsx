@@ -18,7 +18,7 @@ import { useRouter } from 'expo-router';
 import { useMarketplace } from '@/contexts/MarketplaceContext';
 import { categories, getSubCategoriesForCategory } from '@/constants/categories';
 import { Product } from '@/types/marketplace';
-import { useGlobalSettings } from '@/contexts/GlobalSettingsContext';
+import { useScrollingMessage } from '@/contexts/ScrollingMessageContext';
 import ScrollingText from '@/components/ScrollingText';
 
 const isWeb = Platform.OS === 'web';
@@ -58,7 +58,7 @@ export default function HomeScreen() {
     hasMoreProducts,
   } = useMarketplace();
   
-  const { bannerMessage } = useGlobalSettings();
+  const { message: bannerMessage } = useScrollingMessage();
   
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedDate, setSelectedDate] = useState<string | undefined>(undefined);
@@ -310,11 +310,9 @@ export default function HomeScreen() {
           </View>
         </View>
         
-        {bannerMessage && (
-          <View style={styles.bannerContainer}>
-            <ScrollingText message={bannerMessage} speed={50} />
-          </View>
-        )}
+        <View style={styles.bannerContainer}>
+          <ScrollingText message={bannerMessage} speed={50} />
+        </View>
         
         {showSearch && (
           <View style={styles.searchBarContainer}>
