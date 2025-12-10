@@ -3,10 +3,12 @@ import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const STORAGE_KEY = '@scrolling_message';
+const GLOBAL_PREMIUM_KEY = '@global_premium_enabled';
 const DEFAULT_MESSAGE = 'Bienvenue sur Rakthiak - Achetez et vendez facilement au Sénégal';
 
 export const [ScrollingMessageProvider, useScrollingMessage] = createContextHook(() => {
   const [message, setMessage] = useState<string>(DEFAULT_MESSAGE);
+  const [isGlobalPremiumEnabled, setIsGlobalPremiumEnabled] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
@@ -18,6 +20,11 @@ export const [ScrollingMessageProvider, useScrollingMessage] = createContextHook
       const stored = await AsyncStorage.getItem(STORAGE_KEY);
       if (stored) {
         setMessage(stored);
+      }
+      
+      const premiumEnabled = await AsyncStorage.getItem(GLOBAL_PREMIUM_KEY);
+      if (premiumEnabled !== null) {
+        setIsGlobalPremiumEnabled(premiumEnabled === 'true');
       }
     } catch (error) {
       console.error('[SCROLLING MESSAGE] Failed to load:', error);
@@ -37,9 +44,23 @@ export const [ScrollingMessageProvider, useScrollingMessage] = createContextHook
     }
   };
 
+  const updateGlobalPremium = async (enabled: boolean) => {
+    try {
+      setIsGlobalPremiumEnabled(enabled);
+      await AsyncStorage.setItem(GLOBAL_PREMIUM_KEY, enabled ? 'true' : 'false');
+      console.log('[GLOBAL PREMIUM] Updated:', enabled);
+      return { success: true };
+    } catch (error) {
+      console.error('[GLOBAL PREMIUM] Failed to save:', error);
+      return { success: false, error: 'Erreur lors de la sauvegarde' };
+    }
+  };
+
   return {
     message,
     updateMessage,
+    isGlobalPremiumEnabled,
+    updateGlobalPremium,
     isLoading,
   };
 });

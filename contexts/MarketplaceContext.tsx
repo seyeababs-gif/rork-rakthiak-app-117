@@ -7,6 +7,7 @@ import { Product, Category, User, UserType, Review, ProductStatus, SubCategory, 
 import { supabase } from '@/lib/supabase';
 import { useNotifications } from '@/contexts/NotificationContext';
 import { useToast } from '@/contexts/ToastContext';
+import { useScrollingMessage } from '@/contexts/ScrollingMessageContext';
 
 const fetchCurrentUser = async (): Promise<User | null> => {
   try {
@@ -176,6 +177,7 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
   const notifications = useNotifications();
   const toast = useToast();
   const queryClient = useQueryClient();
+  const { isGlobalPremiumEnabled } = useScrollingMessage();
   
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<Category>('all');
@@ -385,7 +387,8 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
       if (updates.location !== undefined) updateData.location = updates.location;
       if (updates.condition !== undefined) updateData.condition = updates.condition;
       
-      if (user?.type === 'premium') {
+      const isPremium = user?.type === 'premium' || isGlobalPremiumEnabled;
+      if (isPremium) {
         if (updates.stockQuantity !== undefined) updateData.stock_quantity = updates.stockQuantity;
         if (updates.isOutOfStock !== undefined) updateData.is_out_of_stock = updates.isOutOfStock;
         if (updates.hasDiscount !== undefined) updateData.has_discount = updates.hasDiscount;
@@ -445,7 +448,7 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
     if (!currentUser) {
       return { canAdd: false, reason: 'Vous devez être connecté pour ajouter un produit.' };
     }
-    if (currentUser.type === 'premium') {
+    if (currentUser.type === 'premium' || isGlobalPremiumEnabled) {
       return { canAdd: true, reason: '' };
     }
     const activeProducts = userProducts.length;
@@ -453,12 +456,12 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
       return { canAdd: false, reason: 'Vous avez atteint la limite de 5 produits actifs. Passez à Premium pour un accès illimité.' };
     }
     return { canAdd: true, reason: '' };
-  }, [currentUser, userProducts]);
+  }, [currentUser, userProducts, isGlobalPremiumEnabled]);
 
   const getMaxImages = useCallback(() => {
     if (!currentUser) return 2;
-    return currentUser.type === 'premium' ? Infinity : 2;
-  }, [currentUser]);
+    return (currentUser.type === 'premium' || isGlobalPremiumEnabled) ? Infinity : 2;
+  }, [currentUser, isGlobalPremiumEnabled]);
 
   const updateUserMutation = useMutation({
     mutationFn: async ({ userId, updates }: { userId: string; updates: any }) => {

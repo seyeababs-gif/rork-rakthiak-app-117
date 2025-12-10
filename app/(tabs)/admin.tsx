@@ -52,7 +52,7 @@ export default function AdminScreen() {
   const insets = useSafeAreaInsets();
   const { orders, updateOrderStatus, deleteOrder, deleteAllUserOrders } = useOrders();
   const toast = useToast();
-  const { message, updateMessage, isLoading: isUpdating } = useScrollingMessage();
+  const { message, updateMessage, isGlobalPremiumEnabled, updateGlobalPremium, isLoading: isUpdating } = useScrollingMessage();
   const { 
     currentUser, 
     isAuthenticated, 
@@ -73,10 +73,15 @@ export default function AdminScreen() {
   const [selectedTab, setSelectedTab] = useState<TabType>('products');
   
   const [scrollingMessage, setScrollingMessage] = useState<string>(message);
+  const [globalPremiumEnabled, setGlobalPremiumEnabled] = useState<boolean>(isGlobalPremiumEnabled);
   
   React.useEffect(() => {
     setScrollingMessage(message);
   }, [message]);
+
+  React.useEffect(() => {
+    setGlobalPremiumEnabled(isGlobalPremiumEnabled);
+  }, [isGlobalPremiumEnabled]);
 
   // Rejection Modal State
   const [rejectModal, setRejectModal] = useState<{
@@ -889,12 +894,13 @@ export default function AdminScreen() {
       return;
     }
     
-    const result = await updateMessage(scrollingMessage.trim());
+    const messageResult = await updateMessage(scrollingMessage.trim());
+    const premiumResult = await updateGlobalPremium(globalPremiumEnabled);
     
-    if (result.success) {
-      toast.showSuccess('Message défilant mis à jour');
+    if (messageResult.success && premiumResult.success) {
+      toast.showSuccess('Paramètres mis à jour avec succès');
     } else {
-      toast.showError(result.error || 'Erreur lors de la sauvegarde');
+      toast.showError('Erreur lors de la sauvegarde de certains paramètres');
     }
   };
 
@@ -947,6 +953,38 @@ export default function AdminScreen() {
             </Text>
           </View>
 
+          <View style={styles.settingSectionDivider} />
+
+          <View style={styles.settingSection}>
+            <View style={styles.settingHeader}>
+              <Crown size={20} color="#FFD700" fill="#FFD700" />
+              <Text style={styles.settingLabel}>Mode Premium Global</Text>
+            </View>
+            <Text style={styles.settingDescription}>
+              Active le mode Premium pour TOUS les utilisateurs de l&apos;application. Ils pourront publier un nombre illimité d&apos;annonces, ajouter plusieurs images, et accéder à toutes les fonctionnalités Premium.
+            </Text>
+            <TouchableOpacity
+              style={styles.settingSwitchContainer}
+              onPress={() => setGlobalPremiumEnabled(!globalPremiumEnabled)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.settingSwitchLabel}>
+                {globalPremiumEnabled ? '✅ Premium activé pour tous' : '❌ Premium désactivé'}
+              </Text>
+              <View style={[styles.switchButton, globalPremiumEnabled && styles.switchButtonActive]}>
+                <View style={[styles.switchThumb, globalPremiumEnabled && styles.switchThumbActive]} />
+              </View>
+            </TouchableOpacity>
+            {globalPremiumEnabled && (
+              <View style={styles.premiumWarningBanner}>
+                <AlertCircle size={16} color="#FFD700" />
+                <Text style={styles.premiumWarningText}>
+                  Tous les utilisateurs ont maintenant accès aux fonctionnalités Premium !
+                </Text>
+              </View>
+            )}
+          </View>
+
           <TouchableOpacity
             style={[styles.saveButton, isUpdating && styles.saveButtonDisabled]}
             onPress={handleSaveSettings}
@@ -955,7 +993,7 @@ export default function AdminScreen() {
             {isUpdating ? (
               <Text style={styles.saveButtonText}>Enregistrement...</Text>
             ) : (
-              <Text style={styles.saveButtonText}>Enregistrer le message</Text>
+              <Text style={styles.saveButtonText}>Enregistrer les paramètres</Text>
             )}
           </TouchableOpacity>
         </View>
@@ -2164,5 +2202,22 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#FFD700',
     fontWeight: '700' as const,
+  },
+  premiumWarningBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 12,
+    padding: 12,
+    backgroundColor: '#FFF9E6',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#FFD700',
+  },
+  premiumWarningText: {
+    flex: 1,
+    fontSize: 13,
+    color: '#B8860B',
+    fontWeight: '600' as const,
   },
 });
