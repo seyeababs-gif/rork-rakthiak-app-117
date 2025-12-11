@@ -17,6 +17,7 @@ import { X, Camera, Image as ImageIcon, ArrowLeft, Calendar as CalendarIcon } fr
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import { useToast } from '@/contexts/ToastContext';
 import { useMarketplace } from '@/contexts/MarketplaceContext';
+import { useScrollingMessage } from '@/contexts/ScrollingMessageContext';
 import { categories, getSubCategoriesForCategory } from '@/constants/categories';
 import { Category, SubCategory, ListingType } from '@/types/marketplace';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -27,6 +28,7 @@ export default function EditProductScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { getProduct, updateProduct, getMaxImages, currentUser } = useMarketplace();
   const toast = useToast();
+  const { isGlobalPremiumEnabled } = useScrollingMessage();
 
   const product = getProduct(id || '');
 
@@ -40,7 +42,7 @@ export default function EditProductScreen() {
   const [images, setImages] = useState<string[]>([]);
   const [stockQuantity, setStockQuantity] = useState<string>('');
   const [manageStock, setManageStock] = useState<boolean>(false);
-  const isPremium = currentUser?.type === 'premium';
+  const isPremium = currentUser?.type === 'premium' || isGlobalPremiumEnabled;
   const [isOutOfStock, setIsOutOfStock] = useState<boolean>(false);
   const [hasDiscount, setHasDiscount] = useState<boolean>(false);
   const [discountPercent, setDiscountPercent] = useState<string>('');

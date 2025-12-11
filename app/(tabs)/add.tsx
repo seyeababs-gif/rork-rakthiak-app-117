@@ -17,6 +17,7 @@ import { X, Camera, Image as ImageIcon, Package, Briefcase, Calendar as Calendar
 import { useRouter } from 'expo-router';
 import { useMarketplace } from '@/contexts/MarketplaceContext';
 import { useToast } from '@/contexts/ToastContext';
+import { useScrollingMessage } from '@/contexts/ScrollingMessageContext';
 import { compressImage, uploadImageToStorage } from '@/lib/supabase';
 import { categories, getSubCategoriesForCategory } from '@/constants/categories';
 import { Category, ListingType } from '@/types/marketplace';
@@ -26,7 +27,10 @@ export default function AddProductScreen() {
   const insets = useSafeAreaInsets();
   const toast = useToast();
   const { addProduct, canAddProduct, getMaxImages, currentUser, isAuthenticated } = useMarketplace();
+  const { isGlobalPremiumEnabled } = useScrollingMessage();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const isPremium = currentUser?.type === 'premium' || isGlobalPremiumEnabled;
 
   const [listingType, setListingType] = useState<ListingType>('product');
 
@@ -68,7 +72,7 @@ export default function AddProductScreen() {
     if (images.length >= maxImages) {
       toast.showAlert(
         'Limite atteinte',
-        (currentUser?.type === 'premium')
+        isPremium
           ? 'Limite de photos atteinte.'
           : 'Vous pouvez ajouter maximum 2 photos par produit. Passez à Premium pour un accès illimité.'
       );
@@ -113,7 +117,7 @@ export default function AddProductScreen() {
     if (images.length >= maxImages) {
       toast.showAlert(
         'Limite atteinte',
-        (currentUser?.type === 'premium')
+        isPremium
           ? 'Limite de photos atteinte.'
           : 'Vous pouvez ajouter maximum 2 photos par produit. Passez à Premium pour un accès illimité.'
       );
@@ -399,7 +403,7 @@ export default function AddProductScreen() {
       <View style={[styles.header, { paddingTop: insets.top + 12, paddingBottom: 12 }]}>
         <Text style={styles.headerTitle}>Publier une annonce</Text>
         <Text style={styles.headerSubtitle}>
-          {(currentUser?.type === 'premium')
+          {isPremium
             ? 'Compte Premium - Accès illimité'
             : 'Compte Standard - 5 annonces max, 2 photos/annonce'}
         </Text>
@@ -579,7 +583,7 @@ export default function AddProductScreen() {
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Photos</Text>
             <Text style={styles.photoCount}>
-              {images.length}/{(currentUser?.type === 'premium') ? '∞' : '2'}
+              {images.length}/{isPremium ? '∞' : '2'}
             </Text>
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imagesScroll}>
@@ -791,7 +795,7 @@ export default function AddProductScreen() {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Réduction / Promotion</Text>
-              {!(currentUser?.type === 'premium') && (
+              {!isPremium && (
                 <View style={styles.premiumBadge}>
                   <Text style={styles.premiumBadgeText}>Premium</Text>
                 </View>
@@ -800,7 +804,7 @@ export default function AddProductScreen() {
             <TouchableOpacity 
               style={styles.checkboxRow}
               onPress={() => {
-                if (!(currentUser?.type === 'premium')) {
+                if (!isPremium) {
                   toast.showAlert(
                     'Fonctionnalité Premium',
                     'Les promotions sont réservées aux utilisateurs Premium. Passez à Premium pour 3500 FCFA/mois pour accéder à cette fonctionnalité.',
@@ -814,10 +818,10 @@ export default function AddProductScreen() {
                 }
               }}
             >
-              <View style={[styles.checkbox, hasDiscount && styles.checkboxChecked, !(currentUser?.type === 'premium') && styles.checkboxDisabled]}>
+              <View style={[styles.checkbox, hasDiscount && styles.checkboxChecked, !isPremium && styles.checkboxDisabled]}>
                 {hasDiscount && <Text style={styles.checkboxCheck}>✓</Text>}
               </View>
-              <Text style={[styles.checkboxLabel, !(currentUser?.type === 'premium') && styles.checkboxLabelDisabled]}>Ce produit est en promotion</Text>
+              <Text style={[styles.checkboxLabel, !isPremium && styles.checkboxLabelDisabled]}>Ce produit est en promotion</Text>
             </TouchableOpacity>
             {hasDiscount && (
               <View>
@@ -854,7 +858,7 @@ export default function AddProductScreen() {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Gestion du stock</Text>
-              {!(currentUser?.type === 'premium') && (
+              {!isPremium && (
                 <View style={styles.premiumBadge}>
                   <Text style={styles.premiumBadgeText}>Premium</Text>
                 </View>
@@ -863,7 +867,7 @@ export default function AddProductScreen() {
             <TouchableOpacity 
               style={styles.checkboxRow}
               onPress={() => {
-                if (!(currentUser?.type === 'premium')) {
+                if (!isPremium) {
                   toast.showAlert(
                     'Fonctionnalité Premium',
                     'La gestion du stock est réservée aux utilisateurs Premium. Passez à Premium pour 3500 FCFA/mois pour accéder à cette fonctionnalité.',
@@ -877,10 +881,10 @@ export default function AddProductScreen() {
                 }
               }}
             >
-              <View style={[styles.checkbox, manageStock && styles.checkboxChecked, !(currentUser?.type === 'premium') && styles.checkboxDisabled]}>
+              <View style={[styles.checkbox, manageStock && styles.checkboxChecked, !isPremium && styles.checkboxDisabled]}>
                 {manageStock && <Text style={styles.checkboxCheck}>✓</Text>}
               </View>
-              <Text style={[styles.checkboxLabel, !(currentUser?.type === 'premium') && styles.checkboxLabelDisabled]}>Gérer le stock de ce produit</Text>
+              <Text style={[styles.checkboxLabel, !isPremium && styles.checkboxLabelDisabled]}>Gérer le stock de ce produit</Text>
             </TouchableOpacity>
             {manageStock && (
               <TextInput
