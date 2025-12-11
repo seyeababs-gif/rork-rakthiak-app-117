@@ -44,7 +44,7 @@ import {
   getButtonHeight,
   getButtonFontSize,
 } from '@/constants/responsive';
-import { useGlobalSettings } from '@/contexts/GlobalSettingsContext';
+import { useScrollingMessage } from '@/contexts/ScrollingMessageContext';
 
 type TabType = 'orders' | 'products' | 'users' | 'settings';
 
@@ -52,7 +52,7 @@ export default function AdminScreen() {
   const insets = useSafeAreaInsets();
   const { orders, updateOrderStatus, deleteOrder, deleteAllUserOrders } = useOrders();
   const toast = useToast();
-  const { settings, updateSettings, isPremium: isGlobalPremiumEnabled, isUpdating } = useGlobalSettings();
+  const { message: scrollingMessageFromContext, updateMessage, isGlobalPremiumEnabled, updateGlobalPremium } = useScrollingMessage();
   const { 
     currentUser, 
     isAuthenticated, 
@@ -72,16 +72,17 @@ export default function AdminScreen() {
   const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [selectedTab, setSelectedTab] = useState<TabType>('products');
   
-  const [scrollingMessage, setScrollingMessage] = useState<string>(settings.messageText);
-  const [globalPremiumEnabled, setGlobalPremiumEnabled] = useState<boolean>(settings.premiumEnabled);
+  const [scrollingMessage, setScrollingMessage] = useState<string>(scrollingMessageFromContext);
+  const [globalPremiumEnabled, setGlobalPremiumEnabled] = useState<boolean>(isGlobalPremiumEnabled);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
   
   React.useEffect(() => {
-    setScrollingMessage(settings.messageText);
-  }, [settings.messageText]);
+    setScrollingMessage(scrollingMessageFromContext);
+  }, [scrollingMessageFromContext]);
 
   React.useEffect(() => {
-    setGlobalPremiumEnabled(settings.premiumEnabled);
-  }, [settings.premiumEnabled]);
+    setGlobalPremiumEnabled(isGlobalPremiumEnabled);
+  }, [isGlobalPremiumEnabled]);
 
   // Rejection Modal State
   const [rejectModal, setRejectModal] = useState<{
@@ -894,17 +895,18 @@ export default function AdminScreen() {
       return;
     }
     
-    console.log('[ADMIN] Saving settings:', { messageText: scrollingMessage.trim(), premiumEnabled: globalPremiumEnabled });
+    setIsSaving(true);
+    console.log('[ADMIN] Saving settings:', { message: scrollingMessage.trim(), premiumEnabled: globalPremiumEnabled });
     
-    const result = await updateSettings({
-      messageText: scrollingMessage.trim(),
-      premiumEnabled: globalPremiumEnabled,
-    });
+    const messageResult = await updateMessage(scrollingMessage.trim());
+    const premiumResult = await updateGlobalPremium(globalPremiumEnabled);
     
-    if (result.success) {
+    setIsSaving(false);
+    
+    if (messageResult.success && premiumResult.success) {
       toast.showSuccess('Paramètres mis à jour avec succès');
     } else {
-      toast.showError(result.error || 'Erreur lors de la sauvegarde');
+      toast.showError('Erreur lors de la sauvegarde');
     }
   };
 
@@ -990,11 +992,11 @@ export default function AdminScreen() {
           </View>
 
           <TouchableOpacity
-            style={[styles.saveButton, isUpdating && styles.saveButtonDisabled]}
+            style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}
             onPress={handleSaveSettings}
-            disabled={isUpdating}
+            disabled={isSaving}
           >
-            {isUpdating ? (
+            {isSaving ? (
               <Text style={styles.saveButtonText}>Enregistrement...</Text>
             ) : (
               <Text style={styles.saveButtonText}>Enregistrer les paramètres</Text>
