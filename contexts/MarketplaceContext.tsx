@@ -62,7 +62,7 @@ const fetchCurrentUser = async (): Promise<User | null> => {
   }
 };
 
-const fetchProducts = async (page: number = 0, limit: number = 100): Promise<Product[]> => {
+const fetchProducts = async (page: number = 0, limit: number = 500): Promise<Product[]> => {
   try {
     console.log(`[FETCH PRODUCTS] Fetching page ${page} with limit ${limit}...`);
     const start = page * limit;
@@ -197,12 +197,13 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
     gcTime: 30 * 60 * 1000,
   });
 
-  const { data: products = [], isFetching } = useQuery({
+  const { data: products = [], isFetching, refetch: refetchProducts } = useQuery({
     queryKey: ['products', currentPage],
-    queryFn: () => fetchProducts(currentPage, 100),
-    staleTime: 5 * 60 * 1000,
+    queryFn: () => fetchProducts(currentPage, 500),
+    staleTime: 30 * 1000,
     gcTime: 10 * 60 * 1000,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 
   React.useEffect(() => {
@@ -220,6 +221,13 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
       setCurrentPage(prev => prev + 1);
     }
   }, [isFetching]);
+
+  const refreshProducts = useCallback(async () => {
+    console.log('[MARKETPLACE] 🔄 Manual refresh triggered');
+    setCurrentPage(0);
+    setAllLoadedProducts([]);
+    await refetchProducts();
+  }, [refetchProducts]);
 
   const { data: favorites = [] } = useQuery({
     queryKey: ['favorites', currentUser?.id, currentUser],
@@ -263,11 +271,13 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
     },
   });
 
+  const { mutate: toggleFavoriteMutate } = toggleFavoriteMutation;
+
   const toggleFavorite = useCallback((productId: string) => {
     if (!isAuthenticated || !currentUser) return;
     const isFav = favorites.includes(productId);
-    toggleFavoriteMutation.mutate({ productId, isFav, userId: currentUser.id });
-  }, [favorites, isAuthenticated, currentUser, toggleFavoriteMutation]);
+    toggleFavoriteMutate({ productId, isFav, userId: currentUser.id });
+  }, [favorites, isAuthenticated, currentUser, toggleFavoriteMutate]);
 
   const isFavorite = useCallback((productId: string) => favorites.includes(productId), [favorites]);
 
@@ -309,7 +319,7 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
     return allLoadedProducts.filter(product => product.sellerId === currentUser.id);
   }, [allLoadedProducts, currentUser]);
 
-  const addProductMutation = useMutation({
+  const addProductMutationResult = useMutation({
     mutationFn: async ({ product, user }: { product: Omit<Product, 'id' | 'createdAt' | 'sellerId' | 'sellerName' | 'sellerAvatar' | 'status'>, user: User }) => {
       const newProductData = {
         id: `product-${Date.now()}`,
@@ -383,19 +393,21 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
     },
   });
 
+  const { mutateAsync: addProductMutateAsync } = addProductMutationResult;
+
   const addProduct = useCallback(async (product: Omit<Product, 'id' | 'createdAt' | 'sellerId' | 'sellerName' | 'sellerAvatar' | 'status'>) => {
     if (!currentUser) return { success: false, error: 'User not logged in' };
     
     try {
-      const result = await addProductMutation.mutateAsync({ product, user: currentUser });
+      const result = await addProductMutateAsync({ product, user: currentUser });
       return { success: true, product: result };
     } catch (error: any) {
       console.error('Error adding product:', error);
       return { success: false, error: error.message || String(error) };
     }
-  }, [currentUser, addProductMutation]);
+  }, [currentUser, addProductMutateAsync]);
 
-  const updateProductMutation = useMutation({
+  const updateProductMutationResult = useMutation({
     mutationFn: async ({ productId, updates, user }: { productId: string; updates: Partial<Product>; user: User }) => {
       const updateData: any = {};
       if (updates.title !== undefined) updateData.title = updates.title;
@@ -431,17 +443,19 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
     },
   });
 
+  const { mutateAsync: updateProductMutateAsync } = updateProductMutationResult;
+
   const updateProduct = useCallback(async (productId: string, updates: Partial<Product>) => {
     if (!currentUser) return;
     
     try {
-      await updateProductMutation.mutateAsync({ productId, updates, user: currentUser });
+      await updateProductMutateAsync({ productId, updates, user: currentUser });
     } catch (error) {
       console.error('Error updating product:', error);
     }
-  }, [currentUser, updateProductMutation]);
+  }, [currentUser, updateProductMutateAsync]);
 
-  const deleteProductMutation = useMutation({
+  const deleteProductMutationResult = useMutation({
     mutationFn: async (productId: string) => {
       const { error } = await supabase
         .from('products')
@@ -456,13 +470,15 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
     },
   });
 
+  const { mutateAsync: deleteProductMutateAsync } = deleteProductMutationResult;
+
   const deleteProduct = useCallback(async (productId: string) => {
     try {
-      await deleteProductMutation.mutateAsync(productId);
+      await deleteProductMutateAsync(productId);
     } catch (error) {
       console.error('Error deleting product:', error);
     }
-  }, [deleteProductMutation]);
+  }, [deleteProductMutateAsync]);
 
   const canAddProduct = useCallback(() => {
     if (!currentUser) {
@@ -483,7 +499,7 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
     return (currentUser.type === 'premium' || isGlobalPremiumEnabled) ? Infinity : 2;
   }, [currentUser, isGlobalPremiumEnabled]);
 
-  const updateUserMutation = useMutation({
+  const updateUserMutationResult = useMutation({
     mutationFn: async ({ userId, updates }: { userId: string; updates: any }) => {
       const { error } = await supabase
         .from('users')
@@ -498,10 +514,12 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
     },
   });
 
+  const { mutateAsync: updateUserMutateAsync } = updateUserMutationResult;
+
   const requestPremiumUpgrade = useCallback(async () => {
     if (!currentUser) return { success: false, error: 'Non connecté' };
     try {
-      await updateUserMutation.mutateAsync({
+      await updateUserMutateAsync({
         userId: currentUser.id,
         updates: {
           premium_payment_pending: true,
@@ -514,13 +532,13 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
       console.error('Error requesting premium upgrade:', error);
       return { success: false, error: 'Erreur lors de la demande' };
     }
-  }, [currentUser, updateUserMutation]);
+  }, [currentUser, updateUserMutateAsync]);
 
   const approvePremiumUpgrade = useCallback(async (userId: string) => {
     if (!currentUser?.isAdmin) return { success: false, error: 'Non autorisé' };
     
     try {
-      await updateUserMutation.mutateAsync({
+      await updateUserMutateAsync({
         userId,
         updates: {
           type: 'premium',
@@ -534,13 +552,13 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
       console.error('Error approving premium upgrade:', error);
       return { success: false, error: 'Erreur lors de l\'approbation' };
     }
-  }, [currentUser, updateUserMutation]);
+  }, [currentUser, updateUserMutateAsync]);
 
   const rejectPremiumUpgrade = useCallback(async (userId: string) => {
     if (!currentUser?.isAdmin) return { success: false, error: 'Non autorisé' };
     
     try {
-      await updateUserMutation.mutateAsync({
+      await updateUserMutateAsync({
         userId,
         updates: {
           premium_payment_pending: false,
@@ -553,9 +571,9 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
       console.error('Error rejecting premium upgrade:', error);
       return { success: false, error: 'Erreur lors du rejet' };
     }
-  }, [currentUser, updateUserMutation]);
+  }, [currentUser, updateUserMutateAsync]);
 
-  const registerMutation = useMutation({
+  const registerMutationResult = useMutation({
     mutationFn: async (userData: { name: string; phone: string; password: string; location: string; deliveryAddress: string; deliveryCity: string; deliveryPhone: string }) => {
       const { data: existingUser } = await supabase
         .from('users')
@@ -619,17 +637,19 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
     },
   });
 
+  const { mutateAsync: registerMutateAsync } = registerMutationResult;
+
   const register = useCallback(async (userData: { name: string; phone: string; password: string; location: string; deliveryAddress: string; deliveryCity: string; deliveryPhone: string }) => {
     try {
-      const user = await registerMutation.mutateAsync(userData);
+      const user = await registerMutateAsync(userData);
       return { success: true, user };
     } catch (error: any) {
       console.error('Registration error:', error);
       return { success: false, error: error.message || 'Erreur lors de l\'inscription' };
     }
-  }, [registerMutation]);
+  }, [registerMutateAsync]);
 
-  const loginMutation = useMutation({
+  const loginMutationResult = useMutation({
     mutationFn: async ({ phone, password }: { phone: string; password: string }) => {
       const { data: userData, error: userError } = await supabase
         .from('users')
@@ -681,15 +701,17 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
     },
   });
 
+  const { mutateAsync: loginMutateAsync } = loginMutationResult;
+
   const login = useCallback(async (phone: string, password: string) => {
     try {
-      const user = await loginMutation.mutateAsync({ phone, password });
+      const user = await loginMutateAsync({ phone, password });
       return { success: true, user };
     } catch (error: any) {
       console.error('Login error:', error);
       return { success: false, error: error.message || 'Erreur lors de la connexion' };
     }
-  }, [loginMutation]);
+  }, [loginMutateAsync]);
 
   const logout = useCallback(async () => {
     try {
@@ -719,13 +741,13 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
       if (updates.deliveryPhone !== undefined) updateData.delivery_phone = updates.deliveryPhone;
       if (updates.isAdmin !== undefined) updateData.is_admin = updates.isAdmin;
       
-      await updateUserMutation.mutateAsync({ userId: currentUser.id, updates: updateData });
+      await updateUserMutateAsync({ userId: currentUser.id, updates: updateData });
       return { success: true };
     } catch (error: any) {
       console.error('Error updating user:', error);
       return { success: false, error: error.message || String(error) };
     }
-  }, [currentUser, updateUserMutation]);
+  }, [currentUser, updateUserMutateAsync]);
 
   const getProductReviews = useCallback((productId: string) => {
     return reviews.filter(review => review.productId === productId);
@@ -768,7 +790,7 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
     if (!currentUser?.isAdmin) return { success: false, error: 'Non autorisé' };
     
     try {
-      await updateUserMutation.mutateAsync({
+      await updateUserMutateAsync({
         userId,
         updates: { type: newType },
       });
@@ -778,9 +800,9 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
       console.error('Error changing user type:', error);
       return { success: false, error: 'Erreur lors du changement de type' };
     }
-  }, [currentUser, updateUserMutation]);
+  }, [currentUser, updateUserMutateAsync]);
 
-  const deleteUserMutation = useMutation({
+  const deleteUserMutationResult = useMutation({
     mutationFn: async (userId: string) => {
       const { error } = await supabase
         .from('users')
@@ -795,6 +817,8 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
     },
   });
 
+  const { mutateAsync: deleteUserMutateAsync } = deleteUserMutationResult;
+
   const deleteUser = useCallback(async (userId: string) => {
     if (!currentUser?.isAdmin && !currentUser?.isSuperAdmin) return { success: false, error: 'Non autorisé' };
     if (currentUser.id === userId) return { success: false, error: 'Vous ne pouvez pas supprimer votre propre compte' };
@@ -803,19 +827,19 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
     if (targetUser?.isSuperAdmin) return { success: false, error: 'Le super administrateur ne peut pas être supprimé' };
     
     try {
-      await deleteUserMutation.mutateAsync(userId);
+      await deleteUserMutateAsync(userId);
       return { success: true };
     } catch (error) {
       console.error('Error deleting user:', error);
       return { success: false, error: 'Erreur lors de la suppression' };
     }
-  }, [currentUser, allUsers, deleteUserMutation]);
+  }, [currentUser, allUsers, deleteUserMutateAsync]);
 
   const pendingProducts = useMemo(() => {
     return allLoadedProducts.filter(product => product.status === 'pending');
   }, [allLoadedProducts]);
 
-  const approveProductMutation = useMutation({
+  const approveProductMutationResult = useMutation({
     mutationFn: async ({ productId, userId, product }: { productId: string; userId: string; product: Product }) => {
       const { error } = await supabase
         .from('products')
@@ -840,6 +864,8 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
     },
   });
 
+  const { mutateAsync: approveProductMutateAsync } = approveProductMutationResult;
+
   const approveProduct = useCallback(async (productId: string) => {
     if (!currentUser?.isAdmin) return;
     
@@ -847,11 +873,11 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
       const product = allLoadedProducts.find(p => p.id === productId);
       if (!product) return;
 
-      await approveProductMutation.mutateAsync({ productId, userId: currentUser.id, product });
+      await approveProductMutateAsync({ productId, userId: currentUser.id, product });
     } catch (error) {
       console.error('Error approving product:', error);
     }
-  }, [allLoadedProducts, currentUser, approveProductMutation]);
+  }, [allLoadedProducts, currentUser, approveProductMutateAsync]);
 
   const toggleAdminStatus = useCallback(async (userId: string) => {
     if (!currentUser?.isSuperAdmin) return { success: false, error: 'Seul le super administrateur peut gérer les admins' };
@@ -863,7 +889,7 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
     
     try {
       const newAdminStatus = !targetUser.isAdmin;
-      await updateUserMutation.mutateAsync({
+      await updateUserMutateAsync({
         userId,
         updates: { is_admin: newAdminStatus },
       });
@@ -873,9 +899,9 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
       console.error('Error toggling admin status:', error);
       return { success: false, error: 'Erreur lors du changement de statut' };
     }
-  }, [currentUser, allUsers, updateUserMutation]);
+  }, [currentUser, allUsers, updateUserMutateAsync]);
 
-  const rejectProductMutation = useMutation({
+  const rejectProductMutationResult = useMutation({
     mutationFn: async ({ productId, reason, product }: { productId: string; reason?: string; product: Product }) => {
       const { error } = await supabase
         .from('products')
@@ -900,6 +926,8 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
     },
   });
 
+  const { mutateAsync: rejectProductMutateAsync } = rejectProductMutationResult;
+
   const rejectProduct = useCallback(async (productId: string, reason?: string) => {
     if (!currentUser?.isAdmin) return;
     
@@ -907,17 +935,18 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
       const product = allLoadedProducts.find(p => p.id === productId);
       if (!product) return;
 
-      await rejectProductMutation.mutateAsync({ productId, reason, product });
+      await rejectProductMutateAsync({ productId, reason, product });
     } catch (error) {
       console.error('Error rejecting product:', error);
     }
-  }, [allLoadedProducts, currentUser, rejectProductMutation]);
+  }, [allLoadedProducts, currentUser, rejectProductMutateAsync]);
 
   return useMemo(() => ({
     products: allLoadedProducts,
     loadMoreProducts,
+    refreshProducts,
     isFetchingMore: isFetching,
-    hasMoreProducts: products.length >= 100,
+    hasMoreProducts: products.length >= 500,
     filteredProducts,
     favoriteProducts,
     userProducts,
@@ -961,6 +990,7 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
   }), [
     allLoadedProducts,
     loadMoreProducts,
+    refreshProducts,
     isFetching,
     products.length,
     filteredProducts,

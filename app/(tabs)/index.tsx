@@ -54,6 +54,7 @@ export default function HomeScreen() {
     setSelectedSubCategory,
     currentUser,
     loadMoreProducts,
+    refreshProducts,
     isFetchingMore,
     hasMoreProducts,
   } = useMarketplace();
@@ -65,6 +66,7 @@ export default function HomeScreen() {
   const [availableDates, setAvailableDates] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<'products' | 'services'>('products');
   const [showSearch, setShowSearch] = useState<boolean>(false);
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const scrollViewRef = useRef<ScrollView>(null);
   const [hasCalledLoadMore, setHasCalledLoadMore] = useState<boolean>(false);
 
@@ -142,6 +144,12 @@ export default function HomeScreen() {
       setTimeout(() => setHasCalledLoadMore(false), 1000);
     }
   }, [hasMoreProducts, isFetchingMore, loadMoreProducts, hasCalledLoadMore]);
+
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    await refreshProducts();
+    setIsRefreshing(false);
+  }, [refreshProducts]);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('fr-FR').format(price) + ' FCFA';
@@ -300,6 +308,14 @@ export default function HomeScreen() {
           </View>
           
           <View style={styles.headerActions}>
+            <TouchableOpacity
+              style={styles.searchButton}
+              onPress={handleRefresh}
+              activeOpacity={0.7}
+              disabled={isRefreshing}
+            >
+              <Text style={styles.refreshIcon}>{isRefreshing ? '⏳' : '🔄'}</Text>
+            </TouchableOpacity>
             <TouchableOpacity
               style={styles.searchButton}
               onPress={() => setShowSearch(!showSearch)}
@@ -666,6 +682,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  refreshIcon: {
+    fontSize: 20,
   },
   searchBarContainer: {
     marginTop: 8,
