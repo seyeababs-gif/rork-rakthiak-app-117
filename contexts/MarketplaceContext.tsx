@@ -62,7 +62,7 @@ const fetchCurrentUser = async (): Promise<User | null> => {
   }
 };
 
-const fetchProducts = async (page: number = 0, limit: number = 20): Promise<Product[]> => {
+const fetchProducts = async (page: number = 0, limit: number = 100): Promise<Product[]> => {
   try {
     console.log(`[FETCH PRODUCTS] Fetching page ${page} with limit ${limit}...`);
     const start = page * limit;
@@ -70,7 +70,7 @@ const fetchProducts = async (page: number = 0, limit: number = 20): Promise<Prod
     
     const { data, error } = await supabase
       .from('products')
-      .select('id,title,price,images,category,sub_category,location,seller_id,seller_name,seller_avatar,condition,status,listing_type,has_discount,discount_percent,original_price,created_at,description')
+      .select('id,title,price,images,category,sub_category,location,seller_id,seller_name,seller_avatar,condition,status,listing_type,has_discount,discount_percent,original_price,created_at,description,service_details,stock_quantity,is_out_of_stock,rejection_reason')
       .order('created_at', { ascending: false })
       .range(start, end);
     
@@ -101,6 +101,10 @@ const fetchProducts = async (page: number = 0, limit: number = 20): Promise<Prod
       hasDiscount: p.has_discount,
       discountPercent: p.discount_percent,
       originalPrice: p.original_price ? parseFloat(p.original_price) : undefined,
+      serviceDetails: p.service_details,
+      stockQuantity: p.stock_quantity,
+      isOutOfStock: p.is_out_of_stock,
+      rejectionReason: p.rejection_reason,
     }));
     return mappedProducts;
   } catch (error: any) {
@@ -195,7 +199,7 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
 
   const { data: products = [], isFetching } = useQuery({
     queryKey: ['products', currentPage],
-    queryFn: () => fetchProducts(currentPage, 20),
+    queryFn: () => fetchProducts(currentPage, 100),
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
     refetchOnWindowFocus: false,
@@ -268,16 +272,32 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
   const isFavorite = useCallback((productId: string) => favorites.includes(productId), [favorites]);
 
   const filteredProducts = useMemo(() => {
-    return allLoadedProducts.filter(product => {
+    console.log('[MARKETPLACE] 📦 Total products loaded:', allLoadedProducts.length);
+    const approvedCount = allLoadedProducts.filter(p => p.status === 'approved').length;
+    console.log('[MARKETPLACE] ✅ Approved products:', approvedCount);
+    console.log('[MARKETPLACE] 👤 User role - Admin:', currentUser?.isAdmin, 'SuperAdmin:', currentUser?.isSuperAdmin);
+    
+    const filtered = allLoadedProducts.filter(product => {
       const isApproved = product.status === 'approved';
       const isAdmin = currentUser?.isAdmin === true;
       const isSuperAdmin = currentUser?.isSuperAdmin === true;
-      const matchesSearch = product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          product.description.toLowerCase().includes(searchQuery.toLowerCase());
+      const canView = isAdmin || isSuperAdmin || isApproved;
+      
+      if (!canView) {
+        return false;
+      }
+      
+      const matchesSearch = searchQuery.trim() === '' || 
+        product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        product.description.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
       const matchesSubCategory = !selectedSubCategory || product.subCategory === selectedSubCategory;
-      return (isAdmin || isSuperAdmin || isApproved) && matchesSearch && matchesCategory && matchesSubCategory;
+      
+      return matchesSearch && matchesCategory && matchesSubCategory;
     });
+    
+    console.log('[MARKETPLACE] 🔍 Filtered products to display:', filtered.length);
+    return filtered;
   }, [allLoadedProducts, searchQuery, selectedCategory, selectedSubCategory, currentUser]);
 
   const favoriteProducts = useMemo(() => {
@@ -897,7 +917,7 @@ export const [MarketplaceProvider, useMarketplace] = createContextHook(() => {
     products: allLoadedProducts,
     loadMoreProducts,
     isFetchingMore: isFetching,
-    hasMoreProducts: products.length >= 20,
+    hasMoreProducts: products.length >= 100,
     filteredProducts,
     favoriteProducts,
     userProducts,
