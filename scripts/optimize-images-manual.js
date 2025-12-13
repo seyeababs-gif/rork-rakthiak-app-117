@@ -10,6 +10,7 @@
  * 4. Lance: node optimize-images-manual.js
  */
 
+/* eslint-disable no-undef */
 const { createClient } = require('@supabase/supabase-js');
 const sharp = require('sharp');
 const https = require('https');
